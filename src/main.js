@@ -1,5 +1,7 @@
 import { init as initController } from './Controller';
 import { init as initEconomy } from './Economy';
+import { init as initConstruction } from './Construction';
+import { init as initSpawn } from './Spawn';
 import { init as initMemory } from './Memory';
 
 import store from './store';
@@ -12,6 +14,8 @@ import {
 
 initController(store);
 initEconomy(store);
+initConstruction(store);
+initSpawn(store);
 initMemory(store);
 
 export function loop() {

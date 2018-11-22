@@ -6,10 +6,16 @@ import cond from 'lodash.cond';
 import intersection from 'lodash.intersection';
 import { call, put, select, takeEvery } from 'redux-saga/effects'
 import { createSelector } from 'reselect';
+import { actionCreators as spawnActions } from '../Spawn';
 import { happy } from '../utils/id';
 import createReducer from '../utils/createReducer';
 import createSaga from '../utils/createSaga';
 import createModule from '../utils/createModule';
+import {
+  moveTo,
+  tasks as creepTasks,
+  acquireTask,
+} from '../utils/creeps';
 import {
   RUN,
   FINAL,
@@ -18,6 +24,7 @@ import {
 const PROBE_COUNT = 4;
 const ENABLE = 'ECONOMY_ENABLE';
 const SPAWN = 'ECONOMY_SPAWN';
+const REMEMBER = 'ECONOMY_REMEMBER';
 const CLAIM_SOURCES = 'ECONOMY_CLAIM_SOURCES';
 const HARVEST_SOURCE = 'HARVEST_SOURCE';
 const ASSIGN_NEW_WORK = 'ASSIGN_NEW_WORK';
@@ -163,7 +170,7 @@ export const selectors = {
   deadProbes: selectDeadProbs,
 };
 
-const probeBody = [WORK, MOVE, CARRY];
+const probeBody = [WORK, MOVE, WORK, CARRY];
 const probeMemory = () => ({ memory: { role: 'probe', infant: true } });
 
 export function init(store) {
@@ -184,11 +191,8 @@ function *watchEnabled() {
 
 function* watchNewWork() {
   yield takeEvery(ASSIGN_NEW_WORK, function* onNewProbe() {
-    console.log('in', ASSIGN_NEW_WORK)
     const infants = yield select(selectInfants);
-    console.log(JSON.stringify(infants));
     const source = yield select(selectLeastMined);
-    console.log(JSON.stringify(source));
     infants.forEach(creep => {
       creep.mine = source.id;
       delete creep.infant;
@@ -211,7 +215,7 @@ function* run() {
 
     const needsSpawn = yield select(selectNeedsSpawn);
     if (needsSpawn.length) {
-      Game.spawns['Spawn1'].spawnCreep(probeBody, needsSpawn[0], probeMemory());
+      yield put(spawnActions.queue(probeBody, needsSpawn[0], probeMemory()));
     }
 
     const harvestProbes = yield select(selectHarvestProbes);
@@ -219,22 +223,29 @@ function* run() {
       if (!creep) { console.log(JSON.stringify(creeps, null, 2)); }
       const source = Game.getObjectById(creep.memory.mine);
       if (creep.carry.energy < creep.carryCapacity) {
-        const err = creep.harvest(source);
-        if (err === ERR_NOT_IN_RANGE) {
-          creep.moveTo(source, { visualizePathStyle: { stroke: '#ffaa00' } });
-        }
+        acquireTask(creep, creepTasks.harvest(), source);
       } else {
         const destination = creep.room.find(
           FIND_STRUCTURES,
           {
-            filter: structure => (structure.structureType == STRUCTURE_EXTENSION || structure.structureType == STRUCTURE_SPAWN)
-              && structure.energy < structure.energyCapacity,
+            filter: structure => (
+              structure.structureType === STRUCTURE_EXTENSION
+              || structure.structureType === STRUCTURE_CONTAINER
+              || structure.structureType === STRUCTURE_SPAWN),
           },
         );
-        if(destination.length > 0) {
-          if(creep.transfer(destination[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-              creep.moveTo(destination[0], {visualizePathStyle: {stroke: '#ffffff'}});
-          }
+        const needsEnergy = destination.filter(structure => structure.energy < structure.energyCapacity);
+        const needsStorage = destination.filter(structure => structure.store && structure.store[RESOURCE_ENERGY] < structure.storeCapacity);
+
+        if(needsEnergy.length > 0) {
+          const target = creep.pos.findClosestByRange(needsEnergy);
+          acquireTask(creep, creepTasks.transfer(RESOURCE_ENERGY), target);
+        } else if(needsStorage.length > 0) {
+          const target = creep.pos.findClosestByRange(needsStorage);
+          acquireTask(creep, creepTasks.transfer(RESOURCE_ENERGY), target);
+        } else {
+          const target = creep.pos.findClosestByRange(destination);
+          moveTo(creep, target)
         }
       }
     })
