@@ -13,11 +13,6 @@ const CLEAN_DEAD = 'MEMORY_CLEAN_DEAD';
 const UPDATE = 'MEMORY_UPDATE';
 
 function cleanDead() {
-  for (let creep in Memory.creeps) {
-    if (!Game.creeps[creep]) {
-      delete Memory.creeps[creep];
-    }
-  }
   return { type: CLEAN_DEAD };
 }
 

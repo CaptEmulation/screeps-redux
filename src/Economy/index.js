@@ -21,7 +21,7 @@ import {
   FINAL,
 } from '../tickEvents';
 
-const PROBE_COUNT = 4;
+const PROBE_COUNT = 8;
 const ENABLE = 'ECONOMY_ENABLE';
 const SPAWN = 'ECONOMY_SPAWN';
 const REMEMBER = 'ECONOMY_REMEMBER';

@@ -12,6 +12,8 @@ import {
 
 const QUEUE = 'SPAWN_QUEUE';
 const POP = 'SPAWN_POP';
+const NEEDS = 'SPAWN_NEEDS';
+const NEEDS_UPDATE = 'SPAWN_NEEDS_UPDATE';
 
 function queue(bodyParts, name, memory) {
   return {
@@ -24,6 +26,20 @@ function pop() {
   return {
     type: POP,
   }
+}
+
+function addNeed(definition) {
+  return {
+    type: NEEDS,
+    payload: definition,
+  };
+}
+
+function updateNeed(definition) {
+  return {
+    type: NEEDS_UPDATE,
+    payload: definition,
+  };
 }
 
 export const actionCreators = {
@@ -47,6 +63,11 @@ const selectNeedsSpawn = createSelector(
   selectPendingNames,
   selectPending,
   (creeps, names, pending) => difference(names, Object.keys(creeps)).map(name => pending.find(p => p[1] === name)),
+);
+
+const selectNeeds = createSelector(
+  root,
+  spawn => spawn.needs,
 );
 
 export const selectors = {
@@ -75,6 +96,7 @@ function* run() {
         yield put(pop());
       }
     }
+
   });
 }
 
@@ -101,7 +123,20 @@ createReducer('Spawn', initialState, {
       ...state,
       pending: state.pending.slice(1),
     };
-  }
+  },
+  [UPDATE_NEEDS](state, { payload: definition }) {
+    const existingNeed = state.needs.find(n => n.id === definition.id);
+    let newNeeds;
+    if (existingNeed) {
+      const index = state.needs.indexOf(existingNeed);
+      newNeeds = [...state.needs.slice(0, index), definition, ...state.needs.slice(index + 1)];
+    } else {
+      newNeeds = [...state.needs, definition];
+    }
+    return {
+      ...state,
+      needs: newNeeds,
+    };
 });
 
 createModule('Spawn', {

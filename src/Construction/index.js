@@ -222,7 +222,7 @@ function* run() {
             acquireTask(creep, creepTasks.build(), target);
           }
         } else {
-          const containerSites = creep.room.find(STRUCTURE_CONTAINER, {
+          const containerSites = creep.room.find(FIND_STRUCTURES, {
             filter: (target) => (target.hits / target.hitsMax) < 0.5,
           });
           if (containerSites.length) {
