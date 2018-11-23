@@ -22,30 +22,19 @@ const CLEAN = 'CREEPS_CLEAN';
 
 export const actionTypes = {
   SPAWN,
-  CLEAN,
 };
 
-function spawn(name) {
+function spawn(name, opts) {
   return {
     type: SPAWN,
-    payload: name,
+    payload: { name, opts },
   };
 }
-
-function clean(dead) {
-  return {
-    type: CLEAN,
-    payload: dead,
-  };
-}
-
 
 export const actionCreators = {
   spawn,
-  clean,
 };
 
-const root = state => state.Creeps;
 const selectMemoryCreeps = () => Memory.creeps || {};
 const selectGameCreeps = () => Game.creeps || {};
 const selectDeadCreepNames = createSelector(
@@ -61,7 +50,7 @@ export const selectors = {
 };
 
 export function init(store) {
-  global.Early = {
+  global.Creeps = {
     ...mapValues(actionCreators, action => (...args) => store.dispatch({
       type: 'EXE',
       payload: action(...args),
@@ -79,12 +68,6 @@ function* run() {
 function *final() {
   yield takeEvery(FINAL, function* onCreepFinal() {
     const dead = yield select(selectDeadCreepNames);
-    yield put(actionCreators.clean(dead));
-  });
-}
-
-function *cleanUp() {
-  yield takeEvery(CLEAN, function *onCreepClean({ payload: dead }) {
     for (let creep in dead) {
       delete Memory.creeps[creep];
     }
@@ -94,24 +77,4 @@ function *cleanUp() {
 createSaga(
   run,
   final,
-  cleanUp,
 );
-
-const initialState = {
-  needs: [],
-};
-
-
-export const reducer = createReducer('Creeps', initialState, {
-  [SPAWN](state, { payload: creep }) {
-    return {
-      ...state,
-    };
-  },
-});
-
-createModule('Creeps', {
-  selectors,
-  actionCreators,
-  reducer,
-});

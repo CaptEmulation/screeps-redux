@@ -4,10 +4,15 @@ import differenceWith from 'lodash.differencewith';
 import difference from 'lodash.difference';
 import cond from 'lodash.cond';
 import intersection from 'lodash.intersection';
+import range from 'lodash.range';
 import { call, put, select, takeEvery } from 'redux-saga/effects'
 import { createSelector } from 'reselect';
 import { actionCreators as spawnActions } from '../Spawn';
 import { happy } from '../utils/id';
+import {
+  worker,
+  supply,
+} from '../Creeps/builds';
 import createReducer from '../utils/createReducer';
 import createSaga from '../utils/createSaga';
 import createModule from '../utils/createModule';
@@ -21,7 +26,9 @@ import {
   FINAL,
 } from '../tickEvents';
 
-const PROBE_COUNT = 4;
+const PROBE_COUNT = 6;
+const WORKER_COUNT = 6;
+const SUPPLY_COUNT = 4;
 const ENABLE = 'ECONOMY_ENABLE';
 const SPAWN = 'ECONOMY_SPAWN';
 const REMEMBER = 'ECONOMY_REMEMBER';
@@ -76,20 +83,19 @@ export const actionCreators = {
 
 const root = state => state.Economy;
 const selectCreeps = state => Memory.creeps || {};
+const selectGameCreeps = state => Game.creeps || {};
 const selectIsEnabled = createSelector(
   root,
   economy => !!economy.enabled,
 );
 const selectProbes = createSelector(
-  root,
-  economy => economy.probes,
-);
-const selectNeedsProbe = createSelector(
-  selectIsEnabled,
-  selectProbes,
-  (isEnabled, probes) => {
-    return (isEnabled && probes.length <= PROBE_COUNT);
-  }
+  selectGameCreeps,
+  mCreeps => Object.keys(mCreeps).reduce((memo, curr) => {
+    if (mCreeps[curr].memory && mCreeps[curr].memory.role === 'worker') {
+      memo.push(curr);
+    }
+    return memo;
+  }, []),
 );
 const selectNeedsSpawn = createSelector(
   selectCreeps,
@@ -136,12 +142,16 @@ const selectLeastMined = createSelector(
       probes: { length: Infinity }
     }).source;
   }
-)
+);
 
 const selectHarvestProbes = createSelector(
-  selectActiveProbeNames,
-  selectCreeps,
-  (activeProbes, creeps) => activeProbes.filter(probe => !creeps[probe].infant).map(name => Game.creeps[name]).filter(a => a),
+  selectGameCreeps,
+  creeps => Object.values(creeps).filter(creep => creep.memory && creep.memory.role === 'worker'),
+);
+
+const selectSuppliers = createSelector(
+  selectGameCreeps,
+  creeps => Object.values(creeps).filter(creep => creep.memory && creep.memory.role === 'supply'),
 );
 
 const selectDeadProbs = createSelector(
@@ -159,7 +169,6 @@ export const selectors = {
   creeps: selectCreeps,
   isEnabled: selectIsEnabled,
   probes: selectProbes,
-  needsProbes: selectNeedsProbe,
   activeProbeNames: selectActiveProbeNames,
   infants: selectInfants,
   sources: selectSources,
@@ -167,11 +176,31 @@ export const selectors = {
   sourceProbeRelationship: selectSourceProbeRelationship,
   leastMined: selectLeastMined,
   harvestProbes: selectHarvestProbes,
+  suppliers: selectSuppliers,
   deadProbes: selectDeadProbs,
 };
 
-const probeBody = [WORK, MOVE, WORK, CARRY];
-const probeMemory = () => ({ memory: { role: 'probe', infant: true } });
+const earlyCreeps = [
+  ...range(0, WORKER_COUNT).map(num => ({
+    name: `Worker-${num}`,
+    controller: 'Economy',
+    body: worker.early,
+    memory: {
+      role: 'worker',
+      infant: true,
+    },
+    priority: -1,
+  })),
+  ...range(0, SUPPLY_COUNT).map(num => ({
+    name: `Supply-${num}`,
+    controller: 'Economy',
+    body: supply.early,
+    memory: {
+      role: 'supply',
+    },
+    priority: -1,
+  })),
+];
 
 export function init(store) {
   global.Econ = {
@@ -203,26 +232,37 @@ function* watchNewWork() {
 function* run() {
   yield takeEvery(RUN, function* onRun() {
     yield put(actionCreators.enable());
-    const creeps = yield select(selectCreeps);
-    if (yield select(selectNeedsProbe)) {
-      yield put(actionCreators.spawn(happy()));
-    }
-
-    const infants = yield select(selectInfants);
-    if (infants.length) {
-      yield put(actionCreators.assignNewWork());
-    }
-
-    const needsSpawn = yield select(selectNeedsSpawn);
-    if (needsSpawn.length) {
-      yield put(spawnActions.queue(probeBody, needsSpawn[0], probeMemory()));
-    }
+    yield put(spawnActions.need(earlyCreeps));
 
     const harvestProbes = yield select(selectHarvestProbes);
-    harvestProbes.forEach(creep => {
+    for (let i = 0; i < harvestProbes.length; i++) {
+      const creep = harvestProbes[i];
+      if (!creep.memory.mine) {
+        const source = yield select(selectLeastMined);
+        creep.memory.mine = source.id;
+      }
       const source = Game.getObjectById(creep.memory.mine);
+      acquireTask(creep, creepTasks.harvest(), source);
+    }
+    const suppliers = yield select(selectSuppliers);
+
+    for (let i = 0; i < suppliers.length; i++) {
+      const creep = suppliers[i];
       if (creep.carry.energy < creep.carryCapacity) {
-        acquireTask(creep, creepTasks.harvest(), source);
+        const droppedEnergy = creep.room.find(FIND_DROPPED_RESOURCES, {
+          filter(resource) {
+            return resource.energy > creep.carryCapacity;
+          }
+        });
+        if (droppedEnergy && droppedEnergy.length) {
+          const mostEnergy = droppedEnergy.reduce((memo, curr) => {
+            if (!memo || curr.energy > memo.energy) {
+              return curr;
+            }
+            return memo
+          });
+          acquireTask(creep, creepTasks.pickup(), mostEnergy);
+        }
       } else {
         const destination = creep.room.find(
           FIND_STRUCTURES,
@@ -247,7 +287,7 @@ function* run() {
           moveTo(creep, target)
         }
       }
-    })
+    }
   });
 }
 

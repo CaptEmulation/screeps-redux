@@ -14,9 +14,9 @@ import {
 } from './tickEvents';
 
 initController(store);
+initSpawn(store);
 initEconomy(store);
 initConstruction(store);
-initSpawn(store);
 initCreeps(store);
 initMemory(store);
 

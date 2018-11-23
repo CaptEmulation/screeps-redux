@@ -4,16 +4,23 @@ import differenceWith from 'lodash.differencewith';
 import difference from 'lodash.difference';
 import cond from 'lodash.cond';
 import intersection from 'lodash.intersection';
-import { call, put, select, takeEvery } from 'redux-saga/effects'
+import range from 'lodash.range';
+import { call, put, select, takeEvery, take } from 'redux-saga/effects'
 import { createSelector } from 'reselect';
 import { happy } from '../utils/id';
 import { actionCreators as spawnActions } from '../Spawn';
+import {
+  builder,
+} from '../Creeps/builds';
 import {
   moveTo,
   acquireTask,
   findClosestEnergy,
   tasks as creepTasks,
 } from '../utils/creeps';
+import {
+  findWorkSites,
+} from '../utils/find';
 import createReducer from '../utils/createReducer';
 import createSaga from '../utils/createSaga';
 import createModule from '../utils/createModule';
@@ -22,7 +29,7 @@ import {
   FINAL,
 } from '../tickEvents';
 
-const BUILDER_COUNT = 5;
+const BUILDER_COUNT = 4;
 const SPAWN = 'BUILDER_SPAWN';
 const QUEUE = 'BUILDER_QUEUE';
 const POP = 'BUILDER_POP';
@@ -76,7 +83,7 @@ export const actionCreators = {
     const ret = {
       type: QUEUE,
       payload: {
-        location:  definition.init(room),
+        location: definition.init(room),
         build: definition.build,
       },
     };
@@ -121,10 +128,10 @@ const selectActiveBuilderNames = createSelector(
 );
 
 const selectActiveBuilders = createSelector(
-  () => Game.creeps,
-  selectActiveBuilderNames,
-  (creeps, names) => names.map(name => creeps[name]).filter(c => c),
+  () => Game.creeps || {},
+  creeps => Object.values(creeps).filter(creep => creep.memory && creep.memory.role === 'builder'),
 );
+
 
 const selectInfants = createSelector(
   selectCreeps,
@@ -161,6 +168,15 @@ export const selectors = {
 const builderBody = [MOVE, MOVE, CARRY, WORK];
 const builderOpts = { memory: { infant: true } };
 
+const earlyCreeps = range(0, BUILDER_COUNT).map(num => ({
+  name: `Builder-${num}`,
+  body: builder.early,
+  memory: {
+    role: 'builder',
+  },
+  controller: 'Construction',
+}));
+
 export function init(store) {
   global.Construct = {
     ...mapValues(actionCreators, action => (...args) => store.dispatch({
@@ -169,40 +185,20 @@ export function init(store) {
     })),
     selectors: mapValues(selectors, selector => () => selector(store.getState())),
   };
-}
-
-const PREFERRED_STRUCTURE_ORDER = [
-  STRUCTURE_SPAWN,
-  STRUCTURE_EXTENSION,
-  STRUCTURE_CONTAINER,
-];
-
-function preferredConstructionTarget(room) {
-  const targets = room.find(FIND_CONSTRUCTION_SITES);
-  let preferredTarget = null;
-  for (let i = 0; i < PREFERRED_STRUCTURE_ORDER.length; i++) {
-    const preferredStruture = PREFERRED_STRUCTURE_ORDER[i];
-    const priorityList = targets.filter(r => r.structureType === preferredStruture).sort((a, b) => (a.progressTotal - a.progress) - (b.progressTotal - b.progress))
-    if (priorityList.length) {
-      preferredTarget = priorityList[0];
-      break;
-    }
-  }
-  return preferredTarget;
+  earlyCreeps.forEach(creep => {
+    store.dispatch(actionCreators.spawn(creep.name));
+  });
 }
 
 function* run() {
+  // yield takeEvery('INIT', function* onRun() {
+  //   for(let i = 0; i < earlyCreeps.length; i++) {
+  //     console.log('need', earlyCreeps[i].name)
+  //     yield put(spawnActions.need(earlyCreeps[i]));
+  //   }
+  // });
   yield takeEvery(RUN, function* onRun() {
-    const creeps = yield select(selectCreeps);
-    if (yield select(selectNeedsBuilders)) {
-      yield put(actionCreators.spawn(happy()));
-    }
-
-    const needsSpawn = yield select(selectNeedsSpawn);
-    if (needsSpawn.length) {
-      yield put(spawnActions.queue(builderBody, needsSpawn[0], builderOpts));
-    }
-
+    yield put(spawnActions.need(earlyCreeps));
     const activeBuilders = yield select(selectActiveBuilders);
     const buildQueue = yield select(selectBuildQueue);
 
@@ -218,10 +214,15 @@ function* run() {
       if(creep.memory.building) {
         const targets = creep.room.find(FIND_CONSTRUCTION_SITES);
         if(targets.length) {
-          const target = preferredConstructionTarget(creep.room);
-          if (target) {
-            acquireTask(creep, creepTasks.build(), target);
-          }
+          const target = findWorkSites(creep.room);
+          acquireTask(creep, creepTasks.build(), target);
+          // console.log(target)
+          // const creepBuild = creepTasks.build();
+          // if (creep.pos.getRangeTo(target) > 3) {
+          //   moveTo(creep, target);
+          // } else {
+          //   creepBuild(target)
+          // }
         } else {
           const containerSites = creep.room.find(FIND_STRUCTURES, {
             filter: (target) => (target.hits / target.hitsMax) < 0.5,
@@ -250,8 +251,8 @@ function* run() {
 
 function *final() {
   yield takeEvery(FINAL, function* onFinal() {
-    const deadBuilders = yield select(selectDeadBuilders);
-    yield put(actionCreators.cleanBuilders(deadBuilders));
+    // const deadBuilders = yield select(selectDeadBuilders);
+    // yield put(actionCreators.cleanBuilders(deadBuilders));
   });
 }
 

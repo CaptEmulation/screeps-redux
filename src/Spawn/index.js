@@ -1,5 +1,7 @@
 import mapValues from 'lodash.mapvalues';
 import difference from 'lodash.difference';
+import differenceWith from 'lodash.differencewith';
+import flow from 'lodash.flow';
 import { createSelector } from 'reselect';
 import { call, put, select, takeEvery } from 'redux-saga/effects';
 import createReducer from '../utils/createReducer';
@@ -12,8 +14,17 @@ import {
 
 const QUEUE = 'SPAWN_QUEUE';
 const POP = 'SPAWN_POP';
+const SPAWNED = 'SPAWNED';
 const NEEDS = 'SPAWN_NEEDS';
 const NEEDS_UPDATE = 'SPAWN_NEEDS_UPDATE';
+
+export const actionTypes = {
+  QUEUE,
+  POP,
+  SPAWNED,
+  NEEDS,
+  NEEDS_UPDATE,
+};
 
 function queue(bodyParts, name, memory) {
   return {
@@ -28,24 +39,37 @@ function pop() {
   }
 }
 
-function addNeed(definition) {
+function need(input) {
   return {
     type: NEEDS,
-    payload: definition,
+    payload: input,
   };
 }
 
-function updateNeed(definition) {
+function updateNeeds(needs) {
   return {
     type: NEEDS_UPDATE,
-    payload: definition,
+    payload: needs,
   };
 }
+
 
 export const actionCreators = {
   queue,
   pop,
+  need,
+  updateNeeds,
 };
+
+const sortHunger = (a, b) => (a.priority + a.hunger) - (b.priority + b.hunger);
+export const nextNeed = needs => needs
+  .map(h => {
+    if(!Game.creeps[h.name]) {
+      return {...h, hunger: h.hunger - 1 };
+    }
+    return h;
+  })
+  .sort(sortHunger);
 
 const root = state => state.Spawn;
 const selectCreeps = state => Memory.creeps;
@@ -57,23 +81,31 @@ const selectPendingNames = createSelector(
   selectPending,
   pending => pending.map(p => p[1]),
 );
-
 const selectNeedsSpawn = createSelector(
   selectCreeps,
   selectPendingNames,
   selectPending,
   (creeps, names, pending) => difference(names, Object.keys(creeps)).map(name => pending.find(p => p[1] === name)),
 );
-
 const selectNeeds = createSelector(
   root,
   spawn => spawn.needs,
+);
+const selectSpawned = createSelector(
+  root,
+  spawn => spawn.spawned,
+);
+const selectNextNeeds = createSelector(
+  selectNeeds,
+  nextNeed,
 );
 
 export const selectors = {
   pending: selectPending,
   pendingNames: selectPendingNames,
   needsSpawn: selectNeedsSpawn,
+  needs: selectNeeds,
+  nextNeeds: selectNextNeeds,
 }
 
 export function init(store) {
@@ -88,13 +120,30 @@ export function init(store) {
 
 function* run() {
   yield takeEvery(RUN, function* onRun() {
-    const needsSpawn = yield select(selectNeedsSpawn);
-    if (needsSpawn.length) {
-      const creep = needsSpawn[0];
-      const err = Game.spawns['Spawn1'].spawnCreep(...creep);
-      if (!err || err === ERR_NAME_EXISTS) {
-        yield put(pop());
+    const needs = yield select(selectNeeds);
+    const need = needs.find(need => {
+      if(Game.creeps[need.name]) {
+        return false;
       }
+      const {
+        body,
+        name,
+        memory,
+      } = need;
+
+      if (Game.spawns['Spawn1'].spawnCreep(body, name, {
+        memory,
+        dryRun: true,
+      })) {
+        return false;
+      }
+      return !Game.spawns['Spawn1'].spawnCreep(body, name, {
+        memory,
+      });
+    });
+    if (need) {
+      need.hunger = 1;
+      yield put(updateNeeds(nextNeed(needs)));
     }
   });
 }
@@ -105,9 +154,11 @@ createSaga(
 
 const initialState = {
   pending: [],
+  needs: [],
+  spawned: null,
 };
 
-createReducer('Spawn', initialState, {
+export const reducer = createReducer('Spawn', initialState, {
   [QUEUE](state, { payload: [bodyParts, name, memory] }) {
     if(state.pending.map(c => c[1]).indexOf(name) === -1) {
       return {
@@ -117,26 +168,42 @@ createReducer('Spawn', initialState, {
     }
     return state;
   },
+  [SPAWNED](state, { payload: spawned }) {
+    return {
+      ...state,
+      spawned,
+    };
+  },
   [POP](state) {
     return {
       ...state,
       pending: state.pending.slice(1),
     };
   },
-  [NEEDS_UPDATE](state, { payload: definition }) {
-    const existingNeed = state.needs.find(n => n.id === definition.id);
-    let newNeeds;
-    if (existingNeed) {
-      const index = state.needs.indexOf(existingNeed);
-      newNeeds = [...state.needs.slice(0, index), definition, ...state.needs.slice(index + 1)];
-    } else {
-      newNeeds = [...state.needs, definition];
-    }
+  [NEEDS](state, { payload: input }) {
+    const definition = Array.isArray(input) ? input : [input];
+    const controller = definition[0].controller;
+    const incomingNames = definition.map(n => n.name);
+    const existingNeeds = state.needs
+      .filter(n => n.controller !== controller || incomingNames.indexOf(n.name) !== -1);
+    const needs = [...differenceWith(definition, existingNeeds, (a, b) => a.name === b.name)
+      .map(n => ({
+        priority: 0,
+        ...n,
+        hunger: 0,
+      })), ...existingNeeds]
+      .sort(sortHunger);
     return {
       ...state,
-      needs: newNeeds,
+      needs,
     };
-  }
+  },
+  [NEEDS_UPDATE](state, { payload: needs }) {
+    return {
+      ...state,
+      needs,
+    };
+  },
 });
 
 createModule('Spawn', {
