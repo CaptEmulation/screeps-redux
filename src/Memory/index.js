@@ -12,10 +12,6 @@ import {
 const CLEAN_DEAD = 'MEMORY_CLEAN_DEAD';
 const UPDATE = 'MEMORY_UPDATE';
 
-function cleanDead() {
-  return { type: CLEAN_DEAD };
-}
-
 function update() {
   return {
     type: UPDATE,
@@ -27,7 +23,6 @@ function update() {
 }
 
 export const actionCreators = {
-  cleanDead,
   update,
 };
 
@@ -47,7 +42,6 @@ function* start() {
 
 function* final() {
   yield takeEvery(FINAL, function * onUpdate() {
-    yield put(cleanDead());
     // Assign latest state to memory
     const newState = yield(select(s => s));
     commit(newState);

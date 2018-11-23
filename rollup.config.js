@@ -10,7 +10,7 @@ function deploy() {
     generateBundle(a, bundles, isWrite) {
       if (isWrite) {
         console.log('deploying')
-        fs.writeFileSync('C:\\Users\\johnh\\AppData\\Local\\Screeps\\scripts\\127_0_0_1___21025\\default\\main.js', bundles['main.js'].code, 'utf8');
+        fs.writeFileSync('/Users/jdean/Library/Application\ Support/Screeps/scripts/127_0_0_1___21025/default/main.js', bundles['main.js'].code, 'utf8');
       }
     }
   }

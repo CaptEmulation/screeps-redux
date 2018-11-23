@@ -96,7 +96,6 @@ function* run() {
         yield put(pop());
       }
     }
-
   });
 }
 
@@ -124,7 +123,7 @@ createReducer('Spawn', initialState, {
       pending: state.pending.slice(1),
     };
   },
-  [UPDATE_NEEDS](state, { payload: definition }) {
+  [NEEDS_UPDATE](state, { payload: definition }) {
     const existingNeed = state.needs.find(n => n.id === definition.id);
     let newNeeds;
     if (existingNeed) {
@@ -137,6 +136,7 @@ createReducer('Spawn', initialState, {
       ...state,
       needs: newNeeds,
     };
+  }
 });
 
 createModule('Spawn', {

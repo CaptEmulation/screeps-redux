@@ -46,8 +46,8 @@ export const actionCreators = {
 };
 
 const root = state => state.Creeps;
-const selectMemoryCreeps = () => Memory.creeps;
-const selectGameCreeps = () => Game.creeps;
+const selectMemoryCreeps = () => Memory.creeps || {};
+const selectGameCreeps = () => Game.creeps || {};
 const selectDeadCreepNames = createSelector(
   selectMemoryCreeps,
   selectGameCreeps,
@@ -77,14 +77,14 @@ function* run() {
 }
 
 function *final() {
-  yield takeEvery(FINAL, function* onFinal() {
+  yield takeEvery(FINAL, function* onCreepFinal() {
     const dead = yield select(selectDeadCreepNames);
     yield put(actionCreators.clean(dead));
   });
 }
 
 function *cleanUp() {
-  yield takeEvery(CLEAN, function *onClean(dead) {
+  yield takeEvery(CLEAN, function *onCreepClean({ payload: dead }) {
     for (let creep in dead) {
       delete Memory.creeps[creep];
     }
@@ -108,7 +108,6 @@ export const reducer = createReducer('Creeps', initialState, {
       ...state,
     };
   },
-  }
 });
 
 createModule('Creeps', {

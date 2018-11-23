@@ -21,7 +21,7 @@ import {
   FINAL,
 } from '../tickEvents';
 
-const PROBE_COUNT = 8;
+const PROBE_COUNT = 4;
 const ENABLE = 'ECONOMY_ENABLE';
 const SPAWN = 'ECONOMY_SPAWN';
 const REMEMBER = 'ECONOMY_REMEMBER';
@@ -75,7 +75,7 @@ export const actionCreators = {
 };
 
 const root = state => state.Economy;
-const selectCreeps = state => Memory.creeps;
+const selectCreeps = state => Memory.creeps || {};
 const selectIsEnabled = createSelector(
   root,
   economy => !!economy.enabled,
@@ -147,7 +147,7 @@ const selectHarvestProbes = createSelector(
 const selectDeadProbs = createSelector(
   selectProbes,
   selectCreeps,
-  () => Game.creeps,
+  () => Game.creeps || {},
   (probes, creepsMem, creepsGame) =>
     intersection(
       difference(Object.keys(creepsMem), Object.keys(creepsGame)),
@@ -220,7 +220,6 @@ function* run() {
 
     const harvestProbes = yield select(selectHarvestProbes);
     harvestProbes.forEach(creep => {
-      if (!creep) { console.log(JSON.stringify(creeps, null, 2)); }
       const source = Game.getObjectById(creep.memory.mine);
       if (creep.carry.energy < creep.carryCapacity) {
         acquireTask(creep, creepTasks.harvest(), source);

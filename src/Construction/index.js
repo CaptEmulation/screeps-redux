@@ -97,7 +97,7 @@ export const actionCreators = {
 };
 
 const root = state => state.Construction;
-const selectCreeps = state => Memory.creeps;
+const selectCreeps = state => Memory.creeps || {};
 const selectBuilders = createSelector(
   root,
   construct => construct.creeps,
@@ -135,7 +135,7 @@ const selectInfants = createSelector(
 const selectDeadBuilders = createSelector(
   selectBuilders,
   selectCreeps,
-  () => Game.creeps,
+  () => Game.creeps || {},
   (builders, creepsMem, creepsGame) =>
     intersection(
       difference(Object.keys(creepsMem), Object.keys(creepsGame)),
@@ -172,6 +172,7 @@ export function init(store) {
 }
 
 const PREFERRED_STRUCTURE_ORDER = [
+  STRUCTURE_SPAWN,
   STRUCTURE_EXTENSION,
   STRUCTURE_CONTAINER,
 ];
@@ -181,7 +182,7 @@ function preferredConstructionTarget(room) {
   let preferredTarget = null;
   for (let i = 0; i < PREFERRED_STRUCTURE_ORDER.length; i++) {
     const preferredStruture = PREFERRED_STRUCTURE_ORDER[i];
-    const priorityList = targets.filter(r => r.structureType === preferredStruture).sort((a, b) => (b.progressTotal - b.progress) - (a.progressTotal - a.progress))
+    const priorityList = targets.filter(r => r.structureType === preferredStruture).sort((a, b) => (a.progressTotal - a.progress) - (b.progressTotal - b.progress))
     if (priorityList.length) {
       preferredTarget = priorityList[0];
       break;
