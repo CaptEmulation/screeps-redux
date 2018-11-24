@@ -189,7 +189,7 @@ const earlyCreeps = [
       role: 'worker',
       infant: true,
     },
-    priority: -1,
+    priority: -2,
   })),
   ...range(0, SUPPLY_COUNT).map(num => ({
     name: `Supply-${num}`,

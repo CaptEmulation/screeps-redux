@@ -1,5 +1,5 @@
 export function moveTo(creep, target, opts = {}) {
-  console.log(`${creep.name}.moveTo(${target})`)
+  // console.log(`${creep.name}.moveTo(${target})`)
   const mOpts = {
     reusePath: 15,
     ...opts,
@@ -20,7 +20,7 @@ export function moveTo(creep, target, opts = {}) {
 function applyToCreep(task) {
   return (...args) => (creep, target) => {
     const err = creep[task](target, ...args);
-    console.log(`${creep.name}.${task}(${[args.join(', ')]}) => ${err}`)
+    // console.log(`${creep.name}.${task}(${[args.join(', ')]}) => ${err}`)
     return err;
   };
 }
