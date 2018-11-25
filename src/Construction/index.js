@@ -29,7 +29,7 @@ import {
   FINAL,
 } from '../tickEvents';
 
-const BUILDER_COUNT = 4;
+const BUILDER_COUNT = 8;
 const SPAWN = 'BUILDER_SPAWN';
 const QUEUE = 'BUILDER_QUEUE';
 const POP = 'BUILDER_POP';

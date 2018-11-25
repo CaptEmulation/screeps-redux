@@ -78,3 +78,5 @@ createSaga(
   run,
   final,
 );
+
+createModule('Creeps');
