@@ -24,7 +24,7 @@ export function findPreferredConstructionTarget(room, preferred = PREFERRED_STRU
         lowPriority.push(r);
       }
       return result;
-    }).sort((a, b) => (a.progressTotal - a.progress) - (b.progressTotal - b.progress)).concat(lowPriority);
+    }).sort((a, b) => (a.progress) - (b.progress)).concat(lowPriority);
     if (priorityList.length) {
       preferredTarget = priorityList[0];
       break;

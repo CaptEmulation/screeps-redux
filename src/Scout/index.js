@@ -60,27 +60,32 @@ createBrood({
     selectors,
   }) {
     const scoutFlags = Object.values(Game.flags).filter(isColor(scoutFlagColor));
-    yield put(spawnActions.need(range(scoutFlags.length).map(num => ({
-      name: `Scout-${num}`,
-      body: scout.early,
-      memory: {
-        role: 'Scout',
-      },
-      priority: 10,
-      controller: 'Scout',
-    }))));
+    if (scoutFlags.length) {
+      yield put(spawnActions.need(range(scoutFlags.length).map(num => ({
+        name: `Scout-${num}`,
+        body: scout.early,
+        memory: {
+          role: 'Scout',
+        },
+        priority: 10,
+        controller: 'Scout',
+      }))));
+    }
+    
     const exploredRooms = yield select(mapSelectors.explored);
     // const unexploredRooms = yield select(mapSelectors.unexplored);
+
     if (exploredRooms.length && (yield select(mapSelectors.unexplored)).length) {
       let j = 0;
       const scouts = yield select(selectors.alive);
+      // scouts.forEach(scout => delete scout.memory.flag);
       for (let i = 0; i < scouts.length; i++) {
         const scout = scouts[i];
         if (!scout.memory.flag || !Game.flags[scout.memory.flag]) {
-          const scoutedFlags = scouts.filter(scout => scout.memory.flag).map(scout => scout.memory.flag.name);
+          const scoutedFlags = scouts.filter(scout => scout.memory.flag).map(scout => scout.memory.flag);
           const unscoutedFlags = Object.values(Game.flags).filter(flag => !scoutedFlags.includes(flag.name));
           if (unscoutedFlags.length) {
-            scout.memory.flag = unscoutedFlags[i].name;
+            scout.memory.flag = unscoutedFlags[0].name;
           }
         } else {
           moveTo(scout, Game.flags[scout.memory.flag]);

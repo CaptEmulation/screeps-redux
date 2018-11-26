@@ -19,6 +19,10 @@ import {
   tasks as creepTasks,
 } from '../utils/creeps';
 import {
+  findEnergyDropOffs,
+  dropOffEnergy,
+} from '../Economy';
+import {
   findWorkSites,
 } from '../utils/find';
 import createReducer from '../utils/createReducer';
@@ -212,6 +216,10 @@ function* run() {
         creep.say('🚧 build');
       }
       if(creep.memory.building) {
+        if (creep.room.energyAvailable < 25 && dropOffEnergy(creep)) {
+          // all done
+          return;
+        }
         const targets = creep.room.find(FIND_CONSTRUCTION_SITES);
         if(targets.length) {
           const target = findWorkSites(creep.room);
