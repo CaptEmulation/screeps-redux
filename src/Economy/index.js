@@ -22,61 +22,24 @@ import {
   acquireTask,
 } from '../utils/creeps';
 import {
+  walkBox,
+} from '../utils/scan';
+import {
   RUN,
   FINAL,
-} from '../tickEvents';
+  SCAN,
+} from '../events';
 
 const PROBE_COUNT = 6;
 const WORKER_COUNT = 6;
 const SUPPLY_COUNT = 4;
-const ENABLE = 'ECONOMY_ENABLE';
-const SPAWN = 'ECONOMY_SPAWN';
-const REMEMBER = 'ECONOMY_REMEMBER';
-const CLAIM_SOURCES = 'ECONOMY_CLAIM_SOURCES';
-const HARVEST_SOURCE = 'HARVEST_SOURCE';
-const ASSIGN_NEW_WORK = 'ASSIGN_NEW_WORK';
-const CLEAN_PROBES = 'ECONOMY_CLEAN_PROBES';
-const CLEAN_SOURCES = 'ECON_CLEAN_SOURCES';
+const SCAN_RESULTS = 'ECONOMY_SCAN_RESULTS';
 
 export const actionCreators = {
-  enable() {
+  scanResults(results) {
     return {
-      type: ENABLE,
-    };
-  },
-  spawn(name) {
-    return {
-      type: SPAWN,
-      payload: name,
-    };
-  },
-  search(room) {
-    const sources = room.find(FIND_SOURCES);
-    return {
-      type: CLAIM_SOURCES,
-      payload: sources
-    }
-  },
-  harvest(probe, source) {
-    return {
-      type: HARVEST_SOURCE,
-      payload: { probe, source },
-    };
-  },
-  assignNewWork() {
-    return {
-      type: ASSIGN_NEW_WORK,
-    };
-  },
-  cleanProbes(deadProbes) {
-    return {
-      type: CLEAN_PROBES,
-      payload: deadProbes,
-    };
-  },
-  cleanSources() {
-    return {
-      type: CLEAN_SOURCES,
+      type: SCAN_RESULTS,
+      payload: results,
     };
   }
 };
@@ -125,7 +88,7 @@ const selectSourceProbeRelationship = createSelector(
   selectSources,
   (activeProbes, sources) => sources.map(source => ({
     source,
-    workers: activeProbes.filter(probe => probe.mines === source.id)
+    workers: activeProbes.filter(probe => probe.mine === source.id)
   })),
 )
 
@@ -180,10 +143,39 @@ export const selectors = {
   deadProbes: selectDeadProbs,
 };
 
+
+function economyNeeds() {
+  const unassignedCreeps = creeps.filter(creep => !creep.memory.mine);
+  const findRoomAtSources = mapSpots(findKnownSources());
+  // const available = totalOpen > 2 ? 2 : totalOpen;
+  // const taken = Object.values(Game.creeps).filter(creep => creep.memory.mine === source.id).length;
+  creeps.filter(creep => !creep.memory.mine).forEach(creep => {
+    const availableSpots = findRoomAtSources.filter(({
+      spotsRemaining,
+    }) => spotsRemaining > 0);
+    const target = creep.pos.findClosestByRange(availableSpots.map(spot => spot.source));
+    if (target) {
+      creep.memory.mine = target.id;
+      // Update remaining spots
+      availableSpots.find(spot => spot.source === target).spotsRemaining--
+    }
+  });
+}
+
 const earlyCreeps = range(0, SUPPLY_COUNT).map(num => ({
   name: `Supply-${num}`,
   controller: 'Economy',
   body: supply.early,
+  memory: {
+    role: 'supply',
+  },
+  priority: -1,
+}));
+
+const defaultCreeps = range(0, SUPPLY_COUNT).map(num => ({
+  name: `Supply-${num}`,
+  controller: 'Economy',
+  body: supply.mid,
   memory: {
     role: 'supply',
   },
@@ -200,84 +192,49 @@ export function init(store) {
   };
 }
 
-function *watchEnabled() {
-  yield takeEvery(ENABLE, function *onEnabled() {
-    yield put(actionCreators.search(Game.spawns['Spawn1'].room));
-  });
-}
-
-function* watchNewWork() {
-  yield takeEvery(ASSIGN_NEW_WORK, function* onNewProbe() {
-    const infants = yield select(selectInfants);
-    const source = yield select(selectLeastMined);
-    infants.forEach(creep => {
-      creep.mine = source.id;
-      delete creep.infant;
-    });
-  });
-}
-
-function walkBox(terrain, pos, size) {
-  const depth = (size - 1) / 2;
-  const spots = [];
-  for (let x = -depth; x <= depth; x++) {
-    spots.push(terrain.get(pos.x + x, pos.y - depth));
-  }
-  for (let y = -(depth - 1); y <= (depth - 1); y++) {
-    spots.push(terrain.get(pos.x - depth, pos.y + y));
-    spots.push(terrain.get(pos.x + depth, pos.y + y));
-  }
-  for (let x = -depth; x <= depth; x++) {
-    spots.push(terrain.get(pos.x + x, pos.y + depth));
-  }
-  return spots;
-}
-
 function freeSpotsAtSource(source) {
   const terrain = new Room.Terrain(source.room.name);
-  const openSpots = walkBox(terrain, source.pos, 3).filter(t => t === 0).length;
-  return openSpots > 5 ? 5 : openSpots;
+  return [...walkBox(source.pos, 1)].filter(([x, y]) => terrain.get(x, y) === 0);
 }
 
 function findKnownSources() {
   const sources = [
     ...Game.spawns['Spawn1'].room.find(FIND_SOURCES),
   ];
-  Object.values(Game.creeps).filter(creep => creep.memory && creep.memory.role === 'Scout')
-    .map(scout => scout.room.find(FIND_SOURCES))
-    .forEach(roomSources => roomSources.forEach(source => {
-      if (!sources.find(s => s.id === source.id)) {
-        sources.push(source);
-      }
-    }));
+  // Object.values(Game.creeps).filter(creep => creep.memory && creep.memory.role === 'Scout')
+  //   .map(scout => scout.room.find(FIND_SOURCES))
+  //   .forEach(roomSources => roomSources.forEach(source => {
+  //     if (!sources.find(s => s.id === source.id)) {
+  //       sources.push(source);
+  //     }
+  //   }));
   return sources;
 }
 
 function mapSpots(sources) {
   return sources.map(source => {
-    const spots = freeSpotsAtSource(source);
-    const takenSpots = Object.values(Game.creeps).filter(creep => creep.memory.mine === source.id).length;
-    const spotsRemaining = spots - takenSpots;
+    const open = freeSpotsAtSource(source);
     return {
       source,
-      free: spots,
-      spotsRemaining,
+      open,
     };
   });
 }
 
-function assignMines(creeps) {
+function assignMines(creeps, max = 2) {
   const unassignedCreeps = creeps.filter(creep => !creep.memory.mine);
   const findRoomAtSources = mapSpots(findKnownSources());
-  creeps.filter(creep => !creep.memory.mine).forEach(creep => {
-    const availableSpots = findRoomAtSources.filter(({
-      spotsRemaining,
-    }) => spotsRemaining > 0);
-    const target = creep.pos.findClosestByRange(availableSpots.map(spot => spot.source));
-    if (target) {
-      creep.memory.mine = target.id;
-      // Update remaining spots
-      availableSpots.find(spot => spot.source === target).spotsRemaining--
+  const assignedSources = creeps.filter(creep => creep.memory.mine).map(creep => creep.memory.mine);
+  // const available = totalOpen > 2 ? 2 : totalOpen;
+  // const taken = Object.values(Game.creeps).filter(creep => creep.memory.mine === source.id).length;
+  unassignedCreeps.forEach(creep => {
+    const source = findRoomAtSources.find(({ source, open }) => {
+      const thisSourceAssignedTo = assignedSources.filter(s => s === source.id);
+      return thisSourceAssignedTo.length < max;
+    }).source;
+
+    if (source) {
+      creep.memory.mine = source.id;
     }
   });
 }
@@ -293,6 +250,7 @@ export function findEnergyDropOffs(room) {
     {
       filter: structure => (
         structure.structureType === STRUCTURE_EXTENSION
+        || structure.structureType === STRUCTURE_TOWER
         || structure.structureType === STRUCTURE_CONTAINER
         || structure.structureType === STRUCTURE_SPAWN),
     },
@@ -311,30 +269,69 @@ export function dropOffEnergy(creep, destinations) {
   const needsStorage = destinations.filter(structure => structure.store && structure.store[RESOURCE_ENERGY] < structure.storeCapacity);
   if(needsEnergy.length > 0) {
     const target = creep.pos.findClosestByRange(needsEnergy);
-    acquireTask(creep, creepTasks.transfer(RESOURCE_ENERGY), target);
+    let amount;
+    if((target.energyCapacity - target.energy) > creep.carry[RESOURCE_ENERGY]) {
+      amount = creep.carry[RESOURCE_ENERGY]
+    } else {
+      amount = target.energyCapacity - target.energy;
+    }
+    acquireTask(creep, creepTasks.transfer(RESOURCE_ENERGY, amount), target);
     return true;
   } else if(needsStorage.length > 0) {
     const target = creep.pos.findClosestByRange(needsStorage);
-    acquireTask(creep, creepTasks.transfer(RESOURCE_ENERGY), target);
+    let amount;
+    const totalInStore = _.sum(target.store);
+    if((target.storeCapacity - totalInStore) > creep.carry[RESOURCE_ENERGY]) {
+      amount = creep.carry[RESOURCE_ENERGY]
+    } else {
+      amount = target.storeCapacity - totalInStore;
+    }
+    acquireTask(creep, creepTasks.transfer(RESOURCE_ENERGY, amount), target);
     return true;
   } else {
     return false;
   }
 }
 
+function *scan() {
+  yield takeEvery(SCAN, function* () {
+    const sources = findKnownSources();
+    const rooms = _.uniqBy(sources, s => s.room.roomName);
+    const result = sources.map(({ id: sourceId}) => ({ sourceId }));
+    rooms.forEach((room) => {
+      const containers = room.find(FIND_MY_STRUCTURES, {
+        filter: (target) => target.structureType === STRUCTURE_CONTAINER,
+      });
+
+      sources.forEach((source) => {
+        // Find nearby containers for outgoing storage
+        const closeContainers = containers.filter(containers => source.pos.getRangeTo(container) <= 2);
+        if (closeContainers) {
+          const sourceResult = result.find(r => r.sourceId = source.id);
+          sourceResult.containers = closeContainers.map(c => c.id);
+        }
+
+        // Figure out how much space is available for mining
+      });
+    });
+  });
+}
+
 function* run() {
   yield takeEvery(RUN, function* onRun() {
-    yield put(actionCreators.enable());
-    const sourceCount = mapSpots(findKnownSources()).reduce((sum, curr) => sum + curr.free, 0);
-    yield put(spawnActions.need([...range(0, sourceCount).map(num => ({
-      name: `Worker-${num}`,
+    const sourceCount = mapSpots(findKnownSources()).reduce((sum, curr) => sum + (curr.open.length > 2 ? 2 : curr.open.length), 0);
+    yield put(spawnActions.need({
+      needs: [...range(0, sourceCount).map(num => ({
+        name: `Worker-${num}`,
+        controller: 'Economy',
+        body: [MOVE, MOVE, MOVE, WORK, WORK, WORK],
+        memory: {
+          role: 'worker',
+        },
+        priority: -2,
+      })), ...earlyCreeps],
       controller: 'Economy',
-      body: worker.early,
-      memory: {
-        role: 'worker',
-      },
-      priority: -2,
-    })), ...earlyCreeps]));
+    }));
 
     const harvestProbes = yield select(selectHarvestProbes);
     // harvestProbes.forEach(h => delete h.memory.mine);
@@ -371,81 +368,82 @@ function* run() {
 
     for (let i = 0; i < suppliers.length; i++) {
       const creep = suppliers[i];
-      if (creep.carry.energy < creep.carryCapacity) {
-        const droppedEnergy = creep.room.find(FIND_DROPPED_RESOURCES, {
-          filter(resource) {
-            return resource.energy > creep.carryCapacity;
+      if (creep.carryCapacity - _.sum(creep.carry) > (0.95 * creep.carryCapacity)) {
+        if (creep.memory.pickupPos) {
+          const { x, y, roomName } = creep.memory.pickupPos;
+          const pos = new RoomPosition(x, y, roomName);
+          if (pos.getRangeTo(creep) === 1
+            || !pos.lookFor(LOOK_ENERGY).find(target => target.amount > (creep.carryCapacity - creep.carry[RESOURCE_ENERGY]) / 2)
+          ) {
+            acquireTask(creep, creepTasks.pickup(RESOURCE_ENERGY), pos);
+            delete creep.memory.pickupPos;
+          } else {
+            moveTo(creep, pos);
           }
-        });
-        if (droppedEnergy && droppedEnergy.length) {
-          const mostEnergy = droppedEnergy.reduce((memo, curr) => {
-            if (!memo || curr.energy > memo.energy) {
-              return curr;
+        }
+        if (!creep.memory.pickupPos) {
+          const creepsEnrouteToPickup = Object.values(Game.creeps)
+            .filter(c => c.memory && c.memory.pickupPos);
+          const droppedEnergy = creep.room.find(FIND_DROPPED_RESOURCES, {
+            filter(resource) {
+              return !creepsEnrouteToPickup.find(c =>
+                  c.memory
+                  && c.memory.pickupPos
+                  && c.memory.pickupPos.x === resource.pos.x
+                  && c.memory.pickupPos.y === resource.pos.y
+                  && c.memory.pickupPos.roomName === resource.pos.roomName
+                  && (resource.amount - (c.carryCapacity - c.carry[RESOURCE_ENERGY])) > (creep.carryCapacity - creep.carry[RESOURCE_ENERGY])
+                && resource.amount > (creep.carryCapacity - creep.carry[RESOURCE_ENERGY]))
             }
-            return memo
           });
-          acquireTask(creep, creepTasks.pickup(), mostEnergy);
+          if (droppedEnergy && droppedEnergy.length) {
+            const closestEnergy = droppedEnergy.sort((a, b) => creep.pos.getRangeTo(a) - creep.pos.getRangeTo(b));
+            const mostEnergy = droppedEnergy.reduce((memo, curr) => {
+              if (!memo
+                || curr.amount > memo.amount) {
+                return curr;
+              }
+              return memo
+            });
+            let pickUpEnergy = closestEnergy[0].pos.getRangeTo(creep) < 5 ? closestEnergy[0] : mostEnergy;
+            const pickupErr = acquireTask(creep, creepTasks.pickup(RESOURCE_ENERGY), pickUpEnergy);
+            if (pickupErr === ERR_NOT_IN_RANGE) {
+              creep.memory.pickupPos = pickUpEnergy.pos;
+            } else if (!pickupErr) {
+              delete creep.memory.pickupPos;
+            }
+          }
         }
       } else {
         const destinations = findEnergyDropOffs(creep.room);
         if (!dropOffEnergy(creep, destinations)) {
-          moveToEnergy(creep, destinations);
+          if (creep.memory.pickupPos) {
+            moveTo(creep, creep.memory.pickupPos);
+          } else {
+            moveToEnergy(creep, destinations);
+          }
         }
       }
     }
   });
 }
 
-function *final() {
-  yield takeEvery(FINAL, function* onFinal() {
-    const deadProbes = yield select(selectDeadProbs);
-    yield put(actionCreators.cleanProbes(deadProbes));
-  });
-}
-
 createSaga(
-  watchEnabled,
-  watchNewWork,
+  scan,
   run,
-  final,
 );
 
 const initialState = {
-  enabled: false,
-  probes: [],
+  enabled: true,
   sources: [],
 };
 
 createReducer('Economy', initialState, {
-  [ENABLE](state) {
+  [SCAN_RESULTS](state, { payload: results }) {
     return {
       ...state,
-      enabled: true,
-    };
-  },
-  [SPAWN](state, { payload: probe }) {
-    return {
-      ...state,
-      probes: [...state.probes, probe],
-    };
-  },
-  [CLAIM_SOURCES](state, { payload: sources }) {
-    return {
-      ...state,
-      sources: [...differenceWith(state.sources, sources, (a, b) => a.id === b.id), ...sources],
-    };
-  },
-  [CLEAN_PROBES](state, { payload: deadProbes }) {
-    return {
-      ...state,
-      probes: [...difference(state.probes, deadProbes)],
-    };
-  },
-  [CLEAN_SOURCES](state, { payload: deadProbes }) {
-    return {
-      ...state,
-      sources: [],
-    };
+      sources: [...differenceWith(state.sources, sources, (a, b) => a.sourceId === b.sourceId), ...sources],
+    }
   },
 });
 

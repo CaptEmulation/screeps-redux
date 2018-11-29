@@ -10,7 +10,7 @@ import createApi from '../utils/createApi';
 import createModule from '../utils/createModule';
 import {
   RUN,
-} from '../tickEvents';
+} from '../events';
 
 export default function broodFactory({
   role,

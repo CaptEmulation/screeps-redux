@@ -14,7 +14,7 @@ import createModule from '../utils/createModule';
 import {
   RUN,
   FINAL,
-} from '../tickEvents';
+} from '../events';
 
 const PROBE_COUNT = 2;
 const SPAWN = 'CREEPS_SPAWN';

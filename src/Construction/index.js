@@ -31,9 +31,9 @@ import createModule from '../utils/createModule';
 import {
   RUN,
   FINAL,
-} from '../tickEvents';
+} from '../events';
 
-const BUILDER_COUNT = 8;
+const BUILDER_COUNT = 3;
 const SPAWN = 'BUILDER_SPAWN';
 const QUEUE = 'BUILDER_QUEUE';
 const POP = 'BUILDER_POP';
@@ -202,7 +202,10 @@ function* run() {
   //   }
   // });
   yield takeEvery(RUN, function* onRun() {
-    yield put(spawnActions.need(earlyCreeps));
+    yield put(spawnActions.need({
+      needs: earlyCreeps,
+      controller: 'Construction',
+    }));
     const activeBuilders = yield select(selectActiveBuilders);
     const buildQueue = yield select(selectBuildQueue);
 

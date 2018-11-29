@@ -1,7 +1,7 @@
 export function moveTo(creep, target, opts = {}) {
   // console.log(`${creep.name}.moveTo(${target})`)
   const mOpts = {
-    reusePath: 15,
+    reusePath: 10,
     ...opts,
   };
   const cachePathErr = creep.moveTo(target, {
@@ -26,6 +26,7 @@ function applyToCreep(task) {
 }
 
 export const tasks = {
+  attack: applyToCreep('attack'),
   build: applyToCreep('build'),
   upgradeController: applyToCreep('upgradeController'),
   harvest:  applyToCreep('harvest'),
@@ -73,4 +74,5 @@ export function acquireTask(creep, task, target) {
   if (result === ERR_NOT_IN_RANGE) {
     moveTo(creep, target);
   }
+  return result;
 }

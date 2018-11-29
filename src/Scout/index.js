@@ -61,17 +61,20 @@ createBrood({
   }) {
     const scoutFlags = Object.values(Game.flags).filter(isColor(scoutFlagColor));
     if (scoutFlags.length) {
-      yield put(spawnActions.need(range(scoutFlags.length).map(num => ({
-        name: `Scout-${num}`,
-        body: scout.early,
-        memory: {
-          role: 'Scout',
-        },
-        priority: 10,
+      yield put(spawnActions.need({
+        needs: range(scoutFlags.length).map(num => ({
+          name: `Scout-${num}`,
+          body: scout.early,
+          memory: {
+            role: 'Scout',
+          },
+          priority: 10,
+          controller: 'Scout',
+        })),
         controller: 'Scout',
-      }))));
+      }));
     }
-    
+
     const exploredRooms = yield select(mapSelectors.explored);
     // const unexploredRooms = yield select(mapSelectors.unexplored);
 

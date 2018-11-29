@@ -9,8 +9,9 @@ import createSaga from '../utils/createSaga';
 import createModule from '../utils/createModule';
 
 import {
+  START,
   RUN,
-} from '../tickEvents';
+} from '../events';
 
 const QUEUE = 'SPAWN_QUEUE';
 const POP = 'SPAWN_POP';
@@ -39,10 +40,16 @@ function pop() {
   }
 }
 
-function need(input) {
+function need({
+  needs = [],
+  controller,
+}) {
   return {
     type: NEEDS,
-    payload: input,
+    payload: {
+      needs,
+      controller,
+    },
   };
 }
 
@@ -118,6 +125,14 @@ export function init(store) {
   };
 }
 
+function* start() {
+  yield takeEvery(START, function* onSpawnStart() {
+    // Clear and rebuild on every tick (for now)
+    // TODO use way less memory if we don't need it
+    yield put(updateNeeds([]));
+  });
+}
+
 function* run() {
   yield takeEvery(RUN, function* onRun() {
     const needs = yield select(selectNeeds);
@@ -149,6 +164,7 @@ function* run() {
 }
 
 createSaga(
+  start,
   run,
 );
 
@@ -180,13 +196,12 @@ export const reducer = createReducer('Spawn', initialState, {
       pending: state.pending.slice(1),
     };
   },
-  [NEEDS](state, { payload: input }) {
+  [NEEDS](state, { payload: { needs: input, controller } }) {
     const definition = Array.isArray(input) ? input : [input];
-    const controller = definition[0].controller;
     const incomingNames = definition.map(n => n.name);
     const existingNeeds = state.needs
-      .filter(n => n.controller !== controller || incomingNames.indexOf(n.name) !== -1);
-    const needs = [...differenceWith(definition, existingNeeds, (a, b) => a.name === b.name)
+      .filter(n => n.controller !== controller);
+    const needs = [...definition
       .map(n => ({
         priority: 0,
         ...n,

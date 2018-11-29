@@ -12,7 +12,7 @@ import {
   START,
   RUN,
   FINAL,
-} from '../tickEvents';
+} from '../events';
 
 const ROOM_INFO = 'MAP_ROOM_INFO';
 

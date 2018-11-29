@@ -7,7 +7,7 @@ import commit from '../utils/commit';
 import {
   START,
   FINAL,
-} from '../tickEvents';
+} from '../events';
 
 const CLEAN_DEAD = 'MEMORY_CLEAN_DEAD';
 const UPDATE = 'MEMORY_UPDATE';

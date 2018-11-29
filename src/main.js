@@ -5,6 +5,7 @@ import { init as initSpawn } from './Spawn';
 import { init as initCreeps } from './Creeps';
 import { init as initMap } from './Map';
 import { init as initMemory } from './Memory';
+import './Defense';
 import './Scout';
 
 import store from './store';
@@ -13,7 +14,7 @@ import {
   START,
   RUN,
   FINAL,
-} from './tickEvents';
+} from './events';
 
 initController(store);
 initSpawn(store);
