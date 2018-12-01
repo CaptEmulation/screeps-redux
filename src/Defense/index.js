@@ -53,9 +53,9 @@ function* run() {
             memory: {
               role: 'Defense'
             },
-            controller: 'Defense',
           })),
         ],
+        room: Game.spawns['Spawn1'].room.name,
         controller: 'Defense',
       }));
     } else {

@@ -1,82 +1,34 @@
-import get from 'lodash.get';
-import mapValues from 'lodash.mapvalues';
-import differenceWith from 'lodash.differencewith';
-import difference from 'lodash.difference';
-import cond from 'lodash.cond';
-import intersection from 'lodash.intersection';
-import { call, put, select, takeEvery } from 'redux-saga/effects'
-import { createSelector } from 'reselect';
-import { actionCreators as spawnActions } from '../Spawn';
-import { happy } from '../utils/id';
-import createReducer from '../utils/createReducer';
+import { takeEvery, call } from 'redux-saga/effects';
+import {
+  deadCreeps,
+} from '../utils/creeps';
 import createSaga from '../utils/createSaga';
 import createModule from '../utils/createModule';
 import {
-  RUN,
-  FINAL,
+  COMMIT,
 } from '../events';
 
-const PROBE_COUNT = 2;
-const SPAWN = 'CREEPS_SPAWN';
-const CLEAN = 'CREEPS_CLEAN';
-
-export const actionTypes = {
-  SPAWN,
-};
-
-function spawn(name, opts) {
-  return {
-    type: SPAWN,
-    payload: { name, opts },
-  };
+function *execute(creeps) {
+  for (let i = 0; i < creeps.length; i++) {
+    const creep = creeps[i];
+    
+  }
 }
 
-export const actionCreators = {
-  spawn,
-};
-
-const selectMemoryCreeps = () => Memory.creeps || {};
-const selectGameCreeps = () => Game.creeps || {};
-const selectDeadCreepNames = createSelector(
-  selectMemoryCreeps,
-  selectGameCreeps,
-  (creepsMem, creepsGame) => difference(Object.keys(creepsMem), Object.keys(creepsGame))
-)
-
-export const selectors = {
-  memory: selectMemoryCreeps,
-  game: selectGameCreeps,
-  deadNames: selectDeadCreepNames,
-};
-
-export function init(store) {
-  global.Creeps = {
-    ...mapValues(actionCreators, action => (...args) => store.dispatch({
-      type: 'EXE',
-      payload: action(...args),
-    })),
-    selectors: mapValues(selectors, selector => () => selector(store.getState())),
-  };
-}
-
-function* run() {
-  yield takeEvery(RUN, function* onRun() {
-
-  });
-}
-
-function *final() {
-  yield takeEvery(FINAL, function* onCreepFinal() {
-    const dead = yield select(selectDeadCreepNames);
-    for (let creep in dead) {
+function *commit() {
+  yield takeEvery(COMMIT, function* onCreepFinal() {
+    // Make our creeps do things
+    yield call(execute, Object.values(Game.creeps));
+    // Bring out your dead
+    // If you need to save anything about recently dead do it on the tick they die
+    for (let creep in deadCreeps()) {
       delete Memory.creeps[creep];
     }
   });
 }
 
 createSaga(
-  run,
-  final,
+  commit,
 );
 
 createModule('Creeps');

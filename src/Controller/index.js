@@ -4,6 +4,10 @@ import commit from '../utils/commit';
 import {
   RESET,
   SCAN,
+  LOOP,
+  RUN,
+  UPDATE,
+  COMMIT,
 } from '../events';
 
 export function init(store) {
@@ -20,6 +24,24 @@ export function init(store) {
   }
 }
 
+const actionCreators = {
+  update() {
+    return {
+      type: UPDATE,
+    };
+  },
+  run() {
+    return {
+      type: RUN,
+    };
+  },
+  commit() {
+    return {
+      type: COMMIT,
+    };
+  }
+};
+
 function *executeAndCommit() {
   yield takeEvery('EXE', function* onExe({ payload: action }) {
     yield put(action);
@@ -27,4 +49,15 @@ function *executeAndCommit() {
   });
 }
 
-createSaga(executeAndCommit);
+function* loop() {
+  yield takeEvery(LOOP, function* () {
+    yield put(actionCreators.update());
+    yield put(actionCreators.run());
+    yield put(actionCreators.commit());
+  });
+}
+
+createSaga(
+  loop,
+  executeAndCommit,
+);

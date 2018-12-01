@@ -26,7 +26,6 @@ import {
 } from '../utils/scan';
 import {
   RUN,
-  FINAL,
   SCAN,
 } from '../events';
 
@@ -161,26 +160,6 @@ function economyNeeds() {
     }
   });
 }
-
-const earlyCreeps = range(0, SUPPLY_COUNT).map(num => ({
-  name: `Supply-${num}`,
-  controller: 'Economy',
-  body: supply.early,
-  memory: {
-    role: 'supply',
-  },
-  priority: -1,
-}));
-
-const defaultCreeps = range(0, SUPPLY_COUNT).map(num => ({
-  name: `Supply-${num}`,
-  controller: 'Economy',
-  body: supply.mid,
-  memory: {
-    role: 'supply',
-  },
-  priority: -1,
-}));
 
 export function init(store) {
   global.Econ = {
@@ -320,16 +299,25 @@ function *scan() {
 function* run() {
   yield takeEvery(RUN, function* onRun() {
     const sourceCount = mapSpots(findKnownSources()).reduce((sum, curr) => sum + (curr.open.length > 2 ? 2 : curr.open.length), 0);
+    const currentWorkers = Object.values(Game.creeps).filter(c => c.memory && c.memory.role === 'worker');
+    const currentSuppliers = Object.values(Game.creeps).filter(c => c.memory && c.memory.role === 'supply');
     yield put(spawnActions.need({
       needs: [...range(0, sourceCount).map(num => ({
         name: `Worker-${num}`,
-        controller: 'Economy',
-        body: [MOVE, MOVE, MOVE, WORK, WORK, WORK],
+        body: [MOVE, MOVE, WORK, WORK],
         memory: {
           role: 'worker',
         },
-        priority: -2,
-      })), ...earlyCreeps],
+        priority: -10 + (2 * num),
+      })), ...range(0, SUPPLY_COUNT).map(num => ({
+        name: `Supply-${num}`,
+        body: supply.early,
+        memory: {
+          role: 'supply',
+        },
+        priority: -9 + (2 * num),
+      }))],
+      room: Game.spawns['Spawn1'].room.name,
       controller: 'Economy',
     }));
 
@@ -340,27 +328,6 @@ function* run() {
     }
     for (let i = 0; i < harvestProbes.length; i++) {
       const creep = harvestProbes[i];
-      // if (!creep.memory.mine) {
-      //
-      //   const sources = creep.room.find(FIND_SOURCES)
-      //     .map(source => source.id)
-      //     .map(source => ({
-      //       source,
-      //       workers: harvestProbes.filter(worker => worker.memory.mine === source)
-      //     }));
-      //   const source = sources
-      //     .reduce((smallest, curr) => {
-      //       if (smallest.workers.length > curr.workers.length) {
-      //         return curr;
-      //       }
-      //       return smallest;
-      //     }, {
-      //       source: sources[0],
-      //       workers: { length: Infinity }
-      //     }).source;
-      //     console.log(source);
-      //     creep.memory.mine = source;
-      // }
       const source = Game.getObjectById(creep.memory.mine);
       acquireTask(creep, creepTasks.harvest(), source);
     }

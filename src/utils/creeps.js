@@ -1,3 +1,22 @@
+import difference from 'lodash.difference';
+import { createSelector } from 'reselect';
+
+export const deadCreeps = (function () {
+  const selectMemoryCreeps = ({ Memory }) => Memory.creeps || {};
+  const selectGameCreeps = ({ Game }) => Game.creeps || {};
+  const selectDeadCreepNames = createSelector(
+    selectMemoryCreeps,
+    selectGameCreeps,
+    (creepsMem, creepsGame) => difference(Object.keys(creepsMem), Object.keys(creepsGame))
+  );
+  return function getDeadCreeps() {
+    return selectDeadCreepNames({
+      Game,
+      Memory,
+    })
+  }
+})();
+
 export function moveTo(creep, target, opts = {}) {
   // console.log(`${creep.name}.moveTo(${target})`)
   const mOpts = {

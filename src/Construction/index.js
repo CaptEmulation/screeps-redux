@@ -30,7 +30,6 @@ import createSaga from '../utils/createSaga';
 import createModule from '../utils/createModule';
 import {
   RUN,
-  FINAL,
 } from '../events';
 
 const BUILDER_COUNT = 3;
@@ -189,9 +188,6 @@ export function init(store) {
     })),
     selectors: mapValues(selectors, selector => () => selector(store.getState())),
   };
-  earlyCreeps.forEach(creep => {
-    store.dispatch(actionCreators.spawn(creep.name));
-  });
 }
 
 function* run() {
@@ -204,6 +200,7 @@ function* run() {
   yield takeEvery(RUN, function* onRun() {
     yield put(spawnActions.need({
       needs: earlyCreeps,
+      room: Game.spawns['Spawn1'].room.name,
       controller: 'Construction',
     }));
     const activeBuilders = yield select(selectActiveBuilders);
@@ -260,16 +257,8 @@ function* run() {
   });
 }
 
-function *final() {
-  yield takeEvery(FINAL, function* onFinal() {
-    // const deadBuilders = yield select(selectDeadBuilders);
-    // yield put(actionCreators.cleanBuilders(deadBuilders));
-  });
-}
-
 createSaga(
   run,
-  final,
 );
 
 const initialState = {

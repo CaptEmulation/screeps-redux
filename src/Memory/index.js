@@ -3,27 +3,22 @@ import { call, put, select, takeEvery } from 'redux-saga/effects';
 import createSaga from '../utils/createSaga';
 import { appendReducer } from '../utils/createReducer';
 import { names as getModuleNames } from '../utils/createModule';
-import commit from '../utils/commit';
+import commitMemory from '../utils/commit';
 import {
-  START,
-  FINAL,
+  UPDATE,
+  COMMIT,
 } from '../events';
 
 const CLEAN_DEAD = 'MEMORY_CLEAN_DEAD';
-const UPDATE = 'MEMORY_UPDATE';
-
-function update() {
-  return {
-    type: UPDATE,
-    payload: getModuleNames().reduce((mem, curr) => {
-      mem[curr] = Memory[curr];
-      return mem;
-    }, {}),
-  };
-}
+const MEMORY_UPDATE = 'MEMORY_UPDATE';
 
 export const actionCreators = {
-  update,
+  update(state) {
+    return {
+      type: MEMORY_UPDATE,
+      payload: state,
+    };
+  },
 };
 
 export function init(store) {
@@ -34,28 +29,33 @@ export function run(store) {
   store.dispatch(cleanDead());
 }
 
-function* start() {
-  yield takeEvery(START, function* onStart() {
-    yield put(update());
+const memoryState = () => getModuleNames().reduce((mem, curr) => {
+  mem[curr] = Memory[curr];
+  return mem;
+}, {});
+
+function* update() {
+  yield takeEvery(UPDATE, function* onStart() {
+    yield put(actionCreators.update(memoryState()));
   });
 }
 
-function* final() {
-  yield takeEvery(FINAL, function * onUpdate() {
+function* commit() {
+  yield takeEvery(COMMIT, function * onUpdate() {
     // Assign latest state to memory
     const newState = yield(select(s => s));
-    commit(newState);
+    commitMemory(newState);
   });
 }
 
 createSaga(
-  start,
-  final,
+  update,
+  commit,
 );
 
 appendReducer((state, action) => {
   switch(action.type) {
-    case UPDATE: {
+    case MEMORY_UPDATE: {
       return action.payload;
     }
     default:
