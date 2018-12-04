@@ -311,7 +311,17 @@ function* run() {
         priority: -10 + (2 * num),
       })), ...range(0, SUPPLY_COUNT).map(num => ({
         name: `Supply-${num}`,
-        body: supply.early,
+        body: ({
+          appraiser,
+          available,
+          max,
+        }) => {
+          const body = [MOVE, MOVE, CARRY, CARRY];
+          const remaining = max - appraiser(body);
+          const parts = Math.floor(remaining / appraiser([MOVE, CARRY]));
+          _.range(0, parts).forEach(() => body.push(MOVE, CARRY));
+          return body;
+        },
         memory: {
           role: 'supply',
         },

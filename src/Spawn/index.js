@@ -143,7 +143,7 @@ function* start() {
 
 const extensionsMax = [0, 50, 50, 50, 50, 50, 100, 200];
 function extensionEnergyStatus(room) {
-  const extensions = spawn.room.find(FIND_MY_STRUCTURES, {
+  const extensions = room.find(FIND_MY_STRUCTURES, {
     filter(target) {
       return target.structureType === STRUCTURE_EXTENSION;
     },
@@ -162,13 +162,19 @@ function calcCreepCost(bodyParts) {
 
 function* run() {
   yield takeEvery(RUN, function* onRun() {
+
+  });
+}
+
+function* commit() {
+  return yield takeEvery(COMMIT, function* () {
     const spawnNeeds = yield select(selectSpawnNeeds);
     const spawnersInRoom = {};
     let requestSpawn = [];
     let waitingForEnergy;
 
     for (let need of spawnNeeds) {
-      const { body, name, memory, room: roomName } = need;
+      const { name, memory, room: roomName } = need;
       const room = Game.rooms[roomName];
       if (!room) {
         continue;
@@ -184,14 +190,25 @@ function* run() {
           }),
         };
       }
-      const cost = calcCreepCost(body);
+
       if (roomInfo.spawners.length) {
         const spawner = roomInfo.spawners.shift();
-        if (cost <= (roomInfo.extensions.available + roomInfo.spawners.energy)) {
+        let body;
+        if (_.isFunction(need.body)) {
+          body = need.body({
+            appraiser: calcCreepCost,
+            available: spawner.energy + roomInfo.extensions.availabe,
+            max: 300 + roomInfo.extensions.max,
+          });
+        } else {
+          body = need.body;
+        }
+        const cost = calcCreepCost(body);
+        if (cost <= (roomInfo.extensions.available + spawner.energy)) {
           requestSpawn.push([spawner, body, name, { memory }]);
         }
         // Earmark energy for use on this creep if cost is possible
-        if (cost <= (roomInfo.extensions.max + roomInfo.spawners.energy)) {
+        if (cost <= (roomInfo.extensions.max + spawner.energy)) {
           const extensionEnergy = cost - spawner.energy;
           roomInfo.extensions.availabe -= extensionEnergy;
         }
@@ -202,17 +219,12 @@ function* run() {
     }
     for (let request of requestSpawn) {
       const [spawner, body, name, opts] = request;
-      console.log('spawning', request);
       const err = spawner.spawnCreep(body, name, opts);
       if (err) {
         console.log('Error spawning', name, err);
       }
     }
-  });
-}
 
-function* commit() {
-  return takeEvery(COMMIT, function* () {
     const needs = yield select(selectNeeds);
     // Only save name and hunger
     yield put(updateNeeds(needs.map(({ hunger, name }) => ({
@@ -261,15 +273,16 @@ export const reducer = createReducer('Spawn', initialState, {
     const existingNeeds = state.needs
       .filter(n => n.controller !== (meta.controller || definition[0].controller));
 
-    const needs = [...definition
-      .map(n => ({
+    const mergedNeeds = definition
+      .map(need => ({
         priority: 0,
         hunger: 0,
-        ...definition.find(def => def.name === n.name),
+        ...state.needs.find(def => def.name === need.name),
         ...meta,
-        ...n,
-      })), ...existingNeeds]
-      .sort(sortHunger);
+        ...need,
+      }));
+    const needs = [...mergedNeeds, ...existingNeeds];
+
     return {
       ...state,
       needs,

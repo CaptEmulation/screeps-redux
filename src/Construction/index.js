@@ -32,7 +32,7 @@ import {
   RUN,
 } from '../events';
 
-const BUILDER_COUNT = 3;
+const BUILDER_COUNT = 4;
 const SPAWN = 'BUILDER_SPAWN';
 const QUEUE = 'BUILDER_QUEUE';
 const POP = 'BUILDER_POP';
@@ -173,7 +173,23 @@ const builderOpts = { memory: { infant: true } };
 
 const earlyCreeps = range(0, BUILDER_COUNT).map(num => ({
   name: `Builder-${num}`,
-  body: builder.early,
+  body: ({
+    appraiser,
+    available,
+    max,
+  }) => {
+    const body = [MOVE, CARRY];
+    while (appraiser(body) < max) {
+      if (body.filter(b => WORK).length % 5 === 0 && appraiser([...body, MOVE, CARRY]) < max) {
+        body.push(MOVE, CARRY);
+      } else if (appraiser([...body, WORK]) <= max) {
+        body.push(WORK);
+      } else {
+        break;
+      }
+    }
+    return body;
+  },
   memory: {
     role: 'builder',
   },

@@ -2,14 +2,10 @@ export function findWorkSites(room) {
   return findPreferredConstructionTarget(room);
 }
 
-export function findEnergySinks(room) {
-  return findPreferredConstructionTarget(room);
-}
-
 const PREFERRED_STRUCTURE_ORDER = [
   STRUCTURE_SPAWN,
-  STRUCTURE_EXTENSION,
   STRUCTURE_CONTAINER,
+  STRUCTURE_EXTENSION,
 ];
 
 export function findPreferredConstructionTarget(room, preferred = PREFERRED_STRUCTURE_ORDER) {
@@ -17,18 +13,17 @@ export function findPreferredConstructionTarget(room, preferred = PREFERRED_STRU
   let preferredTarget = null;
   for (let i = 0; i < preferred.length; i++) {
     const preferredStruture = preferred[i];
-    const lowPriority = [];
     const priorityList = targets.filter(r => {
       const result = r.structureType === preferredStruture;
-      if (!result){
-        lowPriority.push(r);
-      }
       return result;
-    }).sort((a, b) => (a.progress) - (b.progress)).concat(lowPriority);
+    }).sort((a, b) => (a.progressTotal - a.progress) - (b.progressTotal - b.progress));
     if (priorityList.length) {
       preferredTarget = priorityList[0];
       break;
     }
+  }
+  if (!preferredTarget && targets.length) {
+    return targets[0];
   }
   return preferredTarget;
 }
