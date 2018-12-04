@@ -30,8 +30,6 @@ import {
   SCAN,
 } from '../events';
 
-const PROBE_COUNT = 6;
-const WORKER_COUNT = 6;
 const SUPPLY_COUNT = 4;
 const SCAN_RESULTS = 'ECONOMY_SCAN_RESULTS';
 
@@ -221,7 +219,7 @@ function mapSpots(sources) {
   });
 }
 
-function assignMines(creeps, max = 2) {
+function assignMines(creeps, max = 1) {
   const unassignedCreeps = creeps.filter(creep => !creep.memory.mine);
   const findRoomAtSources = mapSpots(findKnownSources());
   const assignedSources = creeps.filter(creep => creep.memory.mine).map(creep => creep.memory.mine);
@@ -252,6 +250,7 @@ export function findEnergyDropOffs(room) {
         structure.structureType === STRUCTURE_EXTENSION
         || structure.structureType === STRUCTURE_TOWER
         || structure.structureType === STRUCTURE_CONTAINER
+        || structure.structureType === STRUCTURE_STORAGE
         || structure.structureType === STRUCTURE_SPAWN),
     },
   );
@@ -319,17 +318,18 @@ function *scan() {
 
 function* run() {
   yield takeEvery(RUN, function* onRun() {
-    const sourceCount = mapSpots(findKnownSources()).reduce((sum, curr) => sum + (curr.open.length > 2 ? 2 : curr.open.length), 0);
+    // const sourceCount = mapSpots(findKnownSources()).reduce((sum, curr) => sum + (curr.open.length > 2 ? 2 : curr.open.length), 0);
+    const sourceCount = findKnownSources().length;
     yield put(spawnActions.need({
       needs: [...range(0, sourceCount).map(num => ({
         name: `Worker-${num}`,
         controller: 'Economy',
-        body: [MOVE, MOVE, MOVE, WORK, WORK, WORK],
+        body: [MOVE, MOVE, MOVE, WORK, WORK, WORK, WORK, WORK],
         memory: {
           role: 'worker',
         },
         priority: -2,
-      })), ...earlyCreeps],
+      })), ...defaultCreeps],
       controller: 'Economy',
     }));
 

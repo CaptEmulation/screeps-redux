@@ -34,13 +34,10 @@ function* run() {
         hits,
         hitsMax,
       } = friendliesNeedingHealing[0];
-      const damage = hitsMax - hits;
-      if (damage / hitsMax > 0.5) {
-        towers.forEach(tower => {
-          tower.heal(friendliesNeedingHealing[0]);
-        });
-        healed = true;
-      }
+      towers.forEach(tower => {
+        tower.heal(friendliesNeedingHealing[0]);
+      });
+      healed = true;
     }
     if (hostiles.length) {
       console.log('I see baddies', hostiles);

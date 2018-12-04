@@ -33,7 +33,7 @@ import {
   FINAL,
 } from '../events';
 
-const BUILDER_COUNT = 3;
+const BUILDER_COUNT = 2;
 const SPAWN = 'BUILDER_SPAWN';
 const QUEUE = 'BUILDER_QUEUE';
 const POP = 'BUILDER_POP';
@@ -174,7 +174,7 @@ const builderOpts = { memory: { infant: true } };
 
 const earlyCreeps = range(0, BUILDER_COUNT).map(num => ({
   name: `Builder-${num}`,
-  body: builder.early,
+  body: builder.mid,
   memory: {
     role: 'builder',
   },
@@ -254,7 +254,7 @@ function* run() {
         //
         // }
       } else {
-        findClosestEnergy(creep);
+        findClosestEnergy(creep, false);
       }
     });
   });

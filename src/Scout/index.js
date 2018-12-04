@@ -73,6 +73,11 @@ createBrood({
         })),
         controller: 'Scout',
       }));
+    } else {
+      yield put(spawnActions.need({
+        needs: [],
+        controller: 'Scout',
+      }));
     }
 
     const exploredRooms = yield select(mapSelectors.explored);

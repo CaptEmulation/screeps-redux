@@ -15,5 +15,5 @@ export const scout = {
 
 export const builder = {
   early: [MOVE, MOVE, CARRY, WORK],
-  mid: [MOVE, MOVE, MOVE, MOVE, CARRY, WORK, WORK, WORK],
+  mid: [MOVE, MOVE, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY, CARRY, WORK, WORK, WORK, WORK, WORK, WORK],
 };
