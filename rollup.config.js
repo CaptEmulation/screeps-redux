@@ -6,15 +6,18 @@ import replace from 'rollup-plugin-replace';
 import fs from 'fs';
 import path from 'path';
 
+const ROOT = '/Users/jdean/Library/Application Support/Screeps/scripts/127_0_0_1___21025/default';
+
 function deploy() {
   return {
     generateBundle(a, bundles, isWrite) {
       if (isWrite) {
         console.log('deploying')
-        fs.writeFileSync('C:\\Users\\johnh\\AppData\\Local\\Screeps\\scripts\\screeps.com\\default\\main.js', bundles['main.js'].code, 'utf8');
+        fs.writeFileSync(path.join(ROOT, 'main.js'), bundles['main.js'].code, 'utf8');
+        // fs.writeFileSync('C:\\Users\\johnh\\AppData\\Local\\Screeps\\scripts\\screeps.com\\default\\main.js', bundles['main.js'].code, 'utf8');
         // fs.writeFileSync('C:\\Users\\johnh\\AppData\\Local\\Screeps\\scripts\\127_0_0_1___21025\\default\\main.js', bundles['main.js'].code, 'utf8');
         const map = `module.exports.d=${bundles['main.js'].map}`;
-        // fs.writeFileSync('C:\\Users\\johnh\\AppData\\Local\\Screeps\\scripts\\127_0_0_1___21025\\default\\main.js.map', map, 'utf8');
+        fs.writeFileSync(path.join(ROOT, 'main.js.map'), map, 'utf8');
       }
     }
   }

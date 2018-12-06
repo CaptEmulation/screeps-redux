@@ -1,4 +1,3 @@
-import flow from 'lodash.flow';
 import {
   actionTypes,
   actionCreators,
@@ -35,7 +34,7 @@ describe('Creeps reducer', () => {
   });
 
   it('adds needs', () => {
-    expect(flow(
+    expect(_.flow(
       state => reducer(state, actionCreators.need(fooNeeds)),
       state => reducer(state, actionCreators.need(barNeeds))
     )(initialState)).toMatchObject({
@@ -57,11 +56,11 @@ describe('Creeps reducer', () => {
       for (let i = 0; i < times; i++) {
         args.push(update);
       }
-      return flow(...args)(needs);
+      return _.flow(...args)(needs);
     }
 
     it('round robins same priority', () => {
-      const state = flow(
+      const state = _.flow(
         state => reducer(state, actionCreators.need(fooNeeds)),
         state => reducer(state, actionCreators.need(barNeeds))
       )(initialState)

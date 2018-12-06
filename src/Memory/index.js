@@ -1,4 +1,3 @@
-import mapValues from 'lodash.mapvalues';
 import { call, put, select, takeEvery } from 'redux-saga/effects';
 import createSaga from '../utils/createSaga';
 import { appendReducer } from '../utils/createReducer';
@@ -22,7 +21,7 @@ export const actionCreators = {
 };
 
 export function init(store) {
-  global.Garbage = mapValues(actionCreators, action => (...args) => store.dispatch(action(...args)));
+  global.Garbage = _.mapValues(actionCreators, action => (...args) => store.dispatch(action(...args)));
 }
 
 export function run(store) {

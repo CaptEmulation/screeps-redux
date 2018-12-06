@@ -1,17 +1,13 @@
-import get from 'lodash.get';
-import set from 'lodash.set';
-import mapValues from 'lodash.mapvalues';
-
 const _reducer = {};
 const _reducers = [];
 
 export function reducer(state, action) {
-  let result = mapValues(_reducer, (r, key) => r(get(state, key), action));
+  let result = _.mapValues(_reducer, (r, key) => r(_.get(state, key), action));
   return _reducers.reduce((s, r) => r(s, action), result);
 }
 
 export function install(keyPath, r) {
-  set(_reducer, keyPath, r);
+  _.set(_reducer, keyPath, r);
 }
 
 export function appendReducer(reducer) {
@@ -27,6 +23,6 @@ export default function createReducer(keyPath, initialState, handlers) {
         }
         return state;
       };
-  set(_reducer, keyPath, r);
+  _.set(_reducer, keyPath, r);
   return r;
 }

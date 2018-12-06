@@ -1,7 +1,3 @@
-import mapValues from 'lodash.mapvalues';
-import difference from 'lodash.difference';
-import differenceWith from 'lodash.differencewith';
-import flow from 'lodash.flow';
 import { createSelector } from 'reselect';
 import { call, put, select, takeEvery } from 'redux-saga/effects';
 import createReducer from '../utils/createReducer';
@@ -93,7 +89,7 @@ const selectNeedsSpawn = createSelector(
   selectCreeps,
   selectPendingNames,
   selectPending,
-  (creeps, names, pending) => difference(names, Object.keys(creeps)).map(name => pending.find(p => p[1] === name)),
+  (creeps, names, pending) => _.difference(names, Object.keys(creeps)).map(name => pending.find(p => p[1] === name)),
 );
 const selectNeeds = createSelector(
   root,
@@ -124,11 +120,11 @@ export const selectors = {
 
 export function init(store) {
   global.Spawner = {
-    ...mapValues(actionCreators, action => (...args) => store.dispatch({
+    ..._.mapValues(actionCreators, action => (...args) => store.dispatch({
       type: 'EXE',
       payload: action(...args),
     })),
-    selectors: mapValues(selectors, selector => () => selector(store.getState())),
+    selectors: _.mapValues(selectors, selector => () => selector(store.getState())),
   };
 }
 

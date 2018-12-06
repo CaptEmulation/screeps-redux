@@ -1,4 +1,3 @@
-import mapValues from 'lodash.mapvalues';
 import { createSelector } from 'reselect';
 import { call, select, takeEvery } from 'redux-saga/effects'
 import {
