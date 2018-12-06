@@ -78,10 +78,10 @@ export const happy = (function () {
     }
   }
 
-  return function happy() {
+  return function happy(length = 5) {
     let id;
     do {
-      id = [...generateText(5)].join('');
+      id = [...generateText(length)].join('');
     } while (Game.creeps[id])
     return id;
   }

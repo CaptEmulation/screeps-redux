@@ -69,9 +69,9 @@ createBrood({
             role: 'Scout',
           },
           priority: 10,
-          controller: 'Scout',
         })),
         controller: 'Scout',
+        room: Game.spawns['Spawn1'].room.name,
       }));
     } else {
       yield put(spawnActions.need({

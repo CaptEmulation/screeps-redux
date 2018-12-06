@@ -1,5 +1,6 @@
-export const START = 'TICK_START';
+export const LOOP = 'TICK_LOOP';
+export const UPDATE = 'TICK_UPDATE';
 export const RUN = 'TICK_RUN';
-export const FINAL = 'TICK_FINAL';
+export const COMMIT = 'TICK_COMMIT';
 export const RESET = 'RESET';
 export const SCAN = 'SCAN';

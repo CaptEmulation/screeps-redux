@@ -45,16 +45,14 @@ export default function broodFactory({
   );
 
   const selectors = {
-    active: selectActive,
+    alive: selectActive,
   };
 
   function* run() {
     yield takeEvery(RUN, function* onBroodRun() {
       yield call(directCreeps, {
-        selectors: {
-          alive: selectActive,
-        }
-      })
+        selectors,
+      });
     });
   }
 
@@ -93,4 +91,9 @@ export default function broodFactory({
     selectors,
     actionCreators,
   });
+
+  return {
+    actionCreators,
+    selectors,
+  };
 }

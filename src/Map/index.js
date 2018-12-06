@@ -9,9 +9,7 @@ import createReducer from '../utils/createReducer';
 import createModule from '../utils/createModule';
 import createSaga from '../utils/createSaga';
 import {
-  START,
   RUN,
-  FINAL,
 } from '../events';
 
 const ROOM_INFO = 'MAP_ROOM_INFO';

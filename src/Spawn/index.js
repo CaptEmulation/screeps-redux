@@ -9,8 +9,9 @@ import createSaga from '../utils/createSaga';
 import createModule from '../utils/createModule';
 
 import {
-  START,
+  UPDATE,
   RUN,
+  COMMIT,
 } from '../events';
 
 const QUEUE = 'SPAWN_QUEUE';
@@ -40,15 +41,14 @@ function pop() {
   }
 }
 
-function need({
-  needs = [],
-  controller,
-}) {
+function need(opts) {
+  const { needs } = opts;
+  const meta = _.omit(opts, 'needs');
   return {
     type: NEEDS,
     payload: {
       needs,
-      controller,
+      meta,
     },
   };
 }
@@ -68,14 +68,15 @@ export const actionCreators = {
   updateNeeds,
 };
 
-const sortHunger = (a, b) => (a.priority + a.hunger) - (b.priority + b.hunger);
+const decrementHunger = h => {
+  if(!Game.creeps[h.name]) {
+    return {...h, hunger: h.hunger - 1 };
+  }
+  return h;
+};
+const sortHunger = (a, b) => (a.priority - a.hunger) - (b.priority - b.hunger);
 export const nextNeed = needs => needs
-  .map(h => {
-    if(!Game.creeps[h.name]) {
-      return {...h, hunger: h.hunger - 1 };
-    }
-    return h;
-  })
+  .map(decrementHunger)
   .sort(sortHunger);
 
 const root = state => state.Spawn;
@@ -98,6 +99,12 @@ const selectNeeds = createSelector(
   root,
   spawn => spawn.needs,
 );
+const selectSpawnNeeds = createSelector(
+  selectNeeds,
+  needs => needs
+    .filter(({ name }) => !Game.creeps[name])
+    .sort(sortHunger),
+)
 const selectSpawned = createSelector(
   root,
   spawn => spawn.spawned,
@@ -126,46 +133,127 @@ export function init(store) {
 }
 
 function* start() {
-  yield takeEvery(START, function* onSpawnStart() {
+  yield takeEvery(UPDATE, function* onSpawnStart() {
     // Clear and rebuild on every tick (for now)
     // TODO use way less memory if we don't need it
-    yield put(updateNeeds([]));
+    // yield put(updateNeeds([]));
+
   });
+}
+
+const extensionsMax = [0, 50, 50, 50, 50, 50, 100, 200];
+function extensionEnergyStatus(room) {
+  const extensions = room.find(FIND_MY_STRUCTURES, {
+    filter(target) {
+      return target.structureType === STRUCTURE_EXTENSION;
+    },
+  });
+  const max = extensionsMax[room.controller.level - 1] * extensions.length;
+  const available = _.sum(extensions.map(e => e.energy));
+  return {
+    max,
+    available,
+  };
+}
+
+function calcCreepCost(bodyParts = []) {
+  return _.sum(bodyParts.map(part => BODYPART_COST[part]));
 }
 
 function* run() {
   yield takeEvery(RUN, function* onRun() {
-    const needs = yield select(selectNeeds);
-    const need = needs.find(need => {
-      if(Game.creeps[need.name]) {
-        return false;
-      }
-      const {
-        body,
-        name,
-        memory,
-      } = need;
 
-      if (Game.spawns['Spawn1'].spawnCreep(body, name, {
-        memory,
-        dryRun: true,
-      })) {
-        return false;
-      }
-      return !Game.spawns['Spawn1'].spawnCreep(body, name, {
-        memory,
+  });
+}
+
+function* commit() {
+  return yield takeEvery(COMMIT, function* () {
+    const spawnNeeds = yield select(selectSpawnNeeds);
+    const spawnersInRoom = {};
+    let requestSpawn = [];
+    let waitingForEnergy;
+
+    if (spawnNeeds.length === 0 && Game.time % 5 === 0) {
+      Object.values(Game.rooms).forEach(room => {
+        room.memory.extensions = extensionEnergyStatus(room);
       });
-    });
-    if (need) {
-      need.hunger = 1;
-      yield put(updateNeeds(nextNeed(needs)));
     }
+
+    for (let need of spawnNeeds) {
+      const { name, memory, room: roomName } = need;
+      const room = Game.rooms[roomName];
+      if (!room) {
+        continue;
+      }
+      let roomInfo;
+      if (spawnersInRoom[roomName]) {
+        roomInfo = spawnersInRoom[roomName];
+      } else {
+        roomInfo = spawnersInRoom[roomName] = {
+          extensions: extensionEnergyStatus(room),
+          spawners: Game.rooms[roomName].find(FIND_MY_STRUCTURES, {
+            filter: target => target.structureType === STRUCTURE_SPAWN
+          }),
+        };
+      }
+      console.log(JSON.stringify(roomInfo.extensions))
+      if (roomInfo.spawners.length) {
+        const spawner = roomInfo.spawners.shift();
+        let body;
+        if (_.isFunction(need.body)) {
+          body = need.body({
+            appraiser: calcCreepCost,
+            available: spawner.energy + roomInfo.extensions.available,
+            max: 300 + roomInfo.extensions.max,
+            extensions: {
+              ...roomInfo.extensions,
+            },
+            spawner: {
+              max: 300,
+              available: spawner.energy,
+            },
+          });
+        } else {
+          body = need.body;
+        }
+        room.memory.extensions = {
+          ...roomInfo.extensions,
+        };
+        const cost = calcCreepCost(body);
+        if (cost <= (roomInfo.extensions.available + spawner.energy)) {
+          requestSpawn.push([spawner, body, name, { memory }]);
+        }
+        // Earmark energy for use on this creep if cost is possible
+        if (cost <= (roomInfo.extensions.max + spawner.energy)) {
+          const extensionEnergy = cost - spawner.energy;
+          roomInfo.extensions.available -= extensionEnergy;
+        }
+      } else if (Game.time % 5 === 0) {
+        // This creep wants to spawn but is being held back for later
+        need.hunger++;
+      }
+    }
+    for (let request of requestSpawn) {
+      const [spawner, body, name, opts] = request;
+      const err = spawner.spawnCreep(body, name, opts);
+      if (err) {
+        console.log('Error spawning', name, err);
+      }
+    }
+
+    const needs = yield select(selectNeeds);
+    // Only save name and hunger
+    yield put(updateNeeds(needs.map(({ hunger, name }) => ({
+      name,
+      hunger,
+    }))));
   });
 }
 
 createSaga(
   start,
   run,
+  commit,
 );
 
 const initialState = {
@@ -196,18 +284,21 @@ export const reducer = createReducer('Spawn', initialState, {
       pending: state.pending.slice(1),
     };
   },
-  [NEEDS](state, { payload: { needs: input, controller } }) {
+  [NEEDS](state, { payload: { needs: input, meta } }) {
     const definition = Array.isArray(input) ? input : [input];
-    const incomingNames = definition.map(n => n.name);
     const existingNeeds = state.needs
-      .filter(n => n.controller !== controller);
-    const needs = [...definition
-      .map(n => ({
+      .filter(n => n.controller !== (meta.controller || definition[0].controller));
+
+    const mergedNeeds = definition
+      .map(need => ({
         priority: 0,
-        ...n,
         hunger: 0,
-      })), ...existingNeeds]
-      .sort(sortHunger);
+        ...state.needs.find(def => def.name === need.name),
+        ...meta,
+        ...need,
+      }));
+    const needs = [...mergedNeeds, ...existingNeeds];
+
     return {
       ...state,
       needs,

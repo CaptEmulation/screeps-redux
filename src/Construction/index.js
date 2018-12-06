@@ -30,10 +30,9 @@ import createSaga from '../utils/createSaga';
 import createModule from '../utils/createModule';
 import {
   RUN,
-  FINAL,
 } from '../events';
 
-const BUILDER_COUNT = 2;
+const BUILDER_COUNT = 1;
 const SPAWN = 'BUILDER_SPAWN';
 const QUEUE = 'BUILDER_QUEUE';
 const POP = 'BUILDER_POP';
@@ -169,18 +168,6 @@ export const selectors = {
   queue: selectBuildQueue,
 };
 
-const builderBody = [MOVE, MOVE, CARRY, WORK];
-const builderOpts = { memory: { infant: true } };
-
-const earlyCreeps = range(0, BUILDER_COUNT).map(num => ({
-  name: `Builder-${num}`,
-  body: builder.mid,
-  memory: {
-    role: 'builder',
-  },
-  controller: 'Construction',
-}));
-
 export function init(store) {
   global.Construct = {
     ...mapValues(actionCreators, action => (...args) => store.dispatch({
@@ -189,9 +176,6 @@ export function init(store) {
     })),
     selectors: mapValues(selectors, selector => () => selector(store.getState())),
   };
-  earlyCreeps.forEach(creep => {
-    store.dispatch(actionCreators.spawn(creep.name));
-  });
 }
 
 function* run() {
@@ -202,8 +186,37 @@ function* run() {
   //   }
   // });
   yield takeEvery(RUN, function* onRun() {
+    const builderCount = Game.spawns['Spawn1'].room.find(FIND_MY_CONSTRUCTION_SITES).length > 0 ? 2 : 1;
     yield put(spawnActions.need({
-      needs: earlyCreeps,
+      needs: range(0, builderCount).map(num => ({
+        name: `Builder-${num}`,
+        body: ({
+          appraiser,
+          available,
+          max,
+        }) => {
+          const body = [MOVE, CARRY];
+          while (appraiser(body) < max) {
+            const workCount = body.filter(b => WORK).length;
+            if (workCount >= 8) {
+              break;
+            }
+            if (workCount % 5 === 0 && appraiser([...body, MOVE, MOVE, CARRY]) < max) {
+              body.push(MOVE, MOVE, CARRY);
+            } else if (appraiser([...body, WORK]) <= max) {
+              body.push(WORK);
+            } else {
+              break;
+            }
+          }
+          return body;
+        },
+        memory: {
+          role: 'builder',
+        },
+        controller: 'Construction',
+      })),
+      room: Game.spawns['Spawn1'].room.name,
       controller: 'Construction',
     }));
     const activeBuilders = yield select(selectActiveBuilders);
@@ -235,15 +248,16 @@ function* run() {
           //   creepBuild(target)
           // }
         } else {
-          const containerSites = creep.room.find(FIND_STRUCTURES, {
-            filter: (target) => (target.hits / target.hitsMax) < 0.5,
-          });
-          if (containerSites.length) {
-            acquireTask(creep, creepTasks.repair(), creep.pos.findClosestByRange(containerSites));
-          } else {
-            acquireTask(creep, creepTasks.upgradeController(), creep.room.controller);
-          }
+          acquireTask(creep, creepTasks.upgradeController(), creep.room.controller);
         }
+        //  else {
+        //   const containerSites = creep.room.find(FIND_STRUCTURES, {
+        //     filter: (target) => (target.hits / target.hitsMax) < 0.5,
+        //   });
+        //   if (containerSites.length) {
+        //     acquireTask(creep, creepTasks.repair(), creep.pos.findClosestByRange(containerSites));
+        //   }
+        // }
         // if (!creep.memory.upgrading && creep.room.controller.ticksToDowngrade < 6000 && creep.room.controller.level === 1) {
         //   creep.memory.upgrading = creep.room.controller.level + 1;
         // } else if (creep.memory.upgrading <= creep.room.controller.level) {
@@ -260,16 +274,8 @@ function* run() {
   });
 }
 
-function *final() {
-  yield takeEvery(FINAL, function* onFinal() {
-    // const deadBuilders = yield select(selectDeadBuilders);
-    // yield put(actionCreators.cleanBuilders(deadBuilders));
-  });
-}
-
 createSaga(
   run,
-  final,
 );
 
 const initialState = {
