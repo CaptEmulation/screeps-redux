@@ -1,10 +1,3 @@
-import range from 'lodash.range';
-import get from 'lodash.get';
-import mapValues from 'lodash.mapvalues';
-import differenceWith from 'lodash.differencewith';
-import difference from 'lodash.difference';
-import cond from 'lodash.cond';
-import intersection from 'lodash.intersection';
 import { call, put, select } from 'redux-saga/effects'
 import { createSelector } from 'reselect';
 import {
@@ -43,7 +36,7 @@ function* newRoomBehavior(creep) {
 }
 
 const SCOUT_COUNT = 3
-const earlyCreeps = range(0, SCOUT_COUNT).map(num => ({
+const earlyCreeps = _.range(0, SCOUT_COUNT).map(num => ({
   name: `Scout-${num}`,
   body: scout.early,
   memory: {
@@ -62,7 +55,7 @@ createBrood({
     const scoutFlags = Object.values(Game.flags).filter(isColor(scoutFlagColor));
     if (scoutFlags.length) {
       yield put(spawnActions.need({
-        needs: range(scoutFlags.length).map(num => ({
+        needs: _.range(scoutFlags.length).map(num => ({
           name: `Scout-${num}`,
           body: scout.early,
           memory: {
@@ -108,7 +101,7 @@ createBrood({
           //   .filter(n => !scout.memory.visited.includes(n))
           //   .map(roomName => {
           //     const roomExit = scout.room.findExitTo(roomName);
-          //     //return { pos: source.pos, range: 1 };
+          //     //return { pos: source.pos, _.range: 1 };
           //     const path = scout.pos.findClosestByRange(roomExit);
           //     return path;
           //   })

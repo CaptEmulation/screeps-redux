@@ -1,10 +1,3 @@
-import get from 'lodash.get';
-import mapValues from 'lodash.mapvalues';
-import differenceWith from 'lodash.differencewith';
-import difference from 'lodash.difference';
-import cond from 'lodash.cond';
-import intersection from 'lodash.intersection';
-import range from 'lodash.range';
 import { call, put, select, takeEvery, take } from 'redux-saga/effects'
 import { createSelector } from 'reselect';
 import { happy } from '../utils/id';
@@ -31,6 +24,14 @@ import createModule from '../utils/createModule';
 import {
   RUN,
 } from '../events';
+
+const {
+  mapValues,
+  difference,
+  intersection,
+  range,
+} = _;
+
 
 const BUILDER_COUNT = 1;
 const SPAWN = 'BUILDER_SPAWN';

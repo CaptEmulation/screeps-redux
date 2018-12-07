@@ -1,8 +1,3 @@
-import mapValues from 'lodash.mapvalues';
-import get from 'lodash.get';
-import set from 'lodash.set';
-// import store from '../store';
-
 export const api = {};
 
 export default function defineApi(keyPath, {

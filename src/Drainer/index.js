@@ -1,10 +1,3 @@
-import range from 'lodash.range';
-import get from 'lodash.get';
-import mapValues from 'lodash.mapvalues';
-import differenceWith from 'lodash.differencewith';
-import difference from 'lodash.difference';
-import cond from 'lodash.cond';
-import intersection from 'lodash.intersection';
 import { call, put, select } from 'redux-saga/effects'
 import { createSelector } from 'reselect';
 import {

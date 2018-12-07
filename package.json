@@ -28,15 +28,8 @@
     "rollup-plugin-replace": "^2.1.0"
   },
   "dependencies": {
-    "lodash.cond": "^4.5.2",
-    "lodash.difference": "^4.5.0",
     "lodash.differencewith": "^4.5.0",
-    "lodash.flow": "^3.5.0",
-    "lodash.get": "^4.4.2",
-    "lodash.intersection": "^4.4.0",
     "lodash.mapvalues": "^4.6.0",
-    "lodash.range": "^3.2.0",
-    "lodash.set": "^4.3.2",
     "redux": "^4.0.1",
     "redux-saga": "^0.16.2",
     "reselect": "^4.0.0",

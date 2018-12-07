@@ -1,5 +1,3 @@
-import range from 'lodash.range';
-import mapValues from 'lodash.mapvalues';
 import { createSelector } from 'reselect';
 import { put, select, takeEvery } from 'redux-saga/effects'
 import {
@@ -92,11 +90,11 @@ export const selectors = {
 
 export function init(store) {
   global.Map = {
-    ...mapValues(actionCreators, action => (...args) => store.dispatch({
+    ..._.mapValues(actionCreators, action => (...args) => store.dispatch({
       type: 'EXE',
       payload: action(...args),
     })),
-    selectors: mapValues(selectors, selector => () => selector(store.getState())),
+    selectors: _.mapValues(selectors, selector => () => selector(store.getState())),
   };
 }
 

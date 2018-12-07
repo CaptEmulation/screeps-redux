@@ -1,7 +1,3 @@
-import mapValues from 'lodash.mapvalues';
-import difference from 'lodash.difference';
-import differenceWith from 'lodash.differencewith';
-import flow from 'lodash.flow';
 import { createSelector } from 'reselect';
 import { call, put, select, takeEvery } from 'redux-saga/effects';
 import {

@@ -1,10 +1,3 @@
-import get from 'lodash.get';
-import mapValues from 'lodash.mapvalues';
-import differenceWith from 'lodash.differencewith';
-import difference from 'lodash.difference';
-import cond from 'lodash.cond';
-import intersection from 'lodash.intersection';
-import range from 'lodash.range';
 import { call, put, select, takeEvery } from 'redux-saga/effects'
 import { createSelector } from 'reselect';
 import { actionCreators as spawnActions } from '../Spawn';
@@ -60,12 +53,12 @@ const selectProbes = createSelector(
 const selectNeedsSpawn = createSelector(
   selectCreeps,
   selectProbes,
-  (creeps, probes) => difference(probes, Object.keys(creeps)),
+  (creeps, probes) => _.difference(probes, Object.keys(creeps)),
 );
 const selectActiveProbeNames = createSelector(
   selectCreeps,
   selectProbes,
-  (creeps, probes) => intersection(Object.keys(creeps), probes),
+  (creeps, probes) => _.intersection(Object.keys(creeps), probes),
 );
 const selectInfants = createSelector(
   selectCreeps,
@@ -119,8 +112,8 @@ const selectDeadProbs = createSelector(
   selectCreeps,
   () => Game.creeps || {},
   (probes, creepsMem, creepsGame) =>
-    intersection(
-      difference(Object.keys(creepsMem), Object.keys(creepsGame)),
+    _.intersection(
+      _.difference(Object.keys(creepsMem), Object.keys(creepsGame)),
       probes,
     ),
 );
@@ -161,11 +154,11 @@ function economyNeeds() {
 
 export function init(store) {
   global.Econ = {
-    ...mapValues(actionCreators, action => (...args) => store.dispatch({
+    ..._.mapValues(actionCreators, action => (...args) => store.dispatch({
       type: 'EXE',
       payload: action(...args),
     })),
-    selectors: mapValues(selectors, selector => () => selector(store.getState())),
+    selectors: _.mapValues(selectors, selector => () => selector(store.getState())),
   };
 }
 
@@ -315,7 +308,7 @@ function* run() {
     const currentWorkers = Object.values(Game.creeps).filter(c => c.memory && c.memory.role === 'worker');
     const currentSuppliers = Object.values(Game.creeps).filter(c => c.memory && c.memory.role === 'supply');
     yield put(spawnActions.need({
-      needs: [...range(0, sourceCount).map(num => ({
+      needs: [..._.range(0, sourceCount).map(num => ({
         name: `Worker-${num}`,
         body({
           appraiser,
@@ -338,7 +331,7 @@ function* run() {
           role: 'worker',
         },
         priority: -10 + (2 * num),
-      })), ...range(0, SUPPLY_COUNT).map(num => ({
+      })), ..._.range(0, SUPPLY_COUNT).map(num => ({
         name: `Supply-${num}`,
         body: ({
           appraiser,
@@ -479,7 +472,7 @@ createReducer('Economy', initialState, {
   [SCAN_RESULTS](state, { payload: results }) {
     return {
       ...state,
-      sources: [...differenceWith(state.sources, sources, (a, b) => a.sourceId === b.sourceId), ...sources],
+      sources: [..._.differenceWith(state.sources, sources, (a, b) => a.sourceId === b.sourceId), ...sources],
     }
   },
 });

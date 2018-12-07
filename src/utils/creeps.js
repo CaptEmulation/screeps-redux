@@ -1,4 +1,3 @@
-import difference from 'lodash.difference';
 import { createSelector } from 'reselect';
 
 export const deadCreeps = (function () {
@@ -7,7 +6,7 @@ export const deadCreeps = (function () {
   const selectDeadCreepNames = createSelector(
     selectMemoryCreeps,
     selectGameCreeps,
-    (creepsMem, creepsGame) => difference(Object.keys(creepsMem), Object.keys(creepsGame))
+    (creepsMem, creepsGame) => _.difference(Object.keys(creepsMem), Object.keys(creepsGame))
   );
   return function getDeadCreeps() {
     return selectDeadCreepNames({
