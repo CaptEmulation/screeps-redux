@@ -343,7 +343,7 @@ function* run() {
           const remaining = available - appraiser(body);
           if (remaining > 0) {
             const parts = Math.min(Math.floor(remaining / appraiser([MOVE, CARRY])), 16);
-            _._.range(0, parts).forEach(() => body.push(MOVE, CARRY));
+            _.range(0, parts).forEach(() => body.push(MOVE, CARRY));
           }
           return body;
         },

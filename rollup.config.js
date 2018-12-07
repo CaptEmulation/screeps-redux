@@ -6,7 +6,7 @@ import replace from 'rollup-plugin-replace';
 import fs from 'fs';
 import path from 'path';
 
-const ROOT = '/Users/jdean/Library/Application Support/Screeps/scripts/127_0_0_1___21025/default';
+const ROOT = '/Users/jdean/Library/Application Support/Screeps/scripts/screeps.com/default';
 
 function deploy() {
   return {
