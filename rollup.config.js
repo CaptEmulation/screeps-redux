@@ -5,22 +5,37 @@ import minify from 'rollup-plugin-babel-minify';
 import replace from 'rollup-plugin-replace';
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 
-function deploy() {
+const ROOT = (function () {
+  const platform = os.platform();
+  switch(platform) {
+    case 'darwin':
+      return 'Library/Application Support/Screeps/scripts';
+    case 'win32':
+      return 'AppData/Local/Screeps/scripts';
+    default:
+      throw new Error('Unsupported platform', platform);
+  }
+})();
+
+function deploy(host) {
   return {
     generateBundle(a, bundles, isWrite) {
       if (isWrite) {
-        console.log('deploying')
-        fs.writeFileSync('C:\\Users\\johnh\\AppData\\Local\\Screeps\\scripts\\screeps.com\\default\\main.js', bundles['main.js'].code, 'utf8');
-        // fs.writeFileSync('C:\\Users\\johnh\\AppData\\Local\\Screeps\\scripts\\127_0_0_1___21025\\default\\main.js', bundles['main.js'].code, 'utf8');
+        const mainjs = path.resolve(os.homedir(), ROOT, host, 'default/main.js');
+        console.log('Writing', mainjs);
+        fs.writeFileSync(mainjs, bundles['main.js'].code, 'utf8');
         const map = `module.exports.d=${bundles['main.js'].map}`;
-        // fs.writeFileSync('C:\\Users\\johnh\\AppData\\Local\\Screeps\\scripts\\127_0_0_1___21025\\default\\main.js.map', map, 'utf8');
+        fs.writeFileSync(path.resolve(os.homedir(), ROOT, host, 'default/main.js.map'), map, 'utf8');
       }
     }
   }
 }
 
-export default {
+export default ({
+  host = '127_0_0_1___21025',
+}) => ({
   input: 'src/main.js',
   output: {
     file: 'main.js',
@@ -40,6 +55,6 @@ export default {
     }),
     commonjs(),
     // minify(),
-    deploy(),
+    deploy(host),
   ]
-}
+})

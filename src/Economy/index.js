@@ -244,8 +244,15 @@ export function moveToEnergy(creep, destinations) {
 export function dropOffEnergy(creep, destinations) {
   destinations = destinations || findEnergyDropOffs(creep.room);
   const needsEnergy = destinations.filter(structure => structure.energy < structure.energyCapacity);
-  const needsStorage = destinations.filter(structure => structure.store && structure.store[RESOURCE_ENERGY] < structure.storeCapacity);
-  if(needsEnergy.length > 0) {
+  const needsStorage = destinations.filter(structure => {
+    const isRoom = structure.store && _.sum(structure.store) < structure.storeCapacity;
+    // Only put minerals in storage
+    if (isRoom && creep.carry[RESOURCE_ENERGY] < _.sum(creep.carry)) {
+      return isRoom && structure.structureType === STRUCTURE_STORAGE
+    }
+    return isRoom;
+  });
+  if(creep.carry[RESOURCE_ENERGY] && needsEnergy.length > 0) {
     const target = creep.pos.findClosestByRange(needsEnergy);
     let amount;
     if((target.energyCapacity - target.energy) > creep.carry[RESOURCE_ENERGY]) {
@@ -256,25 +263,19 @@ export function dropOffEnergy(creep, destinations) {
     acquireTask(creep, creepTasks.transfer(RESOURCE_ENERGY, amount), target);
     return true;
   } else if(needsStorage.length > 0) {
-    const target = _.min(needsStorage, s => s.store[RESOURCE_ENERGY])
+    const target = _.min(needsStorage, s => _.sum(s.store));
     let amount;
     const totalInStore = _.sum(target.store);
-    if((target.storeCapacity - totalInStore) > creep.carry[RESOURCE_ENERGY]) {
-      amount = creep.carry[RESOURCE_ENERGY]
+    const resource = Object.entries(creep.carry).filter(([type, amount]) => amount > 0)[0][0];
+    if((target.storeCapacity - totalInStore) > creep.carry[resource]) {
+      amount = creep.carry[resource]
     } else {
       amount = target.storeCapacity - totalInStore;
     }
-    // acquireTask(creep, creepTasks.transfer(RESOURCE_ENERGY, amount), target);
-    // First transfer anything not energy...
-    const types = Object.values(creep.carry).filter(t => t !== RESOURCE_ENERGY && creep.carry[t] > 0);
-    if (types.length) {
-      acquireTask(creep, creepTasks.transfer(types[0], creep.carry[types]), target);
-    } else {
-      acquireTask(creep, creepTasks.transfer(RESOURCE_ENERGY, amount), target);
-    }
+    acquireTask(creep, creepTasks.transfer(resource, amount), target);
 
     return true;
-  } else {
+  } else {o
     return false;
   }
 }
@@ -377,7 +378,7 @@ function* run() {
 
     for (let i = 0; i < suppliers.length; i++) {
       const creep = suppliers[i];
-      if (creep.carryCapacity - _.sum(creep.carry) > (0.95 * creep.carryCapacity)) {
+      if (!(creep.carry[RESOURCE_ENERGY] < _.sum(creep.carry)) && creep.carryCapacity - _.sum(creep.carry) > (0.95 * creep.carryCapacity)) {
         if (creep.memory.pickupPos) {
           const { x, y, roomName } = creep.memory.pickupPos;
           const pos = new RoomPosition(x, y, roomName);
@@ -394,12 +395,13 @@ function* run() {
           if (creep.room.memory.extensions.available < (0.9 * creep.room.memory.extensions.max)) {
             const tombstones = creep.room.find(FIND_TOMBSTONES, {
               filter(target) {
-                return target.store[RESOURCE_ENERGY] > 0;
+                return _.sum(target.store) > 0;
               }
             });
             if (tombstones.length) {
               const target = creep.pos.findClosestByRange(tombstones);
-              const pickupErr = acquireTask(creep, creepTasks.withdraw(RESOURCE_ENERGY), target, creep.carryCapacity - creep.carry);
+              const resource = _.max(Object.entries(target.store), ([type, amount]) => amount)[0];
+              const pickupErr = acquireTask(creep, creepTasks.withdraw(resource), target, creep.carryCapacity - creep.carry);
             } else {
               const sources = creep.room.find(FIND_MY_STRUCTURES, {
                 filter(target) {
