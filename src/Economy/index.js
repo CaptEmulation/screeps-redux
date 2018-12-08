@@ -465,7 +465,9 @@ function* run() {
         const destinations = findEnergyDropOffs(creep.room);
         if (!dropOffEnergy(creep, destinations)) {
           if (creep.memory.pickupPos) {
-            creep.routeTo(creep.memory.pickupPos);
+            const { x, y, roomName } = creep.memory.pickupPos;
+            const pos = new RoomPosition(x, y, roomName);
+            creep.routeTo(pos);
           } else {
             moveToEnergy(creep, destinations);
           }

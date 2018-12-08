@@ -192,7 +192,7 @@ function* run() {
   // });
   yield takeEvery(RUN, function* onRun() {
     if (!lastNeeds || Game.time % 8 === 0) {
-      const builderCount = Game.spawns['Spawn1'].room.find(FIND_MY_CONSTRUCTION_SITES).length > 0 ? 2 : 1;
+      const builderCount = Game.spawns['Spawn1'].room.find(FIND_MY_CONSTRUCTION_SITES).length > 0 ? 5 : 1;
       lastNeeds = range(0, builderCount).map(num => ({
         name: `Builder-${num}`,
         body: ({
@@ -218,7 +218,7 @@ function* run() {
         },
       }));
     }
-    
+
     yield put(spawnActions.need({
       needs: lastNeeds,
       room: Game.spawns['Spawn1'].room.name,

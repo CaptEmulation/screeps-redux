@@ -121,6 +121,10 @@ createBrood({
         }
       }
       if (creep.memory.fixing.id) {
+        if (!creep.memory.fixing.pos[0]) {
+          creep.memory.fixing = {};
+          return;
+        }
         const target = Game.getObjectById(creep.memory.fixing.id);
         if (target.hits === target.hitsMax) {
           creep.memory.fixing = {};
