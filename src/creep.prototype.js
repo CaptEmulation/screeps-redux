@@ -430,7 +430,28 @@ export function moveTo({
   ensurePath,
 }) {
   const destination = normalizePos(target);
-  const pathOptions = {};
+  const pathOptions = {
+    creep,
+    target,
+    range,
+    movingTarget,
+    stuckValue,
+    opts: moveOptions,
+    returnData,
+    offRoad,
+    route,
+    useFindRoute,
+    allowHostile,
+    ignoreStructures,
+    freshMatrix,
+    obstacles,
+    roomCallback,
+    ignoreCreeps,
+    maxOps,
+    maxRooms,
+    ignoreRoads,
+    ensurePath,
+  };
   creep.memory.moving = true;
   if (creep.fatigue > 0) {
     circle(creep.pos, "aqua", .3);
