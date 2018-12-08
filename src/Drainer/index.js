@@ -17,9 +17,6 @@ import {
   exits as roomExits,
 } from '../utils/room';
 import {
-  moveTo,
-} from '../utils/creeps';
-import {
   isColor,
   scoutFlag as scoutFlagColor,
 } from '../utils/colors';

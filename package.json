@@ -30,6 +30,7 @@
   "dependencies": {
     "lodash.differencewith": "^4.5.0",
     "lodash.mapvalues": "^4.6.0",
+    "lodash.uniqby": "^4.7.0",
     "redux": "^4.0.1",
     "redux-saga": "^0.16.2",
     "reselect": "^4.0.0",

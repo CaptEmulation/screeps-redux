@@ -25,6 +25,11 @@ export function init(store) {
 }
 
 const actionCreators = {
+  scan() {
+    return {
+      type: SCAN,
+    };
+  },
   update() {
     return {
       type: UPDATE,
@@ -51,6 +56,7 @@ function *executeAndCommit() {
 
 function* loop() {
   yield takeEvery(LOOP, function* () {
+    yield put(actionCreators.scan());
     yield put(actionCreators.update());
     yield put(actionCreators.run());
     yield put(actionCreators.commit());

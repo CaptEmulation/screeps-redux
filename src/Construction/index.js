@@ -6,7 +6,6 @@ import {
   builder,
 } from '../Creeps/builds';
 import {
-  moveTo,
   acquireTask,
   findClosestEnergy,
   tasks as creepTasks,
@@ -24,6 +23,9 @@ import createModule from '../utils/createModule';
 import {
   RUN,
 } from '../events';
+import {
+  target as targetMatcher,
+} from '../utils/matchers'
 
 const {
   mapValues,
@@ -33,7 +35,7 @@ const {
 } = _;
 
 
-const BUILDER_COUNT = 1;
+const BUILDER_COUNT = 3;
 const SPAWN = 'BUILDER_SPAWN';
 const QUEUE = 'BUILDER_QUEUE';
 const POP = 'BUILDER_POP';
@@ -179,6 +181,8 @@ export function init(store) {
   };
 }
 
+let lastNeeds;
+
 function* run() {
   // yield takeEvery('INIT', function* onRun() {
   //   for(let i = 0; i < earlyCreeps.length; i++) {
@@ -187,9 +191,9 @@ function* run() {
   //   }
   // });
   yield takeEvery(RUN, function* onRun() {
-    const builderCount = Game.spawns['Spawn1'].room.find(FIND_MY_CONSTRUCTION_SITES).length > 0 ? 2 : 1;
-    yield put(spawnActions.need({
-      needs: range(0, builderCount).map(num => ({
+    if (!lastNeeds || Game.time % 8 === 0) {
+      const builderCount = Game.spawns['Spawn1'].room.find(FIND_MY_CONSTRUCTION_SITES).length > 0 ? 2 : 1;
+      lastNeeds = range(0, builderCount).map(num => ({
         name: `Builder-${num}`,
         body: ({
           appraiser,
@@ -212,12 +216,15 @@ function* run() {
           }
           return body;
         },
-        memory: {
-          role: 'builder',
-        },
-        controller: 'Construction',
-      })),
+      }));
+    }
+    
+    yield put(spawnActions.need({
+      needs: lastNeeds,
       room: Game.spawns['Spawn1'].room.name,
+      memory: {
+        role: 'builder',
+      },
       controller: 'Construction',
     }));
     const activeBuilders = yield select(selectActiveBuilders);
@@ -240,7 +247,14 @@ function* run() {
         const targets = creep.room.find(FIND_CONSTRUCTION_SITES);
         if(targets.length) {
           const target = findWorkSites(creep.room);
-          acquireTask(creep, creepTasks.build(), target);
+          if (creep.pos.getRangeTo(target) > 3) {
+            creep.routeTo(target, {
+              range: 3,
+            });
+          } else {
+            creep.build(target);
+            creep.getOutOfTheWay(target, 3);
+          }
           // console.log(target)
           // const creepBuild = creepTasks.build();
           // if (creep.pos.getRangeTo(target) > 3) {
@@ -249,7 +263,14 @@ function* run() {
           //   creepBuild(target)
           // }
         } else {
-          acquireTask(creep, creepTasks.upgradeController(), creep.room.controller);
+          if (creep.pos.getRangeTo(creep.room.controller) > 3) {
+            creep.routeTo(creep.room.controller, {
+              range: 3,
+            });
+          } else {
+            creep.upgradeController(creep.room.controller);
+            creep.getOutOfTheWay(creep.room.controller, 3);
+          }
         }
         //  else {
         //   const containerSites = creep.room.find(FIND_STRUCTURES, {
@@ -269,7 +290,8 @@ function* run() {
         //
         // }
       } else {
-        findClosestEnergy(creep, false);
+        const pickupDroppedEnergy = creep.room.find(FIND_MY_STRUCTURES, { filter: targetMatcher.isMyContainer }).length ? false : true;
+        findClosestEnergy(creep, pickupDroppedEnergy);
       }
     });
   });

@@ -144,7 +144,7 @@ function extensionEnergyStatus(room) {
       return target.structureType === STRUCTURE_EXTENSION;
     },
   });
-  const max = extensionsMax[room.controller.level - 1] * extensions.length;
+  const max = room.controller && (extensionsMax[room.controller.level - 1] * extensions.length) || 0;
   const available = _.sum(extensions.map(e => e.energy));
   return {
     max,
@@ -164,6 +164,7 @@ function* run() {
 
 function* commit() {
   return yield takeEvery(COMMIT, function* () {
+    const now = Game.cpu.getUsed();
     const spawnNeeds = yield select(selectSpawnNeeds);
     const spawnersInRoom = {};
     let requestSpawn = [];
@@ -192,42 +193,43 @@ function* commit() {
           }),
         };
       }
-      console.log(JSON.stringify(roomInfo.extensions))
       if (roomInfo.spawners.length) {
         const spawner = roomInfo.spawners.shift();
-        let body;
-        if (_.isFunction(need.body)) {
-          body = need.body({
-            appraiser: calcCreepCost,
-            available: spawner.energy + roomInfo.extensions.available,
-            max: 300 + roomInfo.extensions.max,
-            extensions: {
-              ...roomInfo.extensions,
-            },
-            spawner: {
-              max: 300,
-              available: spawner.energy,
-            },
-          });
-        } else {
-          body = need.body;
+        if (!spawner.spawning) {
+          let body;
+          if (_.isFunction(need.body)) {
+            body = need.body({
+              appraiser: calcCreepCost,
+              available: spawner.energy + roomInfo.extensions.available,
+              max: 300 + roomInfo.extensions.max,
+              extensions: {
+                ...roomInfo.extensions,
+              },
+              spawner: {
+                max: 300,
+                available: spawner.energy,
+              },
+            });
+          } else {
+            body = need.body;
+          }
+          room.memory.extensions = {
+            ...roomInfo.extensions,
+          };
+          const cost = calcCreepCost(body);
+          if (cost <= (roomInfo.extensions.available + spawner.energy)) {
+            requestSpawn.push([spawner, body, name, { memory }]);
+          }
+          // Earmark energy for use on this creep if cost is possible
+          if (cost <= (roomInfo.extensions.max + spawner.energy)) {
+            const extensionEnergy = cost - spawner.energy;
+            roomInfo.extensions.available -= extensionEnergy;
+          }
+        } else if (Game.time % 10 === 0) {
+          // This creep wants to spawn but is being held back for later
+          need.hunger++;
         }
-        room.memory.extensions = {
-          ...roomInfo.extensions,
-        };
-        const cost = calcCreepCost(body);
-        if (cost <= (roomInfo.extensions.available + spawner.energy)) {
-          requestSpawn.push([spawner, body, name, { memory }]);
         }
-        // Earmark energy for use on this creep if cost is possible
-        if (cost <= (roomInfo.extensions.max + spawner.energy)) {
-          const extensionEnergy = cost - spawner.energy;
-          roomInfo.extensions.available -= extensionEnergy;
-        }
-      } else if (Game.time % 5 === 0) {
-        // This creep wants to spawn but is being held back for later
-        need.hunger++;
-      }
     }
     for (let request of requestSpawn) {
       const [spawner, body, name, opts] = request;
@@ -243,6 +245,7 @@ function* commit() {
       name,
       hunger,
     }))));
+    if (Game.time % 25 === 0) console.log('Swpawn RUN', Game.cpu.getUsed() - now);
   });
 }
 

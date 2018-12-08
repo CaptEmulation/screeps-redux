@@ -16,24 +16,23 @@ export const deadCreeps = (function () {
   }
 })();
 
-export function moveTo(creep, target, opts = {}) {
-  // console.log(`${creep.name}.moveTo(${target})`)
-  const mOpts = {
-    reusePath: 10,
-    ...opts,
-  };
-  const cachePathErr = creep.moveTo(target, {
-    ...mOpts,
-    noPathFinding: true,
-  });
-  if (cachePathErr === ERR_NOT_FOUND) {
-    return creep.moveTo(target, {
-      ...mOpts,
-      visualizePathStyle: { stroke: '#ffffff' }
-    });
-  }
-  return null;
-}
+
+//   const mOpts = {
+//     reusePath: 10,
+//     ...opts,
+//   };
+//   const cachePathErr = creep.moveTo(destination, {
+//     ...mOpts,
+//     noPathFinding: true,
+//   });
+//   if (cachePathErr === ERR_NOT_FOUND) {
+//     return creep.moveTo(destination, {
+//       ...mOpts,
+//       visualizePathStyle: { stroke: '#ffffff' }
+//     });
+//   }
+//   return null;
+
 
 function applyToCreep(task) {
   return (...args) => (creep, target) => {
@@ -90,7 +89,7 @@ export function findClosestEnergy(creep, dropped = true) {
 export function acquireTask(creep, task, target) {
   const result = task(creep, target);
   if (result === ERR_NOT_IN_RANGE) {
-    moveTo(creep, target);
+    creep.routeTo(target);
   }
   return result;
 }

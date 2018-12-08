@@ -17,9 +17,6 @@ import {
   exits as roomExits,
 } from '../utils/room';
 import {
-  moveTo,
-} from '../utils/creeps';
-import {
   isColor,
   scoutFlag as scoutFlagColor,
 } from '../utils/colors';
@@ -89,7 +86,7 @@ createBrood({
             scout.memory.flag = unscoutedFlags[0].name;
           }
         } else {
-          moveTo(scout, Game.flags[scout.memory.flag]);
+          scout.routeTo(Game.flags[scout.memory.flag]);
         }
         if (scout.memory.lastRoomIn && scout.memory.lastRoomIn !== scout.room.name) {
           console.log('entered room', scout.name, scout.room.name);

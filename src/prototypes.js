@@ -1,3 +1,5 @@
+import './creep.prototype';
+
 // From bencbartlett/creep-tasks
 
 // RoomObject prototypes ===============================================================================================

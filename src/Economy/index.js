@@ -1,26 +1,30 @@
+import uniqBy from 'lodash.uniqby';
 import { call, put, select, takeEvery } from 'redux-saga/effects'
 import { createSelector } from 'reselect';
 import { actionCreators as spawnActions } from '../Spawn';
 import { happy } from '../utils/id';
 import {
-  worker,
-  supply,
+  worker as workerBuild,
+  supply as supplyBuild,
 } from '../Creeps/builds';
 import createReducer from '../utils/createReducer';
 import createSaga from '../utils/createSaga';
 import createModule from '../utils/createModule';
 import {
-  moveTo,
   tasks as creepTasks,
   acquireTask,
 } from '../utils/creeps';
 import {
   walkBox,
+  creepsByRoom,
 } from '../utils/scan';
 import {
   RUN,
   SCAN,
 } from '../events';
+import {
+  target as targetMatcher,
+} from '../utils/matchers';
 
 const SUPPLY_COUNT = 3;
 const SCAN_RESULTS = 'ECONOMY_SCAN_RESULTS';
@@ -198,10 +202,11 @@ function assignMines(creeps, max = 1) {
   // const available = totalOpen > 2 ? 2 : totalOpen;
   // const taken = Object.values(Game.creeps).filter(creep => creep.memory.mine === source.id).length;
   unassignedCreeps.forEach(creep => {
-    const source = findRoomAtSources.find(({ source, open }) => {
+    const thing = findRoomAtSources.find(({ source, open }) => {
       const thisSourceAssignedTo = assignedSources.filter(s => s === source.id);
       return thisSourceAssignedTo.length < max;
-    }).source;
+    });
+    const source = thing && thing.source;
 
     if (source) {
       creep.memory.mine = source.id;
@@ -231,7 +236,7 @@ export function findEnergyDropOffs(room) {
 export function moveToEnergy(creep, destinations) {
   destinations = destinations || findEnergyDropOffs(creep.room);
   const target = creep.pos.findClosestByRange(destinations);
-  moveTo(creep, target)
+  return creep.routeTo(target);
 }
 
 export function dropOffEnergy(creep, destinations) {
@@ -273,87 +278,93 @@ export function dropOffEnergy(creep, destinations) {
   }
 }
 
-function *scan() {
-  yield takeEvery(SCAN, function* () {
-    const sources = findKnownSources();
-    const rooms = _.uniqBy(sources, s => s.room.roomName);
-    const result = sources.map(({ id: sourceId}) => ({ sourceId }));
-    rooms.forEach((room) => {
-      const containers = room.find(FIND_MY_STRUCTURES, {
-        filter: (target) => target.structureType === STRUCTURE_CONTAINER,
-      });
-      room.memory.sources = mapSpots(sources).map(data => {
-        data.source = data.source.id;
-        // Find nearby containers for outgoing storage
-        const closeContainers = containers.filter(containers => source.pos.getRangeTo(container) <= 2);
-        if (closeContainers) {
-          data.containers = closeContainers.map(({
-            id,
-            pos,
-          }) => ({
-            id,
-            pos,
-          }));
-        }
-        return data;
-      });
+function locateMiningThings() {
+  const sources = findKnownSources();
+  const rooms = uniqBy(sources, (a) => a.room.roomName);
+  const result = sources.map(({ id: sourceId}) => ({ sourceId }));
+  rooms.forEach((room) => {
+    const containers = room.find(FIND_MY_STRUCTURES, {
+      filter: (target) => target.structureType === STRUCTURE_CONTAINER,
+    });
+    room.memory.sources = mapSpots(sources).map(data => {
+      data.source = data.source.id;
+      // Find nearby containers for outgoing storage
+      const closeContainers = containers.filter(containers => source.pos.getRangeTo(container) <= 2);
+      if (closeContainers) {
+        data.containers = closeContainers.map(({
+          id,
+          pos,
+        }) => ({
+          id,
+          pos,
+        }));
+      }
+      return data;
     });
   });
 }
 
+function *scan() {
+  yield takeEvery(SCAN, function* () {
+    if (Game.time % 50) {
+      // locateMiningThings();
+    }
+  });
+}
+
+const DEFAULT_WORKER_PRIORITY = -50;
+const DEFAULT_SUPPLY_PRIORITY = -40;
+
+let lastNeeds;
+
 function* run() {
   yield takeEvery(RUN, function* onRun() {
+    const now = Game.cpu.getUsed();
     // const sourceCount = mapSpots(findKnownSources()).reduce((sum, curr) => sum + (curr.open.length > 2 ? 2 : curr.open.length), 0);
     const sourceCount = findKnownSources().length;
     const currentWorkers = Object.values(Game.creeps).filter(c => c.memory && c.memory.role === 'worker');
     const currentSuppliers = Object.values(Game.creeps).filter(c => c.memory && c.memory.role === 'supply');
+    const roomInfos = creepsByRoom();
+    if (!lastNeeds || Game.time % 8 === 0) {
+      lastNeeds = roomInfos.reduce((n, { room, creeps }) => {
+        if (room.find(FIND_MY_STRUCTURES, {
+          filter: targetMatcher.isSpawn,
+        })) {
+          let workerPriority = DEFAULT_SUPPLY_PRIORITY;
+          let supplyPriority = DEFAULT_SUPPLY_PRIORITY;
+          let supplyCount = room.controller.level < 3 ? 5 : 3;
+          if (!(creeps.worker && creeps.worker.length) && !(creeps.supply && creeps.supply.length)) {
+            workerPriority *= 2;
+          } else if (!(creeps.supply && creeps.supply.length)) {
+            supplyPriority *= 2;
+          }
+          const sourceCount = room.find(FIND_SOURCES).length;
+          n.push(..._.range(0, sourceCount).map(num => ({
+            name: `Worker-${room.name}-${num}`,
+            body: workerBuild.default,
+            memory: {
+              role: 'worker',
+              home: room.name,
+            },
+            priority: workerPriority,
+            room: room.name,
+          })), ..._.range(0, supplyCount).map(num => ({
+            name: `Supply-${room.name}-${num}`,
+            body: supplyBuild.default,
+            memory: {
+              role: 'supply',
+              home: room.name,
+            },
+            priority: supplyPriority,
+            room: room.name,
+          })));
+        }
+        return n;
+      }, []);
+    }
+
     yield put(spawnActions.need({
-      needs: [..._.range(0, sourceCount).map(num => ({
-        name: `Worker-${num}`,
-        body({
-          appraiser,
-          available,
-          max,
-        }) {
-          const fullBody = [MOVE, MOVE, MOVE, WORK, WORK, WORK, WORK, WORK];
-          const fullCost = appraiser(fullBody);
-          if (fullCost < available) {
-            return fullBody;
-          }
-          if ((fullCost - (BODYPART_COST[MOVE] + 2 * BODYPART_COST[WORK])) < available) {
-            fullBody.shift();
-            fullBody.pop();
-            return fullBody;
-          }
-          return [MOVE, MOVE, WORK, WORK];
-        },
-        memory: {
-          role: 'worker',
-        },
-        priority: -10 + (2 * num),
-      })), ..._.range(0, SUPPLY_COUNT).map(num => ({
-        name: `Supply-${num}`,
-        body: ({
-          appraiser,
-          available,
-          max,
-          spawner,
-          extensions,
-        }) => {
-          const body = [MOVE, MOVE, CARRY, CARRY];
-          const remaining = available - appraiser(body);
-          if (remaining > 0) {
-            const parts = Math.min(Math.floor(remaining / appraiser([MOVE, CARRY])), 16);
-            _.range(0, parts).forEach(() => body.push(MOVE, CARRY));
-          }
-          return body;
-        },
-        memory: {
-          role: 'supply',
-        },
-        priority: -9 + (2 * num),
-      }))],
-      room: Game.spawns['Spawn1'].room.name,
+      needs: lastNeeds,
       controller: 'Economy',
     }));
 
@@ -378,13 +389,31 @@ function* run() {
           if (pos.getRangeTo(creep) === 1
             || !pos.lookFor(LOOK_ENERGY).find(target => target.amount > (creep.carryCapacity - creep.carry[RESOURCE_ENERGY]) / 2)
           ) {
-            const pickupErr = acquireTask(creep, creepTasks.pickup(RESOURCE_ENERGY), _.max(pos.lookFor(LOOK_ENERGY)));
-            delete creep.memory.pickupPos;
+            const pickupErr = acquireTask(creep, creepTasks.pickup(RESOURCE_ENERGY), _.max(pos.lookFor(LOOK_ENERGY), r => r.amount));
+            if (pickupErr) {
+              delete creep.memory.pickupPos;
+            }
+            continue;
           } else {
-            moveTo(creep, pos);
+            creep.routeTo(pos);
+            continue;
           }
         }
         if (!creep.memory.pickupPos) {
+          const creepsEnrouteToPickup = Object.values(Game.creeps)
+            .filter(c => c.memory && c.memory.pickupPos);
+          const droppedEnergy = creep.room.find(FIND_DROPPED_RESOURCES, {
+            filter(resource) {
+              return !creepsEnrouteToPickup.find(c =>
+                  c.memory
+                  && c.memory.pickupPos
+                  && c.memory.pickupPos.x === resource.pos.x
+                  && c.memory.pickupPos.y === resource.pos.y
+                  && c.memory.pickupPos.roomName === resource.pos.roomName
+                  && (resource.amount - (c.carryCapacity - c.carry[RESOURCE_ENERGY])) > (creep.carryCapacity - creep.carry[RESOURCE_ENERGY])
+                && resource.amount > (creep.carryCapacity - creep.carry[RESOURCE_ENERGY]))
+            }
+          });
           if (creep.room.memory.extensions.available < (0.9 * creep.room.memory.extensions.max)) {
             const tombstones = creep.room.find(FIND_TOMBSTONES, {
               filter(target) {
@@ -404,43 +433,31 @@ function* run() {
                 },
               });
               if (sources.length) {
-                const target = creep.pos.findClosestByRange(sources);
-                const pickupErr = acquireTask(creep, creepTasks.withdraw(RESOURCE_ENERGY), target, creep.carryCapacity - creep.carry);
+                const target = creep.pos.findClosestByRange([...sources, ...droppedEnergy]);
+                if (target instanceof Resource) {
+                  const pickupErr = acquireTask(creep, creepTasks.pickup(RESOURCE_ENERGY), target, creep.carryCapacity - creep.carry);
+                } else {
+                  const pickupErr = acquireTask(creep, creepTasks.withdraw(RESOURCE_ENERGY), target, creep.carryCapacity - creep.carry);
+                }
+
               }
             }
-          } else {
-            const creepsEnrouteToPickup = Object.values(Game.creeps)
-              .filter(c => c.memory && c.memory.pickupPos);
-            const droppedEnergy = creep.room.find(FIND_DROPPED_RESOURCES, {
-              filter(resource) {
-                return !creepsEnrouteToPickup.find(c =>
-                    c.memory
-                    && c.memory.pickupPos
-                    && c.memory.pickupPos.x === resource.pos.x
-                    && c.memory.pickupPos.y === resource.pos.y
-                    && c.memory.pickupPos.roomName === resource.pos.roomName
-                    && (resource.amount - (c.carryCapacity - c.carry[RESOURCE_ENERGY])) > (creep.carryCapacity - creep.carry[RESOURCE_ENERGY])
-                  && resource.amount > (creep.carryCapacity - creep.carry[RESOURCE_ENERGY]))
+          } else if (droppedEnergy && droppedEnergy.length) {
+            const closestEnergy = droppedEnergy.sort((a, b) => creep.pos.getRangeTo(a) - creep.pos.getRangeTo(b));
+            const mostEnergy = droppedEnergy.reduce((memo, curr) => {
+              if (!memo
+                || curr.amount > memo.amount) {
+                return curr;
               }
+              return memo
             });
-
-            if (droppedEnergy && droppedEnergy.length) {
-              const closestEnergy = droppedEnergy.sort((a, b) => creep.pos.getRangeTo(a) - creep.pos.getRangeTo(b));
-              const mostEnergy = droppedEnergy.reduce((memo, curr) => {
-                if (!memo
-                  || curr.amount > memo.amount) {
-                  return curr;
-                }
-                return memo
-              });
-              let pickUpEnergy = closestEnergy[0].pos.getRangeTo(creep) < 5 ? closestEnergy[0] : mostEnergy;
-              const pickupErr = acquireTask(creep, creepTasks.pickup(RESOURCE_ENERGY), pickUpEnergy);
-              if (pickupErr === ERR_NOT_IN_RANGE) {
-                creep.memory.pickupPos = pickUpEnergy.pos;
-              } else if (!pickupErr) {
-                creep.say(happy(2));
-                delete creep.memory.pickupPos;
-              }
+            let pickUpEnergy = closestEnergy[0].pos.getRangeTo(creep) < 5 ? closestEnergy[0] : mostEnergy;
+            const pickupErr = acquireTask(creep, creepTasks.pickup(RESOURCE_ENERGY), pickUpEnergy);
+            if (pickupErr === ERR_NOT_IN_RANGE) {
+              creep.memory.pickupPos = pickUpEnergy.pos;
+            } else if (!pickupErr) {
+              creep.say(happy(2));
+              delete creep.memory.pickupPos;
             }
           }
         }
@@ -448,13 +465,14 @@ function* run() {
         const destinations = findEnergyDropOffs(creep.room);
         if (!dropOffEnergy(creep, destinations)) {
           if (creep.memory.pickupPos) {
-            moveTo(creep, creep.memory.pickupPos);
+            creep.routeTo(creep.memory.pickupPos);
           } else {
             moveToEnergy(creep, destinations);
           }
         }
       }
     }
+    if (Game.time % 25 === 0) console.log('Econ RUN', Game.cpu.getUsed() - now);
   });
 }
 

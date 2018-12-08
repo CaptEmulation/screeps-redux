@@ -16,20 +16,24 @@ import {
 import {
   acquireTask,
   tasks as creepTasks,
-  moveTo,
   findClosestEnergy,
 } from '../utils/creeps';
 import findPath from '../utils/findPath';
+import {
+  walkBox
+} from '../utils/scan';
 
 const UPGRADER_COUNT = 1;
+
+let lastNeeds;
 
 createBrood({
   role: 'Fixer',
   * directCreeps({
     selectors,
   }) {
-    yield put(spawnActions.need({
-      needs: _.range(0, UPGRADER_COUNT).map(num => ({
+    if (!lastNeeds || Game.time & 8 === 0) {
+      lastNeeds = _.range(0, UPGRADER_COUNT).map(num => ({
         name: `Fixer-${num}`,
         body: ({
           appraiser,
@@ -52,7 +56,10 @@ createBrood({
           }
           return body;
         },
-      })),
+      }))
+    }
+    yield put(spawnActions.need({
+      needs: lastNeeds,
       memory: {
         role: 'Fixer',
         fixing: {},
@@ -66,7 +73,7 @@ createBrood({
 
     const activeFixers = yield select(selectors.alive);
     activeFixers.forEach(creep => {
-      if (creep.memory.fixing.id && creep.carry.energy === 0) {
+      if (!creep.memory.fixing || creep.memory.fixing.id && creep.carry.energy === 0) {
         creep.memory.fixing = {};
         creep.say('🔄 harvest');
       }
@@ -102,14 +109,14 @@ createBrood({
           const mine = creep.pos.findClosestByRange(notWallsToRepair);
           _.remove(notWallsToRepair, mine);
           creep.memory.fixing.id = mine.id;
-          creep.memory.fixing.pos = mine.pos;
+          creep.memory.fixing.pos = [mine.pos.x, mine.pos.y, mine.pos.roomName];
           creep.say('🚧 fix');
         } else if (wallsToRepair && wallsToRepair.length) {
           // find weakest wall
           const mine = _.head(wallsToRepair.sort((a, b) => a.hits - b.hits));
           _.remove(wallsToRepair, mine);
           creep.memory.fixing.id = mine.id;
-          creep.memory.fixing.pos = mine.pos;
+          creep.memory.fixing.pos = [mine.pos.x, mine.pos.y, mine.pos.roomName];
           creep.say('🏰 fix');
         }
       }
@@ -117,8 +124,13 @@ createBrood({
         const target = Game.getObjectById(creep.memory.fixing.id);
         if (target.hits === target.hitsMax) {
           creep.memory.fixing = {};
+        } else if (creep.pos.getRangeTo(new RoomPosition(...creep.memory.fixing.pos)) > 3) {
+          creep.routeTo(target, {
+            range: 3,
+          });
         } else {
-          acquireTask(creep, creepTasks.repair(), target);
+          creep.repair(target);
+          creep.getOutOfTheWay(target, 3);
         }
       } else {
         findClosestEnergy(creep, false);
