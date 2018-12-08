@@ -8,8 +8,26 @@ import createSaga from '../utils/createSaga';
 import createApi from '../utils/createApi';
 import createModule from '../utils/createModule';
 import {
+  START,
+  UPDATE,
   RUN,
+  COMMIT.
 } from '../events';
+
+/*
+ * These are default actions provided by being in a brood
+ */
+const defaultActions = [
+  'ENABLE',
+  'DISABLE',
+  'START',
+  'UPDATE',
+  'RUN',
+  'COMMIT',
+].reduce((actions, name, index) => {
+  actions[name] = index;
+  return actions;
+}, {});
 
 export default function broodFactory({
   role,
@@ -20,7 +38,8 @@ export default function broodFactory({
   reducerHandler = () => ({}),
   initialState = {},
 } = {}) {
-  const allActions = ['enable', 'disable'].concat(actions);
+  const allActions = Object.keys(defaultActions).map(a => a.toLowerCase()).concat(actions);
+
   const TYPE = role.toUpperCase();
   const ACTIONS = allActions.map(camelCaseToDash)
   const ACTION_TYPES = ACTIONS.map(curr => `${TYPE}_${curr}`);
@@ -56,19 +75,32 @@ export default function broodFactory({
   }
 
   const broodMember = `Creeps${role}`;
+  createReducer(function broodMetaReducer(state, { type }) {
+    switch(type) {
+      case UPDATE: {
+        return {
+          ...state,
+          brood: {
+            ...state.brood,
+
+          },
+        }
+      }
+    }
+  });
   createReducer(broodMember, {
     ...initialState,
     enabled,
   }, {
     // ENABLE
-    [ACTIONS[0]](state) {
+    [defaultActions.ENABLE](state) {
       return {
         ...state,
         enabled: true,
       };
     },
     // DISABLE
-    [ACTIONS[1]](state) {
+    [defaultActions.DISABLE](state) {
       return {
         ...state,
         enabled: false,

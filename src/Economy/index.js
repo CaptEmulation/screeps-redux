@@ -414,6 +414,7 @@ function* run() {
                 && resource.amount > (creep.carryCapacity - creep.carry[RESOURCE_ENERGY]))
             }
           });
+          let busyRefillingSpawners = false;
           if (creep.room.memory.extensions.available < (0.9 * creep.room.memory.extensions.max)) {
             const tombstones = creep.room.find(FIND_TOMBSTONES, {
               filter(target) {
@@ -425,7 +426,7 @@ function* run() {
               const resource = _.max(Object.entries(target.store), ([type, amount]) => amount)[0];
               const pickupErr = acquireTask(creep, creepTasks.withdraw(resource), target, creep.carryCapacity - creep.carry);
             } else {
-              const sources = creep.room.find(FIND_MY_STRUCTURES, {
+              const sources = creep.room.find(FIND_STRUCTURES, {
                 filter(target) {
                   return (target.structureType === STRUCTURE_STORAGE
                     || target.structureType === STRUCTURE_CONTAINER)
@@ -433,16 +434,17 @@ function* run() {
                 },
               });
               if (sources.length) {
+                busyRefillingSpawners = true;
                 const target = creep.pos.findClosestByRange([...sources, ...droppedEnergy]);
                 if (target instanceof Resource) {
                   const pickupErr = acquireTask(creep, creepTasks.pickup(RESOURCE_ENERGY), target, creep.carryCapacity - creep.carry);
                 } else {
                   const pickupErr = acquireTask(creep, creepTasks.withdraw(RESOURCE_ENERGY), target, creep.carryCapacity - creep.carry);
                 }
-
               }
             }
-          } else if (droppedEnergy && droppedEnergy.length) {
+          }
+          if (!busyRefillingSpawners && droppedEnergy && droppedEnergy.length) {
             const closestEnergy = droppedEnergy.sort((a, b) => creep.pos.getRangeTo(a) - creep.pos.getRangeTo(b));
             const mostEnergy = droppedEnergy.reduce((memo, curr) => {
               if (!memo

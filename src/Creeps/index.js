@@ -11,7 +11,7 @@ import {
 function *execute(creeps) {
   for (let i = 0; i < creeps.length; i++) {
     const creep = creeps[i];
-    
+
   }
 }
 
@@ -21,7 +21,8 @@ function *commit() {
     yield call(execute, Object.values(Game.creeps));
     // Bring out your dead
     // If you need to save anything about recently dead do it on the tick they die
-    for (let creep in deadCreeps()) {
+    const deads = deadCreeps();
+    for (let creep of deads) {
       delete Memory.creeps[creep];
     }
   });
