@@ -332,7 +332,7 @@ function* run() {
         })) {
           let workerPriority = DEFAULT_WORKER_PRIORITY;
           let supplyPriority = DEFAULT_SUPPLY_PRIORITY;
-          let supplyCount = (room.controller && room.controller.level) < 3 ? 5 : 3;
+          let supplyCount = 0; // (room.controller && room.controller.level) < 3 ? 5 : 3;
           if (!(creeps.worker && creeps.worker.length) && !(creeps.supply && creeps.supply.length)) {
             workerPriority *= 2;
           } else if (!(creeps.supply && creeps.supply.length)) {
