@@ -451,7 +451,8 @@ function* run() {
               }
               return memo
             });
-            let pickUpEnergy = closestEnergy[0].pos.getRangeTo(creep) < 5 ? closestEnergy[0] : mostEnergy;
+            // closestEnergy[0].pos.getRangeTo(creep) < 5 ? closestEnergy[0] :
+            let pickUpEnergy = mostEnergy;
             const pickupErr = acquireTask(creep, creepTasks.pickup(RESOURCE_ENERGY), pickUpEnergy);
             if (pickupErr === ERR_NOT_IN_RANGE) {
               creep.memory.pickupPos = pickUpEnergy.pos;
