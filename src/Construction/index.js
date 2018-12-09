@@ -192,7 +192,7 @@ function* run() {
   // });
   yield takeEvery(RUN, function* onRun() {
     if (!lastNeeds || Game.time % 8 === 0) {
-      const builderCount = Math.max(Math.min(Game.spawns['Spawn1'].room.find(FIND_MY_CONSTRUCTION_SITES).length, 5), 1);
+      const builderCount = Math.max(Math.min(Game.spawns['Spawn1'].room.find(FIND_MY_CONSTRUCTION_SITES).length, 5), 2);
       lastNeeds = range(0, builderCount).map(num => ({
         name: `Builder-${num}`,
         body: ({

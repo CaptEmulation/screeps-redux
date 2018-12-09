@@ -31,6 +31,7 @@ import profiler from '../utils/generatorProfiler';
 const DEFAULT_SUPPLY_PRIORITY = -40;
 
 let lastNeeds;
+let lastTasks;
 
 function* createNeeds({
   selectors,
@@ -43,7 +44,7 @@ function* createNeeds({
       filter: targetMatcher.isSpawn,
     })) {
       let supplyPriority = DEFAULT_SUPPLY_PRIORITY;
-      let supplyCount = 1;//room.controller && (room.controller.level < 3 ? 4 : 3) || 0;
+      let supplyCount = 2;//room.controller && (room.controller.level < 3 ? 4 : 3) || 0;
       if (!(creeps.supply && creeps.supply.length)) {
         supplyPriority *= 2;
       }
@@ -54,6 +55,7 @@ function* createNeeds({
           role: 'Hauler',
           home: room.name,
           transfer: {},
+          pickup: {},
         },
         priority: supplyPriority,
         room: room.name,
@@ -96,6 +98,8 @@ createBrood({
     const creeps = Object.values(Game.creeps).filter(c => c.memory && c.memory.role === 'Hauler');
     for (let creep of creeps) {
       creep.memory.transfer = creep.memory.transfer || {};
+      creep.memory.pickup = creep.memory.pickup || {};
+      delete creep.memory.tasks;
     }
   },
   scan: profiler('Hauler SCAN', function * haulerScan({
@@ -106,10 +110,16 @@ createBrood({
       return room.memory.haul;
     });
     const oldMeta = yield select(selectors.brood);
-    const tasks = yield select(selectors.tasks);
+    const tasks = lastTasks || (yield select(selectors.tasks));
     const creeps = yield select(selectors.alive);
+    // for (let task of tasks) {
+    //   const target = Game.getObjectById(task.id);
+    //   if (target) {
+    //     tas
+    //   }
+    // }
     const newMeta = {};
-    if (Game.time % 3 === 0) {
+    if (true) {
       for (let room of haulingRooms) {
         if (!room.memory.sources) {
           room.memory.sources = room.find(FIND_SOURCES).map(source => ({
@@ -135,6 +145,8 @@ createBrood({
           }
         }
 
+        const newEnergyDrops = [];
+
         const droppedEnergy = room.find(FIND_DROPPED_RESOURCES, {
           filter(resource) {
             return !tasks.find(t => t.id === resource.id);
@@ -142,7 +154,7 @@ createBrood({
         })
           .sort((a, b) => b.amount - a.amount)
           .forEach(resource => {
-            tasks.push({
+            newEnergyDrops.push({
               id: resource.id,
               amount: resource.amount,
               type: resource.resourceType,
@@ -164,7 +176,7 @@ createBrood({
               || target.structureType === STRUCTURE_TOWER);
           }
         });
-        const storageDropOffs = room.find(FIND_MY_STRUCTURES, {
+        const storageDropOffs = room.find(FIND_STRUCTURES, {
           filter(target) {
             return target.structureType === STRUCTURE_CONTAINER
               || target.structureType === STRUCTURE_STORAGE;
@@ -174,6 +186,7 @@ createBrood({
         const needsStorage = storageDropOffs.filter(structure => {
           return _.sum(structure.store) < structure.storeCapacity;
         });
+
         const newDropoffTasks = [];
         const pendingEnergyDeliveries = tasks.filter(t => t.from && !t.id && t.type === RESOURCE_ENERGY);
         const pendingEnergyPickupPositions = pendingEnergyDeliveries.reduce((memo, t) => {
@@ -186,49 +199,37 @@ createBrood({
           }
           return memo;
         }, []);
-        const pendingStorageDeliveries = tasks.filter(t => t.from && !t.id && t.type !== RESOURCE_ENERGY);
-        const pendingStoragePickupPositions = pendingStorageDeliveries.reduce((memo, t) => {
-          const pickupTask = tasks.find(pt => pt.id === t.id);
-          if (pickupTask) {
-            const pickupTarget = Game.getObjectById(pickupTask.id);
-            if (pickupTarget) {
-              memo.push(pickupTarget);
-            }
-          }
-          return memo;
-        }, []);
+
         for (let dropoff of needsEnergy) {
-          if (pendingEnergyDeliveries.length) {
-            for (let pendingDelivery of pendingEnergyDeliveries) {
-              const energyLocations = pendingEnergyPickupPositions.sort((a, b) => a.pos.getRangeTo(dropoff) - b.pos.getRangeTo(dropoff));
-              let remaining = dropoff.energyCapacity - dropoff.energy;
-              let index = 0;
-              while(remaining > 0) {
-                const target = energyLocations[index];
-                if (!target) {
-                  break;
-                }
-                let amountInPickup = target.amount;
-                if (remaining < amountInPickup) {
-                  pendingDelivery.id = target.id;
-                  // Create a new task for the remainder
-                  const remainingTask = {
-                    from: pendingDelivery.from,
-                    amount: amountInPickup - remaining,
-                    action: 'transfer',
-                    type: RESOURCE_ENERGY,
-                    room: room.name,
-                  };
-                  newDropoffTasks.push(remainingTask);
-                  pendingEnergyDeliveries.push(remainingTask);
-                } else if (remaining >= amountInPickup) {
-                  pendingDelivery.id = target.id;
-                  _.pull(pendingEnergyDeliveries, )
-                }
-                remaining - amountInPickup;
-                if (index++ >= energyLocations.length) {
-                  break;
-                }
+          for (let pendingDelivery of pendingEnergyDeliveries) {
+            const energyLocations = pendingEnergyPickupPositions.sort((a, b) => a.pos.getRangeTo(dropoff) - b.pos.getRangeTo(dropoff));
+            let remaining = dropoff.energyCapacity - dropoff.energy;
+            let index = 0;
+            while(remaining > 0) {
+              const target = energyLocations[index];
+              if (!target) {
+                break;
+              }
+              let amountInPickup = target.amount;
+              if (remaining < amountInPickup) {
+                pendingDelivery.id = target.id;
+                // Create a new task for the remainder
+                const remainingTask = {
+                  from: pendingDelivery.from,
+                  amount: amountInPickup - remaining,
+                  action: 'transfer',
+                  type: RESOURCE_ENERGY,
+                  room: room.name,
+                };
+                newDropoffTasks.push(remainingTask);
+                // pendingEnergyDeliveries.push(remainingTask);
+              } else if (remaining >= amountInPickup) {
+                pendingDelivery.id = target.id;
+                //
+              }
+              remaining - amountInPickup;
+              if (index++ >= energyLocations.length) {
+                break;
               }
             }
           }
@@ -247,6 +248,7 @@ createBrood({
 
             if (totalOnTask > dropoff.energyCapacity && pendingTasks.length) {
               // Too much is pending
+              console.log('too much is pending in energy');
               _.pull(tasks, ...pendingTasks);
             } else if (pendingTasks.length > 1) {
               // Something got unassigned, merge them together
@@ -262,7 +264,51 @@ createBrood({
           }
         }
 
+        const pendingStorageDeliveries = tasks.filter(t => t.from && !t.id);
+        const pendingStoragePickupPositions = pendingStorageDeliveries.reduce((memo, t) => {
+          const pickupTask = tasks.find(pt => pt.id === t.id);
+          if (pickupTask) {
+            const pickupTarget = Game.getObjectById(pickupTask.id);
+            if (pickupTarget) {
+              memo.push(pickupTarget);
+            }
+          }
+          return memo;
+        }, []);
+
         for (let dropoff of needsStorage) {
+          for (let pendingDelivery of pendingStoragePickupPositions) {
+            const resourceLocation = pendingStoragePickupPositions.sort((a, b) => a.pos.getRangeTo(dropoff) - b.pos.getRangeTo(dropoff));
+            let remaining = dropoff.energyCapacity - dropoff.energy;
+            let index = 0;
+            while(remaining > 0) {
+              const target = resourceLocation[index];
+              if (!target) {
+                break;
+              }
+              let amountInPickup = target.amount;
+              if (remaining < amountInPickup) {
+                pendingDelivery.id = target.id;
+                // Create a new task for the remainder
+                const remainingTask = {
+                  from: pendingDelivery.from,
+                  amount: amountInPickup - remaining,
+                  action: 'transfer',
+                  type: target.resourceType,
+                  room: room.name,
+                };
+                newDropoffTasks.push(remainingTask);
+                pendingEnergyDeliveries.push(remainingTask);
+              } else if (remaining >= amountInPickup) {
+                pendingDelivery.id = target.id;
+                _.pull(pendingEnergyDeliveries, )
+              }
+              remaining - amountInPickup;
+              if (index++ >= energyLocations.length) {
+                break;
+              }
+            }
+          }
           const matchingTasks = tasks.filter(t => t.id === dropoff.id)
           if (matchingTasks.length === 0) {
             newDropoffTasks.push({
@@ -292,10 +338,15 @@ createBrood({
             }
           }
         }
-        tasks.push(...newDropoffTasks);
+        tasks.push(...newEnergyDrops, ...newDropoffTasks);
+        const beforeRemoveLength = tasks.length;
         _.remove(tasks, task => !Game.getObjectById(task.id) || task.amount === 0);
+        const removedTasks = beforeRemoveLength - tasks.length;
+        const totalUnassigned = tasks.filter(task => !task.name);
+        console.log('Total hauler tasks:', tasks.length, 'removed:', removedTasks, 'newEnergyDrops:', newEnergyDrops.length, 'newDropoffTasks:', newDropoffTasks.length, 'unassigned:', totalUnassigned.length);
       };
     }
+    lastTasks = tasks;
   }),
   update: profiler('Hauler UPDATE', function* haulerUpdate({
     selectors,
@@ -307,8 +358,9 @@ createBrood({
         actionCreators,
       });
     }
-    const tasks = yield select(selectors.tasks);
+    const tasks = lastTasks;
     const creeps = yield select(selectors.alive);
+    _.remove(tasks, task => !Game.getObjectById(task.id) || task.amount === 0);
     tasks.forEach(task => {
       if (task.name && !Game.creeps[task.name]) {
         console.log('This creep no longer exists to fulfill task')
@@ -319,50 +371,161 @@ createBrood({
       _.difference(creeps.map(c => c.name), tasks.map(t => t.name))
       .map(name => Game.creeps[name]);
 
-    // Fix memory
-    for (let creep of creeps) {
-      if (!creep.tasks.length && creepsNeedingTasks.includes(creep)) {
-        creep.memory.transfer = {};
-      }
+    for (let creep of creepsNeedingTasks) {
+      creep.memory.transfer = {};
+      creep.memory.pickup = {};
     }
+    // Fix memory
+    // for (let creep of creeps) {
+    //   if (!creep.tasks.length) {
 
-    const unfilledTasks = tasks.filter(task => !task.name && task.id);
+    //   }
+    // }
+
     // Assign creeps to tasks
-    for (let task of unfilledTasks) {
-      const target = Game.getObjectById(task.id);
-      if (target) {
-        const creepsSortedByDistance = creepsNeedingTasks.sort((a, b) => a.pos.getRangeTo(dropoff) - b.pos.getRangeTo(dropoff));
-        for (let creep of creepsSortedByDistance) {
-          if (task.action === 'transfer') {
-            const carryAmount = closestCreep.carry[task.type] - _.get(closestCreep.memory, `transfer.${task.type}`, 0);
-            console.log('in transfer', closestCreep.carry[task.type], _.get(closestCreep.memory, `transfer.${task.type}`));
+    console.log('Creeps needing tasks:', _.difference(creeps.map(c => c.name), tasks.map(t => t.name)).map(name => Game.creeps[name]))
+    for (let creep of creepsNeedingTasks) {
+      const unfilledTasks = tasks.filter(task => !task.name && task.id);
+      const tasksSortedByDistance = unfilledTasks.sort((a, b) => Game.getObjectById(a.id).pos.getRangeTo(creep) - Game.getObjectById(b.id).pos.getRangeTo(creep));
+      for (let task of tasksSortedByDistance) {
+        const target = Game.getObjectById(task.id);
+        if (target) {
+          if (creep.carry[task.type] > 0 && task.action === 'transfer' && !task.name) {
+            const carryAmount = _.sum(creep.carry) - _.sum(creep.memory.transfer);
             if (carryAmount > 0) {
-              const transferAmount = Math.min(closestCreep.carry[task.type], task.amount);
-              closestCreep.memory.transfer[task.type] = closestCreep.memory.transfer[task.type] || 0;
-              closestCreep.memory.transfer[task.type] += transferAmount;
-              if (closestCreep.carry[task.type] < task.amount) {
+              console.log('has it', creep.carry[task.type], _.sum(creep.memory.transfer), 'carryAmount:', carryAmount)
+              // console.log('in transfer', 'creep:', creep.carry[task.type], 'transfer:', _.get(creep.memory, `transfer.${task.type}`));
+              const transferAmount = Math.min(carryAmount, task.amount);
+              console.log(`assigning ${transferAmount} to ${creep.name} before: ${creep.memory.transfer[task.type] || 0} after ${(creep.memory.transfer[task.type] || 0) + transferAmount} for ${task.id}`)
+              creep.memory.transfer[task.type] = creep.memory.transfer[task.type] || 0;
+              creep.memory.transfer[task.type] += transferAmount;
+              console.log('can add remainder task for transfer?', 'creep:', creep.carry[task.type], '<', 'task:', task.amount, !unfilledTasks.find(t => t !== task && t.id === task.id))
+              if (creep.carry[task.type] < task.amount && !unfilledTasks.find(t => t !== task && t.id === task.id)) {
+                const amount = _.sum(tasks, t => {
+                  if (t.id === task.id) {
+                    return t.amount;
+                  }
+                  return 0;
+                }) - transferAmount;
+                console.log('add remainder task for transfer', amount);
                 tasks.push({
                   ...task,
-                  amount: target.amount - transferAmount,
+                  amount,
                 });
               }
-              task.name = closestCreep.name;
+              task.name = creep.name;
+              task.amount = transferAmount;
+              _.pull(creepsNeedingTasks, creep);
+              _.pull(unfilledTasks, task);
             }
-          } else if (task.action === 'pickup') {
-            const carryLeft = closestCreep.carryCapacity - _.sum(closestCreep.carry);
+          } else if ((creep.carryCapacity - _.sum(creep.carry)) > 0 && task.action === 'pickup' && !task.name) {
+            const carryLeft = creep.carryCapacity - _.sum(creep.carry) - _.sum(creep.memory.pickup);
             if (carryLeft > 0) {
-              if (target.amount > carryLeft) {
+              console.log(creep.name, 'needs it', creep.carry[task.type], _.sum(creep.carry), 'carryLeft:', carryLeft)
+              // console.log('can add remainder task for pickup?', 'target:', target.amount, '> task:', task.amount, !unfilledTasks.find(t => t !== task && t.id === task.id))
+              const pickupAmount = Math.min(carryLeft, task.amount);
+              console.log(`assigning ${pickupAmount} to ${creep.name} before: ${creep.memory.pickup[task.type] || 0} after ${(creep.memory.pickup[task.type] || 0) + pickupAmount} for ${task.id}`)
+              creep.memory.pickup[task.type] = creep.memory.pickup[task.type] || 0;
+              creep.memory.pickup[task.type] += pickupAmount;
+              if (target.amount > carryLeft && !unfilledTasks.find(t => t !== task && t.id === task.id)) {
+                const amount = _.sum(tasks, t => {
+                  if (t.id === task.id) {
+                    return t.amount;
+                  }
+                  return 0;
+                }) - pickupAmount;
+                console.log('adding remainder task for pickup', amount);
                 // make a new task for the remaining
                 tasks.push({
                   ...task,
-                  amount: target.amount - carryLeft,
+                  amount,
                   name: null,
                 });
               }
-              task.name = closestCreep.name;
-              _.pull(creepsNeedingTasks, closestCreep);
+              task.name = creep.name;
+              task.amount = pickupAmount;
+              _.pull(creepsNeedingTasks, creep);
+              _.pull(unfilledTasks, task);
             }
           }
+        }
+      }
+    }
+    console.log('Creeps still needing tasks:', _.difference(creeps.map(c => c.name), tasks.map(t => t.name)).map(name => Game.creeps[name]))
+    // for (let task of unfilledTasks) {
+    //   const target = Game.getObjectById(task.id);
+    //   if (target) {
+    //     const creepsSortedByDistance = creepsNeedingTasks.sort((a, b) => a.pos.getRangeTo(target) - b.pos.getRangeTo(target));
+    //     for (let creep of creepsSortedByDistance) {
+    //
+    //     }
+    //   }
+    // }
+    // console.log(creeps.map(c => `${c.name} pickup:${c.memory.pickup.energy ? c.memory.pickup.energy : 0} transfer:${c.memory.transfer.energy ? c.memory.transfer.energy : 0} ${JSON.stringify(c.memory.tasks.map(task => ({
+    //   id: task.id,
+    //   amount: task.amount,
+    //   action: task.action,
+    // })))}`).join('\n'))
+    console.log('At end of UPDATE there are', tasks.filter(t => t.name).length, 'assigned tasks');
+    lastTasks = tasks;
+
+    for (let creep of creeps) {
+      const myTasks = tasks.filter(t => t.name === creep.name);
+      const task = myTasks[0];
+      console.log(`${creep.name} has ${myTasks.length} to do`)
+      if (task) {
+        const target = Game.getObjectById(task.id);
+        if (target) {
+          const range = creep.pos.getRangeTo(target);
+          if (task.action === 'pickup') {
+            if (range > 1) {
+              creep.routeTo(target, { range: 1 });
+            } else {
+              const creepAmount = creep.carryCapacity - creep.carry[task.type];
+              const pickupAmount = Math.min(creepAmount, target.amount);
+              creep.say('pickup');
+              const pickupErr = creep.pickup(target, pickupAmount, task.type);
+              if (!pickupErr) {
+                const deliverTask = tasks.find(t => t.from === task.id);
+                if (deliverTask) {
+                  deliverTask.name === creep.name;
+                }
+              }
+              if (pickupErr) {
+                console.log('pickup error', pickupErr);
+              }
+              _.pull(tasks, task);
+              creep.memory.pickup[task.type] = Math.max(creep.memory.pickup[task.type] - task.amount, 0);
+              console.log(`${creep.name} pickup task:${task.amount} targetAmount:${target.amount} creep:(${_.sum(creep.carry)}/${creep.carryCapacity}) pickup:${_.sum(creep.memory.pickup)}`);
+            }
+            continue;
+          } else if (task.action === 'transfer') {
+            if (range > 1) {
+              creep.routeTo(target, { range: 1 });
+            } else {
+              creep.say('transfer');
+              let targetAmount;
+              if ('energy' in target) {
+                targetAmount = target.energyCapacity - target.energy;
+              } else if (target.store && target.store[task.type]) {
+                targetAmount = target.storeCapacity - _.sum(target.store);
+              } else {
+                console.log('what is', target);
+              }
+              const creepAmount = creep.carry[task.type];
+              const transferErr = creep.transfer(target, task.type, Math.min(creepAmount, targetAmount));
+              _.pull(tasks, task);
+              creep.memory.transfer[task.type] = Math.max(creep.memory.transfer[task.type] - task.amount, 0);
+              if (transferErr) {
+                console.log('transfer error', transferErr);
+              }
+              console.log(`${creep.name} transfer target:${target} task:${task.amount} targetAmount:${targetAmount} creep:(${_.sum(creep.carry)}/${creep.carryCapacity}) transfer:${_.sum(creep.memory.transfer)}`);
+            }
+            continue;
+          }
+        } else {
+          console.log(`Object ${task.id} no longer exists`);
+          _.pull(tasks, task);
         }
       }
     }
@@ -374,64 +537,22 @@ createBrood({
       needs: lastNeeds,
       controller: 'Hauler',
     }));
-    const tasks = yield select(selectors.tasks);
-    const creeps = yield select(selectors.alive);
-    for (let creep of creeps) {
-      const task = creep.tasks[0];
-      if (task) {
-        const target = Game.getObjectById(task.id);
-        if (!target) {
-          console.log(`Object ${task.id} no longer exists`);
-          _.pull(tasks, task);
-          continue;
-        }
-        if (creep.pos.getRangeTo(target) > 1) {
-          creep.routeTo(target, { range: 1 });
-        } else {
-          switch(task.action) {
-            case 'pickup': {
-              creep.say('pickup');
-              console.log(`${creep.name} pickup task:${task.amount} target:${target.amount} creep:(${_.sum(creep.carry)}/${creep.carryCapacity})`);
-              const pickupErr = creep.pickup(target, task.amount, task.type);
-              if (!pickupErr) {
-                const deliverTask = tasks.find(t => t.from === task.id);
-                if (deliverTask) {
-                  deliverTask.name === creep.name;
-                }
-              }
-              _.pull(tasks, task);
-              break;
-            }
-            case 'transfer': {
-              creep.say('transfer');
-              let targetAmount;
-              if (target.energy) {
-                targetAmount = target.energy;
-              } else if (target.store[task.type]) {
-                targetAmount = target.store[task.type];
-              }
-              console.log(`${creep.name} transfer task:${task.amount} target:${targetAmount} creep:(${_.sum(creep.carry)}/${creep.carryCapacity})`);
-              const transferErr = creep.transfer(target, task.type, task.amount);
-              _.pull(tasks, task);
-              if (transferErr) {
-                console.log('transfer error', transferErr);
-              } else {
-                creep.memory.transfer[task.type] -= task.amount;
-              }
-              break;
-            }
-            default: {
-              break;
-            }
-          }
-        }
-      }
-    }
-    for (let task of tasks) {
-      if (task.name) {
-        const creep = Game.creeps[task.name];
-
-      }
-    }
+    // const tasks = lastTasks;
+    // const creeps = yield select(selectors.alive);
+    // console.log('HAULER RUN start');
+    // // console.log(creeps.map(c => `${c.name} pickup:${c.memory.pickup.energy ? c.memory.pickup.energy : 0} transfer:${c.memory.transfer.energy ? c.memory.transfer.energy : 0} ${c.memory.tasks.map(task => ({
+    // //   id: task.id,
+    // //   amount: task.amount,
+    // //   action: task.action,
+    // // })))}`).join('\n'))
+    // console.log('At begining of RUN there are', tasks.filter(t => t.name).length, 'assigned tasks');
+    //
+    // console.log('HAULER RUN end');
+    // for (let task of tasks) {
+    //   if (task.name) {
+    //     const creep = Game.creeps[task.name];
+    //
+    //   }
+    // }
   }),
 });
