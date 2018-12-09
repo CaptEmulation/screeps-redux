@@ -41,7 +41,7 @@ const drainerTemplate = (num) => ({
 createBrood({
   role: 'Drainer',
   actions: ['start', 'stop'],
-  * directCreeps({
+  * run({
     selectors,
   }) {
     const rooms = yield select(selectRooms);

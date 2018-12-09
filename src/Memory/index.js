@@ -29,7 +29,9 @@ export function run(store) {
 }
 
 const memoryState = () => getModuleNames().reduce((mem, curr) => {
-  mem[curr] = Memory[curr];
+  if (Memory[curr]) {
+    mem[curr] = Memory[curr];
+  }
   return mem;
 }, {});
 
@@ -43,7 +45,10 @@ function* commit() {
   yield takeEvery(COMMIT, function * onUpdate() {
     // Assign latest state to memory
     const newState = yield(select(s => s));
-    commitMemory(newState);
+    commitMemory(getModuleNames().reduce((m, mod) => {
+      m[mod] = newState[mod];
+      return m;
+    }, {}));
   });
 }
 
@@ -55,7 +60,11 @@ createSaga(
 appendReducer((state, action) => {
   switch(action.type) {
     case MEMORY_UPDATE: {
-      return action.payload;
+      return {
+        ...state,
+        ...action.payload,
+        brood: _.merge(state.brood, action.payload.brood)
+      };
     }
     default:
       return state;

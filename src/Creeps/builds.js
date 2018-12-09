@@ -14,6 +14,7 @@ export const worker = {
     if ((fullCost - (BODYPART_COST[MOVE] + 2 * BODYPART_COST[WORK])) <= available) {
       fullBody.shift();
       fullBody.pop();
+      fullBody.pop();
       return fullBody;
     }
     return [MOVE, MOVE, WORK, WORK];

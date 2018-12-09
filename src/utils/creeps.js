@@ -83,6 +83,8 @@ export function findClosestEnergy(creep, dropped = true) {
       task = tasks.harvest();
     }
     return acquireTask(creep, task, source);
+  } else {
+    creep.getOutOfTheWay();
   }
 }
 

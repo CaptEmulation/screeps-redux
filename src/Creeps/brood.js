@@ -3,16 +3,41 @@ import { call, select, takeEvery } from 'redux-saga/effects'
 import {
   camelCaseToDash,
 } from '../utils/string';
-import createReducer from '../utils/createReducer';
+import createReducer, { appendReducer } from '../utils/createReducer';
 import createSaga from '../utils/createSaga';
 import createApi from '../utils/createApi';
 import createModule from '../utils/createModule';
 import {
   START,
+  SCAN,
   UPDATE,
   RUN,
-  COMMIT.
+  COMMIT,
 } from '../events';
+
+
+const metaRoot = state => state.brood;
+
+export function init(store) {
+  Object.defineProperty(Creep.prototype, 'brood', {
+    get() {
+      if (this.memory.role) {
+        return metaRoot(store.getState())[this.memory.role];
+      }
+      return null;
+    },
+    configurable: false,
+  });
+
+  Object.defineProperty(Creep.prototype, 'tasks', {
+    get() {
+      return _.get(this, 'brood.tasks',[]).filter(t => t.name === this.name);
+    },
+    configurable: false,
+  });
+}
+
+createModule('brood', {});
 
 /*
  * These are default actions provided by being in a brood
@@ -20,10 +45,7 @@ import {
 const defaultActions = [
   'ENABLE',
   'DISABLE',
-  'START',
-  'UPDATE',
-  'RUN',
-  'COMMIT',
+  'SET',
 ].reduce((actions, name, index) => {
   actions[name] = index;
   return actions;
@@ -33,10 +55,15 @@ export default function broodFactory({
   role,
   enabled = true,
   actions = [],
-  directCreeps,
+  start,
+  scan,
+  update,
+  run,
+  commit,
   provideNeeds,
   reducerHandler = () => ({}),
-  initialState = {},
+  initialState,
+  selectors: broodSelectors = () => ({}),
 } = {}) {
   const allActions = Object.keys(defaultActions).map(a => a.toLowerCase()).concat(actions);
 
@@ -57,71 +84,92 @@ export default function broodFactory({
     return memo;
   }, {});
 
-  const selectActive = createSelector(
+  const selectBrood = state => _.get(state, `brood.${role}`);
+
+  const selectAlive = createSelector(
     () => Game.creeps || {},
     creeps => Object.values(creeps).filter(creep => creep.memory && creep.memory.role === role),
   );
 
+
   const selectors = {
-    alive: selectActive,
+    alive: selectAlive,
+    brood: selectBrood,
   };
 
-  function* run() {
-    yield takeEvery(RUN, function* onBroodRun() {
-      yield call(directCreeps, {
-        selectors,
-      });
-    });
-  }
+  Object.assign(selectors, broodSelectors(selectors));
 
-  const broodMember = `Creeps${role}`;
-  createReducer(function broodMetaReducer(state, { type }) {
-    switch(type) {
-      case UPDATE: {
-        return {
-          ...state,
-          brood: {
-            ...state.brood,
-
-          },
-        }
-      }
-    }
-  });
-  createReducer(broodMember, {
-    ...initialState,
-    enabled,
-  }, {
-    // ENABLE
+  createReducer(`brood.${role}`, initialState, {
+    [START](brood, { type }) {
+      return {
+        ...brood,
+        enabled,
+      };
+    },
+    [defaultActions.SET](brood, { payload: meta }) {
+      return _.merge(
+        ..._.clone(brood),
+        meta,
+      );
+    },
     [defaultActions.ENABLE](state) {
       return {
-        ...state,
+        ...brood,
         enabled: true,
       };
     },
-    // DISABLE
     [defaultActions.DISABLE](state) {
       return {
-        ...state,
+        ...brood,
         enabled: false,
       };
     },
-    ...reducerHandler(actionTypes),
+    ...reducerHandler(actionTypes)
+  })
+
+  let sagaDelegates = [];
+  if (start) sagaDelegates.push(function* startDelegate() {
+    yield takeEvery(START, function* onBroodStart() {
+      yield call(start, {
+        selectors,
+        actionCreators,
+      });
+    });
+  });
+  if (scan) sagaDelegates.push(function* updateDelegate() {
+    yield takeEvery(SCAN, function* onBroodScan() {
+      yield call(scan, {
+        selectors,
+        actionCreators,
+      });
+    });
+  });
+  if (update) sagaDelegates.push(function* updateDelegate() {
+    yield takeEvery(UPDATE, function* onBroodUpdate() {
+      yield call(update, {
+        selectors,
+        actionCreators,
+      });
+    });
+  });
+  if (run) sagaDelegates.push(function* runDelegate() {
+    yield takeEvery(RUN, function* onBroodRun() {
+      yield call(run, {
+        selectors,
+        actionCreators,
+      });
+    });
+  });
+  if (commit) sagaDelegates.push(function* commitDelegate() {
+    yield takeEvery(COMMIT, function* onBroodRun() {
+      yield call(commit, {
+        selectors,
+        actionCreators,
+      });
+    });
   });
 
-  createApi(broodMember, {
-    selectors,
-    actionCreators,
-  });
-
-  createSaga(
-    run,
-  );
-
-  createModule(broodMember, {
-    selectors,
-    actionCreators,
-  });
+  createSaga(...sagaDelegates);
 
   return {
     actionCreators,

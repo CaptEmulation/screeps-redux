@@ -573,7 +573,7 @@ Creep.prototype.routeTo = function routeCreep(target, opts) {
   });
 };
 
-Creep.prototype.getOutOfTheWay = function getOutOfTheWay(target, range) {
+Creep.prototype.getOutOfTheWay = function getOutOfTheWay(target, range = 1) {
   const onStructures = this.pos.lookFor(LOOK_STRUCTURES);
   const road = onStructures.find(s => s.structureType === STRUCTURE_ROAD);
   let movedFromRoad = false;
@@ -581,7 +581,8 @@ Creep.prototype.getOutOfTheWay = function getOutOfTheWay(target, range) {
   if (road) {
     for (let coords of shuffled) {
       const pos = new RoomPosition(...coords, this.room.name);
-      if (pos.getRangeTo(target) <= range
+      const inRange = target ? pos.getRangeTo(target) <= range : true;
+      if (inRange
         && !pos.lookFor(LOOK_CREEPS).length
         && !pos.lookFor(LOOK_STRUCTURES).find(s => s.structureType === STRUCTURE_ROAD)) {
         this.move(this.pos.getDirectionTo(pos));
@@ -604,7 +605,8 @@ Creep.prototype.getOutOfTheWay = function getOutOfTheWay(target, range) {
       let foundOpenSpot = false;
       for (let coords of shuffled) {
         const pos = new RoomPosition(...coords, this.room.name);
-        if (pos.getRangeTo(target) <= range) {
+        const inRange = target ? pos.getRangeTo(target) <= range : true;
+        if (inRange) {
           foundOpenSpot = true;
           this.move(this.pos.getDirectionTo(pos));
           break;

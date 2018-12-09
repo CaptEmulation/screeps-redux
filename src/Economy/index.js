@@ -273,7 +273,7 @@ export function dropOffEnergy(creep, destinations) {
     acquireTask(creep, creepTasks.transfer(resource, amount), target);
 
     return true;
-  } else {o
+  } else {
     return false;
   }
 }
@@ -330,9 +330,9 @@ function* run() {
         if (room.find(FIND_MY_STRUCTURES, {
           filter: targetMatcher.isSpawn,
         })) {
-          let workerPriority = DEFAULT_SUPPLY_PRIORITY;
+          let workerPriority = DEFAULT_WORKER_PRIORITY;
           let supplyPriority = DEFAULT_SUPPLY_PRIORITY;
-          let supplyCount = room.controller.level < 3 ? 5 : 3;
+          let supplyCount = (room.controller && room.controller.level) < 3 ? 5 : 3;
           if (!(creeps.worker && creeps.worker.length) && !(creeps.supply && creeps.supply.length)) {
             workerPriority *= 2;
           } else if (!(creeps.supply && creeps.supply.length)) {
@@ -349,15 +349,16 @@ function* run() {
             priority: workerPriority,
             room: room.name,
           })), ..._.range(0, supplyCount).map(num => ({
-            name: `Supply-${room.name}-${num}`,
-            body: supplyBuild.default,
-            memory: {
-              role: 'supply',
-              home: room.name,
-            },
-            priority: supplyPriority,
-            room: room.name,
-          })));
+           name: `Supply-${room.name}-${num}`,
+           body: supplyBuild.default,
+           memory: {
+             role: 'supply',
+             home: room.name,
+           },
+           priority: supplyPriority,
+           room: room.name,
+         })));
+
         }
         return n;
       }, []);

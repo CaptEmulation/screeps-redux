@@ -29,7 +29,7 @@ let lastNeeds;
 
 createBrood({
   role: 'Fixer',
-  * directCreeps({
+  * run({
     selectors,
   }) {
     if (!lastNeeds || Game.time & 8 === 0) {

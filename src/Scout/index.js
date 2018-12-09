@@ -46,7 +46,7 @@ const earlyCreeps = _.range(0, SCOUT_COUNT).map(num => ({
 createBrood({
   role: 'Scout',
   actions: ['patrol'],
-  * directCreeps({
+  * run({
     selectors,
   }) {
     const scoutFlags = Object.values(Game.flags).filter(isColor(scoutFlagColor));
