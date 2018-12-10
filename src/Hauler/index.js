@@ -65,6 +65,18 @@ function* createNeeds({
   }, []);
 }
 
+function amountAssignedTo(creep, action, tasks) {
+  return _.sum(
+    tasks.filter(t => t.action === action && t.name === creep.name),
+    t => t.amount,
+  );
+}
+function taskAmountForId(id) {
+  return function amountforTargetIdItr(task) {
+    return task.id === id && task.amount || 0;
+  };
+}
+
 /*
  * Example tasks
  *
@@ -110,7 +122,7 @@ createBrood({
       return room.memory.haul;
     });
     const oldMeta = yield select(selectors.brood);
-    const tasks = lastTasks || (yield select(selectors.tasks));
+    const tasks = yield select(selectors.tasks);
     const creeps = yield select(selectors.alive);
     // for (let task of tasks) {
     //   const target = Game.getObjectById(task.id);
@@ -128,7 +140,7 @@ createBrood({
           }));
         }
 
-        const containerlessSourceRefs = room.memory.sources.filter(s => !s.container);
+        const containerlessSourceRefs = room.memory.sources.filter(s => !s.container || (s.container && s.container.container));
         if (containerlessSourceRefs.length) {
           const containers = room.find(FIND_STRUCTURES, {
             filter: (target) => target.structureType === STRUCTURE_CONTAINER
@@ -138,37 +150,16 @@ createBrood({
             const container = containers.find(container => container.pos.getRangeTo(sourcePos) <= 2);
             if (container) {
               sourceRef.container = {
-                container: container.id,
+                id: container.id,
                 pos: [container.pos.x, container.pos.y, container.pos.roomName],
               };
             }
           }
         }
 
-        const newEnergyDrops = [];
+        const newResourceDrops = [];
 
-        const droppedEnergy = room.find(FIND_DROPPED_RESOURCES, {
-          filter(resource) {
-            return !tasks.find(t => t.id === resource.id);
-          }
-        })
-          .sort((a, b) => b.amount - a.amount)
-          .forEach(resource => {
-            newEnergyDrops.push({
-              id: resource.id,
-              amount: resource.amount,
-              type: resource.resourceType,
-              action: 'pickup',
-              room: room.name,
-            }, {
-              from: resource.id,
-              amount: resource.amount,
-              type: resource.resourceType,
-              action: 'transfer',
-              room: room.name,
-            });
-          });
-
+        const droppedResources = room.find(FIND_DROPPED_RESOURCES);
         const energyDropOffs = room.find(FIND_MY_STRUCTURES, {
           filter(target) {
             return (target.structureType === STRUCTURE_SPAWN
@@ -182,10 +173,37 @@ createBrood({
               || target.structureType === STRUCTURE_STORAGE;
           },
         });
+        // room.find(FIND_DROPPED_RESOURCES, {
+        //   filter(resource) {
+        //     return !tasks.find(t => t.id === resource.id);
+        //   }
+        // })
+        //   .sort((a, b) => b.amount - a.amount)
+        //   .forEach(resource => {
+        //     newEnergyDrops.push({
+        //       id: resource.id,
+        //       amount: resource.amount,
+        //       type: resource.resourceType,
+        //       action: 'pickup',
+        //       room: room.name,
+        //     });
+        //   });
+
+        // for (let resource of droppedResources) {
+        //   // Just energy for now
+        //   if (resource.resourceType === RESOURCE_ENERGY) {
+        //
+        //   }
+        // }
+
+
+
         const needsEnergy = energyDropOffs.filter(structure => structure.energy < structure.energyCapacity);
         const needsStorage = storageDropOffs.filter(structure => {
           return _.sum(structure.store) < structure.storeCapacity;
         });
+
+
 
         const newDropoffTasks = [];
         const pendingEnergyDeliveries = tasks.filter(t => t.from && !t.id && t.type === RESOURCE_ENERGY);
@@ -199,156 +217,328 @@ createBrood({
           }
           return memo;
         }, []);
+        const haveEnergyCreeps = creeps.filter(c => c.carry[RESOURCE_ENERGY]);
 
-        for (let dropoff of needsEnergy) {
-          for (let pendingDelivery of pendingEnergyDeliveries) {
-            const energyLocations = pendingEnergyPickupPositions.sort((a, b) => a.pos.getRangeTo(dropoff) - b.pos.getRangeTo(dropoff));
-            let remaining = dropoff.energyCapacity - dropoff.energy;
-            let index = 0;
-            while(remaining > 0) {
-              const target = energyLocations[index];
-              if (!target) {
-                break;
+        // Find haulers that have energy and available pending tasks
+        const haveEnergyCapacityCreeps = haveEnergyCreeps.filter(creep =>
+          (_.sum(creep.carry) -  amountAssignedTo(creep, 'transfer', tasks)) > 0,
+        )
+        for (let creep of haveEnergyCapacityCreeps) {
+          // targets that have no pending energy deliveries
+          const needsDeliveryEnergyTargets = needsEnergy.filter(target => {
+            const pendingAmount = _.sum(tasks, taskAmountForId(target.id));
+            return (target.energyCapacity - target.energy - pendingAmount) > 0;
+          });
+          if (needsDeliveryEnergyTargets.length) {
+            const lastTransferTargetIndex = _.findLastIndex(tasks, t => t.action === 'transfer' && t.name === creep.name);
+            let lastTransferTarget;
+            if (lastTransferTargetIndex !== -1) {
+              lastTransferTarget = Game.getObjectById(tasks[lastTransferTargetIndex].id);
+              if (!lastTransferTarget) {
+                console.log('Not able to find last transfer target');
               }
-              let amountInPickup = target.amount;
-              if (remaining < amountInPickup) {
-                pendingDelivery.id = target.id;
-                // Create a new task for the remainder
-                const remainingTask = {
-                  from: pendingDelivery.from,
-                  amount: amountInPickup - remaining,
+            } else {
+              // If there are no pending transfer targets, set self as target
+              lastTransferTarget = creep;
+            }
+            let transferAmount = amountAssignedTo(creep, 'transfer', tasks);
+            while(transferAmount < _.sum(creep.carry)) {
+              // Find a nearby target
+              const nextTarget = lastTransferTarget.pos.findClosestByRange(needsDeliveryEnergyTargets);
+              if (nextTarget) {
+                const availabeOnCreep = _.sum(creep.carry) - transferAmount;
+                const pendingAmountForTarget = _.sum([...tasks, ...newDropoffTasks], taskAmountForId(nextTarget.id));
+                const availableAmountForTarget = nextTarget.energyCapacity - nextTarget.energy - pendingAmountForTarget;
+                const dropOffAmount = Math.min(availableAmountForTarget, availabeOnCreep);
+
+                if (availableAmountForTarget < availabeOnCreep) {
+                  // This dropoff will be full, so remove it from consideration
+                  _.pull(needsDeliveryEnergyTargets, nextTarget);
+                }
+                newDropoffTasks.push({
+                  id: nextTarget.id,
+                  name: creep.name,
+                  amount: dropOffAmount,
                   action: 'transfer',
                   type: RESOURCE_ENERGY,
                   room: room.name,
-                };
-                newDropoffTasks.push(remainingTask);
-                // pendingEnergyDeliveries.push(remainingTask);
-              } else if (remaining >= amountInPickup) {
-                pendingDelivery.id = target.id;
-                //
-              }
-              remaining - amountInPickup;
-              if (index++ >= energyLocations.length) {
+                });
+                transferAmount += dropOffAmount;
+                lastTransferTarget = nextTarget;
+              } else {
+                // Nothing more to do
                 break;
               }
-            }
-          }
-          const matchingTasks = tasks.filter(t => t.id === dropoff.id)
-          if (matchingTasks.length === 0) {
-            newDropoffTasks.push({
-              id: dropoff.id,
-              amount: dropoff.energyCapacity - dropoff.energy,
-              action: 'transfer',
-              type: RESOURCE_ENERGY,
-              room: room.name,
-            });
-          } else {
-            const totalOnTask = _.sum(matchingTasks, task => task.name && task.amount || 0);
-            const pendingTasks = matchingTasks.filter(task => !task.name);
-
-            if (totalOnTask > dropoff.energyCapacity && pendingTasks.length) {
-              // Too much is pending
-              console.log('too much is pending in energy');
-              _.pull(tasks, ...pendingTasks);
-            } else if (pendingTasks.length > 1) {
-              // Something got unassigned, merge them together
-              _.pull(tasks, ...pendingTasks);
-              newDropoffTasks.push({
-                id: dropoff.id,
-                amount: dropoff.energyCapacity - totalOnTask,
-                action: 'transfer',
-                type: RESOURCE_ENERGY,
-                room: room.name,
-              });
             }
           }
         }
 
-        const pendingStorageDeliveries = tasks.filter(t => t.from && !t.id);
-        const pendingStoragePickupPositions = pendingStorageDeliveries.reduce((memo, t) => {
-          const pickupTask = tasks.find(pt => pt.id === t.id);
-          if (pickupTask) {
-            const pickupTarget = Game.getObjectById(pickupTask.id);
-            if (pickupTarget) {
-              memo.push(pickupTarget);
-            }
-          }
-          return memo;
-        }, []);
-
-        for (let dropoff of needsStorage) {
-          for (let pendingDelivery of pendingStoragePickupPositions) {
-            const resourceLocation = pendingStoragePickupPositions.sort((a, b) => a.pos.getRangeTo(dropoff) - b.pos.getRangeTo(dropoff));
-            let remaining = dropoff.energyCapacity - dropoff.energy;
-            let index = 0;
-            while(remaining > 0) {
-              const target = resourceLocation[index];
-              if (!target) {
-                break;
+        // Find haulers that have energy and available pending tasks
+        const haveEnergyCapacityCreeps = haveEnergyCreeps.filter(creep =>
+          (_.sum(creep.carry) -  amountAssignedTo(creep, 'transfer', tasks)) > 0,
+        )
+        for (let creep of haveEnergyCapacityCreeps) {
+          // targets that have no pending energy deliveries
+          const needsDeliveryEnergyTargets = needsEnergy.filter(target => {
+            const pendingAmount = _.sum(tasks, taskAmountForId(target.id));
+            return (target.energyCapacity - target.energy - pendingAmount) > 0;
+          });
+          if (needsDeliveryEnergyTargets.length) {
+            const lastTransferTargetIndex = _.findLastIndex(tasks, t => t.action === 'transfer' && t.name === creep.name);
+            let lastTransferTarget;
+            if (lastTransferTargetIndex !== -1) {
+              lastTransferTarget = Game.getObjectById(tasks[lastTransferTargetIndex].id);
+              if (!lastTransferTarget) {
+                console.log('Not able to find last transfer target');
               }
-              let amountInPickup = target.amount;
-              if (remaining < amountInPickup) {
-                pendingDelivery.id = target.id;
-                // Create a new task for the remainder
-                const remainingTask = {
-                  from: pendingDelivery.from,
-                  amount: amountInPickup - remaining,
+            } else {
+              // If there are no pending transfer targets, set self as target
+              lastTransferTarget = creep;
+            }
+            let transferAmount = amountAssignedTo(creep, 'transfer', tasks);
+            while(transferAmount < _.sum(creep.carry)) {
+              // Find a nearby target
+              const nextTarget = lastTransferTarget.pos.findClosestByRange(needsDeliveryEnergyTargets);
+              if (nextTarget) {
+                const availabeOnCreep = _.sum(creep.carry) - transferAmount;
+                const pendingAmountForTarget = _.sum([...tasks, ...newDropoffTasks], taskAmountForId(nextTarget.id));
+                const availableAmountForTarget = nextTarget.energyCapacity - nextTarget.energy - pendingAmountForTarget;
+                const dropOffAmount = Math.min(availableAmountForTarget, availabeOnCreep);
+
+                if (availableAmountForTarget < availabeOnCreep) {
+                  // This dropoff will be full, so remove it from consideration
+                  _.pull(needsDeliveryEnergyTargets, nextTarget);
+                }
+                newDropoffTasks.push({
+                  id: nextTarget.id,
+                  name: creep.name,
+                  amount: dropOffAmount,
                   action: 'transfer',
-                  type: target.resourceType,
+                  type: RESOURCE_ENERGY,
                   room: room.name,
-                };
-                newDropoffTasks.push(remainingTask);
-                pendingEnergyDeliveries.push(remainingTask);
-              } else if (remaining >= amountInPickup) {
-                pendingDelivery.id = target.id;
-                _.pull(pendingEnergyDeliveries, )
-              }
-              remaining - amountInPickup;
-              if (index++ >= energyLocations.length) {
+                });
+                transferAmount += dropOffAmount;
+                lastTransferTarget = nextTarget;
+              } else {
+                // Nothing more to do
                 break;
               }
             }
           }
-          const matchingTasks = tasks.filter(t => t.id === dropoff.id)
-          if (matchingTasks.length === 0) {
-            newDropoffTasks.push({
-              id: dropoff.id,
-              amount: dropoff.storeCapacity - _.sum(dropoff.store),
-              action: 'transfer',
-              type: RESOURCE_ENERGY,
-              room: room.name,
-            });
-          } else {
-            const totalOnTask = _.sum(matchingTasks, task => task.name && task.amount || 0);
-            const pendingTasks = matchingTasks.filter(task => !task.name);
+        }
 
-            if (totalOnTask > dropoff.energyCapacity && pendingTasks.length) {
-              // Too much is pending
-              _.pull(tasks, ...pendingTasks);
-            } else if (pendingTasks.length > 1) {
-              // Something got unassigned, merge them together
-              _.pull(tasks, ...pendingTasks);
-              newDropoffTasks.push({
-                id: dropoff.id,
-                amount: dropoff.energyCapacity - totalOnTask,
-                action: 'transfer',
-                type: RESOURCE_ENERGY,
-                room: room.name,
-              });
+        // Find haulers that can pickup energy
+        const canPickupCreeps = creeps.filter(creep => _.sum(creep.carry) === 0
+          || amountAssignedTo(creep, 'pickup', tasks) === 0,
+        );
+        console.log('Creeps that can pickup', canPickupCreeps.map(c => c.name));
+        for (let creep of canPickupCreeps) {
+          // Find resources that need to be picked up
+          const availableDroppedResources = droppedResources.filter(resource => {
+            const pendingAmount = _.sum(tasks, taskAmountForId(resource.id));
+            return (resource.amount - pendingAmount) > 0;
+          });
+          console.log();
+          if (availableDroppedResources.length) {
+            const lastPickupTargetIndex = _.findLastIndex(tasks, t => t.action === 'pickup' && t.name === creep.name);
+            let lastPickupTarget;
+            if (lastPickupTargetIndex !== -1) {
+              lastPickupTarget = Game.getObjectById(tasks[lastPickupTargetIndex].id);
+              if (!lastPickupTarget) {
+                console.log('Not able to find last transfer target');
+              }
+            } else {
+              // If there are no pending transfer targets, set self as target
+              lastPickupTarget = creep;
+            }
+            let pickupAmount = amountAssignedTo(creep, 'pickup', tasks);
+            console.log('availableDroppedResources:', availableDroppedResources, 'lastPickupTarget:', lastPickupTarget, 'pickupAmount:', pickupAmount);
+            while(pickupAmount < (creep.carryCapacity - _.sum(creep.carry))) {
+              // Find a nearby target
+              const sortedResources = availableDroppedResources.sort((a, b) =>
+                (b.amount / lastPickupTarget.pos.getRangeTo(b)) - (a.amount / lastPickupTarget.pos.getRangeTo(a)),
+              )
+              if (sortedResources.length) {
+                const nextTarget = sortedResources[0];
+                console.log('nextTarget:', nextTarget);
+                const availabeToPickupForCreep = creep.carryCapacity - _.sum(creep.carry) - pickupAmount;
+                const pendingAmountForResource = _.sum([...tasks, ...newResourceDrops], taskAmountForId(nextTarget.id));
+                const availableAmountForResource = nextTarget.amount - pendingAmountForResource;
+                const pickupAmountForResource = Math.min(availableAmountForResource, availabeToPickupForCreep);
+
+                if (availableAmountForResource < availabeToPickupForCreep) {
+                  // This dropoff will be full, so remove it from consideration
+                  _.pull(availableDroppedResources, nextTarget);
+                }
+                newResourceDrops.push({
+                  id: nextTarget.id,
+                  name: creep.name,
+                  amount: pickupAmountForResource,
+                  action: 'pickup',
+                  type: RESOURCE_ENERGY,
+                  room: room.name,
+                });
+                pickupAmount += pickupAmountForResource;
+                lastPickupTarget = nextTarget;
+              } else {
+                // Nothing more to do
+                break;
+              }
             }
           }
         }
-        tasks.push(...newEnergyDrops, ...newDropoffTasks);
+
+        // for (let dropoff of needsEnergy) {
+        //
+        //
+        //   for (let pendingDelivery of pendingEnergyDeliveries) {
+        //     const energyLocations = pendingEnergyPickupPositions.sort((a, b) => a.pos.getRangeTo(dropoff) - b.pos.getRangeTo(dropoff));
+        //     let remaining = dropoff.energyCapacity - dropoff.energy;
+        //     let index = 0;
+        //     while(remaining > 0) {
+        //       const target = energyLocations[index];
+        //       if (!target) {
+        //         break;
+        //       }
+        //       let amountInPickup = target.amount;
+        //       if (remaining < amountInPickup) {
+        //         pendingDelivery.id = target.id;
+        //         // Create a new task for the remainder
+        //         const remainingTask = {
+        //           from: pendingDelivery.from,
+        //           amount: amountInPickup - remaining,
+        //           action: 'transfer',
+        //           type: RESOURCE_ENERGY,
+        //           room: room.name,
+        //         };
+        //         newDropoffTasks.push(remainingTask);
+        //         // pendingEnergyDeliveries.push(remainingTask);
+        //       } else if (remaining >= amountInPickup) {
+        //         pendingDelivery.id = target.id;
+        //         //
+        //       }
+        //       remaining - amountInPickup;
+        //       if (index++ >= energyLocations.length) {
+        //         break;
+        //       }
+        //     }
+        //   }
+        //   const matchingTasks = tasks.filter(t => t.id === dropoff.id)
+        //   if (matchingTasks.length === 0) {
+        //     newDropoffTasks.push({
+        //       id: dropoff.id,
+        //       amount: dropoff.energyCapacity - dropoff.energy,
+        //       action: 'transfer',
+        //       type: RESOURCE_ENERGY,
+        //       room: room.name,
+        //     });
+        //   } else {
+        //     const totalOnTask = _.sum(matchingTasks, task => task.name && task.amount || 0);
+        //     const pendingTasks = matchingTasks.filter(task => !task.name);
+        //
+        //     if (totalOnTask > dropoff.energyCapacity && pendingTasks.length) {
+        //       // Too much is pending
+        //       console.log('too much is pending in energy');
+        //       _.pull(tasks, ...pendingTasks);
+        //     } else if (pendingTasks.length > 1) {
+        //       // Something got unassigned, merge them together
+        //       _.pull(tasks, ...pendingTasks);
+        //       newDropoffTasks.push({
+        //         id: dropoff.id,
+        //         amount: dropoff.energyCapacity - totalOnTask,
+        //         action: 'transfer',
+        //         type: RESOURCE_ENERGY,
+        //         room: room.name,
+        //       });
+        //     }
+        //   }
+        // }
+        //
+        // const pendingStorageDeliveries = tasks.filter(t => t.from && !t.id);
+        // const pendingStoragePickupPositions = pendingStorageDeliveries.reduce((memo, t) => {
+        //   const pickupTask = tasks.find(pt => pt.id === t.id);
+        //   if (pickupTask) {
+        //     const pickupTarget = Game.getObjectById(pickupTask.id);
+        //     if (pickupTarget) {
+        //       memo.push(pickupTarget);
+        //     }
+        //   }
+        //   return memo;
+        // }, []);
+        //
+        // for (let dropoff of needsStorage) {
+        //   for (let pendingDelivery of pendingStoragePickupPositions) {
+        //     const resourceLocation = pendingStoragePickupPositions.sort((a, b) => a.pos.getRangeTo(dropoff) - b.pos.getRangeTo(dropoff));
+        //     let remaining = dropoff.energyCapacity - dropoff.energy;
+        //     let index = 0;
+        //     while(remaining > 0) {
+        //       const target = resourceLocation[index];
+        //       if (!target) {
+        //         break;
+        //       }
+        //       let amountInPickup = target.amount;
+        //       if (remaining < amountInPickup) {
+        //         pendingDelivery.id = target.id;
+        //         // Create a new task for the remainder
+        //         const remainingTask = {
+        //           from: pendingDelivery.from,
+        //           amount: amountInPickup - remaining,
+        //           action: 'transfer',
+        //           type: target.resourceType,
+        //           room: room.name,
+        //         };
+        //         newDropoffTasks.push(remainingTask);
+        //         pendingEnergyDeliveries.push(remainingTask);
+        //       } else if (remaining >= amountInPickup) {
+        //         pendingDelivery.id = target.id;
+        //         _.pull(pendingEnergyDeliveries, )
+        //       }
+        //       remaining - amountInPickup;
+        //       if (index++ >= energyLocations.length) {
+        //         break;
+        //       }
+        //     }
+        //   }
+        //   const matchingTasks = tasks.filter(t => t.id === dropoff.id)
+        //   if (matchingTasks.length === 0) {
+        //     newDropoffTasks.push({
+        //       id: dropoff.id,
+        //       amount: dropoff.storeCapacity - _.sum(dropoff.store),
+        //       action: 'transfer',
+        //       type: RESOURCE_ENERGY,
+        //       room: room.name,
+        //     });
+        //   } else {
+        //     const totalOnTask = _.sum(matchingTasks, task => task.name && task.amount || 0);
+        //     const pendingTasks = matchingTasks.filter(task => !task.name);
+        //
+        //     if (totalOnTask > dropoff.energyCapacity && pendingTasks.length) {
+        //       // Too much is pending
+        //       _.pull(tasks, ...pendingTasks);
+        //     } else if (pendingTasks.length > 1) {
+        //       // Something got unassigned, merge them together
+        //       _.pull(tasks, ...pendingTasks);
+        //       newDropoffTasks.push({
+        //         id: dropoff.id,
+        //         amount: dropoff.energyCapacity - totalOnTask,
+        //         action: 'transfer',
+        //         type: RESOURCE_ENERGY,
+        //         room: room.name,
+        //       });
+        //     }
+        //   }
+        // }
+
+        tasks.push(...newResourceDrops, ...newDropoffTasks);
         const beforeRemoveLength = tasks.length;
         _.remove(tasks, task => !Game.getObjectById(task.id) || task.amount === 0);
         const removedTasks = beforeRemoveLength - tasks.length;
         const totalUnassigned = tasks.filter(task => !task.name);
-        console.log('Total hauler tasks:', tasks.length, 'removed:', removedTasks, 'newEnergyDrops:', newEnergyDrops.length, 'newDropoffTasks:', newDropoffTasks.length, 'unassigned:', totalUnassigned.length);
+        console.log('Total hauler tasks:', tasks.length, 'removed:', removedTasks, 'newResourceDrops:', newResourceDrops.length, 'newDropoffTasks:', newDropoffTasks.length, 'unassigned:', totalUnassigned.length);
       };
     }
-    lastTasks = tasks;
   }),
-  update: profiler('Hauler UPDATE', function* haulerUpdate({
+  foo: profiler('Hauler UPDATE', function* haulerUpdate({
     selectors,
     actionCreators,
   }) {
@@ -469,6 +659,24 @@ createBrood({
     console.log('At end of UPDATE there are', tasks.filter(t => t.name).length, 'assigned tasks');
     lastTasks = tasks;
 
+
+  }),
+  run: profiler('Hauler RUN', function* haulerRun({
+    selectors,
+    actionCreators,
+  }) {
+    if (!lastNeeds || Game.time % 8 === 0) {
+      lastNeeds = yield call(createNeeds, {
+        selectors,
+        actionCreators,
+      });
+    }
+    yield put(spawnActions.need({
+      needs: lastNeeds,
+      controller: 'Hauler',
+    }));
+    const tasks = yield select(selectors.tasks);
+    const creeps = yield select(selectors.alive);
     for (let creep of creeps) {
       const myTasks = tasks.filter(t => t.name === creep.name);
       const task = myTasks[0];
@@ -512,12 +720,46 @@ createBrood({
               } else {
                 console.log('what is', target);
               }
-              const creepAmount = creep.carry[task.type];
-              const transferErr = creep.transfer(target, task.type, Math.min(creepAmount, targetAmount));
+              let creepAmount = creep.carry[task.type];
+              const transferAmount = Math.min(creepAmount, targetAmount);
+              const transferErr = creep.transfer(target, task.type, transferAmount);
               _.pull(tasks, task);
               creep.memory.transfer[task.type] = Math.max(creep.memory.transfer[task.type] - task.amount, 0);
               if (transferErr) {
                 console.log('transfer error', transferErr);
+              } else {
+                creepAmount -= transferAmount;
+              }
+              let moved = false;
+              for (let i = 1; i < myTasks.length; i++) {
+                if (creepAmount <= 0) {
+                  break;
+                }
+                const futureTask = myTasks[i];
+                const futureTarget = Game.getObjectById(futureTask.id);
+                if (futureTarget) {
+                  if (futureTarget.pos.getRangeTo(creep) <= 1) {
+                    if ('energy' in target) {
+                      targetAmount = target.energyCapacity - target.energy;
+                    } else if (target.store && target.store[task.type]) {
+                      targetAmount = target.storeCapacity - _.sum(target.store);
+                    } else {
+                      console.log('what is', target);
+                    }
+                    const futureTransferAmount = Math.min(creepAmount, targetAmount);
+                    if (futureTransferAmount > 0) {
+                      const transferErr = creep.transfer(futureTask, futureTask.type, Math.min(creepAmount, futureTransferAmount));
+                      if (transferErr) {
+                        console.log('transfer error', transferErr);
+                      } else {
+                        creepAmount -= futureTransferAmount;
+                      }
+                    }
+                  } else if (!moved) {
+                    creep.routeTo(futureTarget, { range: 1 });
+                    moved = true;
+                  }
+                }
               }
               console.log(`${creep.name} transfer target:${target} task:${task.amount} targetAmount:${targetAmount} creep:(${_.sum(creep.carry)}/${creep.carryCapacity}) transfer:${_.sum(creep.memory.transfer)}`);
             }
@@ -529,14 +771,6 @@ createBrood({
         }
       }
     }
-  }),
-  run: profiler('Hauler RUN', function* haulerRun({
-    selectors,
-  }) {
-    yield put(spawnActions.need({
-      needs: lastNeeds,
-      controller: 'Hauler',
-    }));
     // const tasks = lastTasks;
     // const creeps = yield select(selectors.alive);
     // console.log('HAULER RUN start');
