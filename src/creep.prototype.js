@@ -612,9 +612,9 @@ Creep.prototype.getOutOfTheWay = function getOutOfTheWay(target, range = 1) {
           break;
         }
       }
-      if (!foundOpenSpot) {
-        this.move(this.pos.getDirectionTo(creepNearby));
-      }
+      // if (!foundOpenSpot) {
+      //   this.move(this.pos.getDirectionTo(creepNearby));
+      // }
     }
   }
 }
