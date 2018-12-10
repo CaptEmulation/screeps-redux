@@ -136,6 +136,8 @@ createBrood({
           creep.repair(target);
           creep.getOutOfTheWay(target, 3);
         }
+      } else if(creep.carryCapacity === _.sum(creep.carry)) {
+        creep.getOutOfTheWay();
       } else {
         findClosestEnergy(creep, false);
       }
