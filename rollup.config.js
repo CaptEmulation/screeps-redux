@@ -15,7 +15,7 @@ const ROOT = (function () {
     case 'win32':
       return 'AppData/Local/Screeps/scripts';
     default:
-      throw new Error('Unsupported platform', platform);
+      return '.config/Screeps/scripts';
   }
 })();
 
