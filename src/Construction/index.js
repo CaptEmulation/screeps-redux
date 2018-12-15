@@ -195,12 +195,13 @@ function* run() {
       const builderCount = Game.spawns['Spawn1'].room.find(FIND_MY_CONSTRUCTION_SITES).length > 0 ? 5 : 2;
       lastNeeds = range(0, builderCount).map(num => ({
         name: `Builder-${num}`,
-        body: ({
+        priority: -60,
+        /*body: ({
           appraiser,
           available,
           max,
         }) => {
-          const body = [MOVE, CARRY];
+          const body = [MOVE, CARRY, WORK];
           while (appraiser(body) < available) {
             const workCount = body.filter(b => WORK).length;
             if (workCount >= 8) {
@@ -215,7 +216,8 @@ function* run() {
             }
           }
           return body;
-        },
+        },*/
+        body: [MOVE, CARRY, WORK],
       }));
     }
 

@@ -332,7 +332,7 @@ function* run() {
         })) {
           let workerPriority = DEFAULT_SUPPLY_PRIORITY;
           let supplyPriority = DEFAULT_SUPPLY_PRIORITY;
-          let supplyCount = room.controller.level < 3 ? 5 : 3;
+          let supplyCount = 2;
           if (!(creeps.worker && creeps.worker.length) && !(creeps.supply && creeps.supply.length)) {
             workerPriority *= 2;
           } else if (!(creeps.supply && creeps.supply.length)) {
@@ -364,7 +364,7 @@ function* run() {
     }
 
     yield put(spawnActions.need({
-      needs: lastNeeds,
+      needs: [],
       controller: 'Economy',
     }));
 
