@@ -40,6 +40,44 @@ export function eq(source) {
   });
 }
 
+export function matchProp(prop, matcher) {
+  return createMatcher({
+    matcher(value) {
+      return matcher(_.get(value, prop));
+    },
+    descrive(value, m) {
+      const p = m(value);
+      return `matchProp(${prop}) with ${matcher.describe(p, matcher(p))}`;
+    },
+  });
+}
+
+export function isInstanceOf(type) {
+  return createMatcher({
+    matcher(value) {
+      return value instanceof type;
+    },
+    describe(value) {
+      return `${value} instanceof ${type}`;
+    },
+  });
+}
+
+export function withGameObject(matcher) {
+  return createMatcher({
+    matcher(id) {
+      return matcher(Game.getObjectById(id));
+    },
+    describe(id, m) {
+      return `withGameObject(${id}) with ${m(id)}`;
+    },
+  })
+}
+
+export function isTaskTargetingInstanceOf(instance) {
+  return matchProp('target', withGameObject(isInstanceOf(instance)));
+}
+
 export function hasCarryCapacityRemaining(matcher) {
   return createMatcher({
     matcher(creep) {
@@ -62,13 +100,22 @@ export function isStructureOfType(type) {
   });
 }
 
-export function isMine() {
+export const isMine = createMatcher({
+  matcher(target) {
+    return target.my === true;
+  },
+  describe(target) {
+    return `isMine === ${target.my}`;
+  },
+});
+
+export function isTaskAction(action) {
   return createMatcher({
-    matcher(target) {
-      return target.my === true;
+    matcher({ action }) {
+      return task.action === action;
     },
-    describe(target) {
-      return `isMine === ${target.my}`;
+    describe(task) {
+      return `isTaskAction(${action}) === ${task.action}`;
     },
   });
 }
@@ -87,7 +134,55 @@ export const creep = {
 export const target = {
   isSpawn: isStructureOfType(STRUCTURE_SPAWN),
   isContainer: isStructureOfType(STRUCTURE_CONTAINER),
-  isMyContainer: and(isStructureOfType(STRUCTURE_CONTAINER), isMine()),
+  isMyContainer: and(isStructureOfType(STRUCTURE_CONTAINER), isMine),
+};
+
+const isEnergyHarvestingTask = and(
+  matchProp('action', eq('harvest')),
+  matchProp('target', withGameObject(isInstanceOf(Source)))
+);
+
+const isEnergyDeliveryTask = and(
+  matchProp('action', eq('transfer')),
+  matchProp('type', eq(RESOURCE_ENERGY)),
+  matchProp('target', or(
+     withGameObject(isInstanceOf(StructureContainer)),
+     withGameObject(isInstanceOf(StructureStorage)),
+     withGameObject(isInstanceOf(StructureTower)),
+  )),
+);
+
+const isPickupTask = and(
+  matchProp('action', eq('pickup')),
+  matchProp('target', or(
+     withGameObject(isInstanceOf(Resource)),
+  )),
+);
+
+const isEnergyAcquireTask = or(
+  and(
+    matchProp('action', eq('pickup')),
+    matchProp('type', eq(RESOURCE_ENERGY)),
+    matchProp('target', withGameObject(isInstanceOf(Resource))),
+  ),
+  and(
+    matchProp('action', eq('withdraw')),
+    matchProp('type', eq(RESOURCE_ENERGY)),
+    matchProp('for', withGameObject(isInstanceOf(Source))),
+    matchProp('target', withGameObject(isInstanceOf(StructureContainer))),
+  ),
+  and(
+    matchProp('action', eq('withdraw')),
+    matchProp('type', eq(RESOURCE_ENERGY)),
+    matchProp('target', withGameObject(isInstanceOf(Tombstone))),
+  )
+);
+
+export const task = {
+  isEnergyHarvestingTask,
+  isEnergyDeliveryTask,
+  isPickupTask,
+  isEnergyAcquireTask,
 };
 
 const commands = {

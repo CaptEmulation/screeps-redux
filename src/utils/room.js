@@ -1,4 +1,6 @@
 
+
+
 export function exits(name) {
   const pre1 = name[0];
   const leftright = parseInt(name[1]);

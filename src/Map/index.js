@@ -112,30 +112,17 @@ createSaga(
   start,
 );
 
-const initialState = {
-  rooms: [],
-};
+const initialState = {};
 
 createReducer('Map', initialState, {
   [ROOM_INFO](state, { payload: roomInfo }) {
     const { name } = roomInfo;
-    const existingRoom = state.rooms.find(room => room.name === name);
-
-    let rooms;
-    if (existingRoom) {
-      const newRoomInfo = {
-        ...existingRoom,
-        ...roomInfo,
-      };
-      const indexOfExistingRoom = state.rooms.indexOf(existingRoom);
-      rooms = [...state.rooms.slice(indexOfExistingRoom), newRoomInfo, ...state.rooms.slice(indexOfExistingRoom + 1)];
-    } else {
-      rooms = [roomInfo].concat(state.rooms);
-
-    }
     return {
       ...state,
-      rooms,
+      [name]: {
+        ...state[name],
+        roomInfo,
+      },
     };
   },
 });

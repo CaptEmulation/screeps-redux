@@ -5,3 +5,4 @@ export const COMMIT = 'TICK_COMMIT';
 export const RESET = 'RESET';
 export const SCAN = 'SCAN';
 export const START = 'START';
+export const DEATH = 'DEATH';

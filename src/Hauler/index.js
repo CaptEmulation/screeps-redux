@@ -118,6 +118,15 @@ function actionForPickupTarget(target) {
   throw new Error('Unknown target', target);
 }
 
+function availableCreepCapacityWithTasks(creep, tasks) {
+  return (_.sum(creep.carry) -  amountAssignedTo(creep, 'transfer', tasks));
+}
+
+function energyNeededAfterPendingTransfer(target, tasks) {
+  return target.energyCapacity - target.energy - _.sum(tasks, taskAmountForId(target.id));
+}
+
+
 /*
  * Example tasks
  *
@@ -194,6 +203,8 @@ createBrood({
           }
         }
 
+        // New tasks
+        const newDropoffTasks = [];
         const newResourceDrops = [];
 
         const droppedResources = room.find(FIND_DROPPED_RESOURCES);
@@ -216,20 +227,22 @@ createBrood({
           return _.sum(structure.store) < structure.storeCapacity;
         });
 
-
-
-        const newDropoffTasks = [];
         const haveEnergyCreeps = creeps.filter(c => c.carry[RESOURCE_ENERGY]);
+        const haveResourcesCreeps = creeps.filter(c => Object.entries(c.carry).some(
+          ([type, amount]) => type !== RESOURCE_ENERGY && amount > 0,
+        ));
 
         // Find haulers that have energy and available pending tasks
         const haveEnergyCapacityCreeps = haveEnergyCreeps.filter(creep =>
-          (_.sum(creep.carry) -  amountAssignedTo(creep, 'transfer', tasks)) > 0,
+          availableCreepCapacityWithTasks(creep, tasks) > 0,
         );
+
         // targets that have no pending energy deliveries
-        const needsDeliveryEnergyTargets = needsEnergy.filter(target => {
-          const pendingAmount = _.sum(tasks, taskAmountForId(target.id));
-          return (target.energyCapacity - target.energy - pendingAmount) > 0;
-        });
+        const needsDeliveryEnergyTargets = needsEnergy.filter(target =>
+          energyNeededAfterPendingTransfer(target, tasks) > 0,
+        );
+
+
         for (let creep of haveEnergyCapacityCreeps) {
           if (needsDeliveryEnergyTargets.length) {
             const lastTransferTargetIndex = _.findLastIndex(tasks, t => t.action === 'transfer' && t.name === creep.name);
@@ -369,7 +382,7 @@ createBrood({
               const sortedResources = availableResources.sort(bestAmountPickup(lastPickupTarget, availabeToPickupForCreep, [...tasks, ...newResourceDrops]));
               if (sortedResources.length) {
                 const nextTarget = sortedResources[0];
-                console.log('nextTarget:', nextTarget);
+                console.log('pickup nextTarget:', nextTarget);
                 const pendingAmountForResource = _.sum([...tasks, ...newResourceDrops], taskAmountForId(nextTarget.id));
                 const availableAmountForResource = amountFromTarget(nextTarget) - pendingAmountForResource;
                 const pickupAmountForResource = Math.min(availableAmountForResource, availabeToPickupForCreep);

@@ -290,10 +290,14 @@ export const reducer = createReducer('Spawn', initialState, {
 
     const mergedNeeds = definition
       .map(need => ({
+        // defaults
         priority: 0,
         hunger: 0,
+        // assign matching name
         ...state.needs.find(def => def.name === need.name),
+        // assign brood props
         ...meta,
+        // input
         ...need,
       }));
     const needs = [...mergedNeeds, ...existingNeeds];
