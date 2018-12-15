@@ -36,7 +36,7 @@ function deploy(host) {
 export default ({
   host = '127_0_0_1___21025',
 }) => ({
-  input: 'src/main.js',
+  input: 'src/app.js',
   output: {
     file: 'main.js',
     format: 'cjs',

@@ -56,12 +56,18 @@ createBrood({
       const creeps = yield select(selectors.alive);
       for (let creep of creeps) {
         if (creep.carry[RESOURCE_ENERGY] === creep.carryCapacity) {
-          const target = Game.spawns['Spawn1'];
+          const targets = creep.room.find(FIND_STRUCTURES, {
+            filter(structure){
+              return (structure.structureType === STRUCTURE_EXTENSION || structure.structureType === STRUCTURE_SPAWN) && structure.energy < structure.energyCapacity;
+            }
+          })
+          const target = creep.pos.findClosestByRange(targets);
           const range = creep.pos.getRangeTo(target);
           if (target && range > 1) {
             creep.moveTo(target);
           } else {
-            creep.transfer(target, RESOURCE_ENERGY);
+            const amount = Math.min(creep.carry[RESOURCE_ENERGY], target.energyCapacity - target.energy);
+            creep.transfer(target, RESOURCE_ENERGY, amount);
           }
         } else {
           if (!creep.memory.source) {
