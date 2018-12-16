@@ -192,11 +192,11 @@ function* run() {
   // });
   yield takeEvery(RUN, function* onRun() {
     if (!lastNeeds || Game.time % 8 === 0) {
-      const builderCount = Game.spawns['Spawn1'].room.find(FIND_MY_CONSTRUCTION_SITES).length > 0 ? 5 : 2;
+      const builderCount = 4//Game.spawns['Spawn1'].room.find(FIND_MY_CONSTRUCTION_SITES).length > 0 ? 5 : 2;
       lastNeeds = range(0, builderCount).map(num => ({
         name: `Builder-${num}`,
         priority: -60,
-        /*body: ({
+        body: ({
           appraiser,
           available,
           max,
@@ -207,17 +207,14 @@ function* run() {
             if (workCount >= 8) {
               break;
             }
-            if (workCount % 5 === 0 && appraiser([...body, MOVE, MOVE, CARRY]) < max) {
-              body.push(MOVE, MOVE, CARRY);
-            } else if (appraiser([...body, WORK]) <= max) {
-              body.push(WORK);
+            if (appraiser([...body, MOVE, CARRY, WORK, CARRY]) <= max) {
+              body.push(MOVE, CARRY, WORK, CARRY);
             } else {
               break;
             }
           }
           return body;
-        },*/
-        body: [MOVE, CARRY, WORK],
+        },
       }));
     }
 

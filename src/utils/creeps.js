@@ -66,18 +66,24 @@ export function findClosestEnergy(creep, dropped = true) {
 
   const energySources = dropped ? creep.room.find(FIND_DROPPED_RESOURCES, {
     filter(resource) {
-      return resource.energy > creep.carryCapacity;
+      return resource.amount > creep.carryCapacity && resource.resourceType === RESOURCE_ENERGY;
     }
   }) : [];
 
-  const sources = [...energySources, ...structureSources].sort((a, b) => creep.pos.getRangeTo(a) - creep.pos.getRangeTo(b));
+  const tombstones = creep.room.find(FIND_TOMBSTONES, {
+    filter(tombstone) {
+      return tombstone.store[RESOURCE_ENERGY] > 0;
+    }
+  });
+  
+  const sources = [...energySources, ...structureSources, ...tombstones].sort((a, b) => creep.pos.getRangeTo(a) - creep.pos.getRangeTo(b));
 
   if (sources.length) {
     const source = sources[0];
     let task;
     if (source instanceof Resource) {
       task = tasks.pickup();
-    } else if (source instanceof StructureContainer || source instanceof StructureStorage) {
+    } else if (source instanceof StructureContainer || source instanceof StructureStorage || source instanceof Tombstone) {
       task = tasks.withdraw(RESOURCE_ENERGY);
     } else if (source instanceof Source) {
       task = tasks.harvest();

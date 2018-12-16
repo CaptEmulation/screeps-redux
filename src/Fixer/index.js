@@ -27,6 +27,16 @@ const UPGRADER_COUNT = 1;
 
 let lastNeeds;
 
+
+function getRepairList(creep, activeFixers) {
+  const stuff = creep.room.find(FIND_STRUCTURES, {
+    filter(target) {
+      return target.structureType !== STRUCTURE_WALL && (target.hits / target.hitsMax) <= 0.85 && !activeFixers.find(fixer => fixer.memory.fixing.id === target.id);
+    },
+  });
+  return stuff;
+}
+
 createBrood({
   role: 'Fixer',
   * directCreeps({
@@ -73,6 +83,67 @@ createBrood({
 
     const activeFixers = yield select(selectors.alive);
     activeFixers.forEach(creep => {
+      const somethingToRepair = getRepairList(creep, activeFixers).length > 0;
+      if (!somethingToRepair){
+        if (!creep.memory.task) {
+          creep.memory.task = "fill";
+        }
+        if (creep.carry[RESOURCE_ENERGY] === creep.carryCapacity && creep.memory.task === "fill") {
+          creep.say("full");
+          creep.memory.task = "empty";
+        }
+        if (creep.carry[RESOURCE_ENERGY] === 0 && creep.memory.task === "empty") {
+          creep.say("empty");
+          creep.memory.task = "fill";
+          delete creep.memory.source;
+        }
+
+        if (creep.memory.task === "empty") {
+          let targets = creep.room.find(FIND_STRUCTURES, {
+            filter(structure){
+              return (structure.structureType === STRUCTURE_EXTENSION || structure.structureType === STRUCTURE_SPAWN) && structure.energy < structure.energyCapacity;
+            }
+          })
+          if (targets.length === 0) {
+            targets = creep.room.find(FIND_STRUCTURES, {
+              filter(structure){
+                return structure.structureType === STRUCTURE_CONTAINER && _.sum(structure.store) < structure.storeCapacity;
+              }
+            })
+          }
+          const target = creep.pos.findClosestByRange(targets);
+          const range = creep.pos.getRangeTo(target);
+          if (target && range > 1) {
+            creep.moveTo(target, {reusePath: 5, visualizePathStyle: {}});
+            //creep.routeTo(target, { range:0, ignoreCreeps:false });
+          } else if (target) {
+            const amount = Math.min(creep.carry[RESOURCE_ENERGY], target.energyCapacity - target.energy);
+            creep.transfer(target, RESOURCE_ENERGY, amount);
+          }
+        } else if (creep.memory.task === "fill"){
+          const energySources = creep.room.find(FIND_DROPPED_RESOURCES, {
+            filter(resource) {
+              return resource.amount > creep.carryCapacity && resource.resourceType === RESOURCE_ENERGY;
+            }
+          });
+
+          const tombstones = creep.room.find(FIND_TOMBSTONES, {
+            filter(tombstone) {
+              return tombstone.store[RESOURCE_ENERGY] > 0;
+            }
+          });
+
+          const target = creep.pos.findClosestByRange([...energySources, ...tombstones]);
+          const range = creep.pos.getRangeTo(target);
+          if (target && range > 1) {
+            creep.moveTo(target, {reusePath: 5, visualizePathStyle: {}});
+            //creep.routeTo(target, { range:0, ignoreCreeps:false });
+          } else {
+            creep.harvest(target);
+          }
+        }
+      }
+
       if (!creep.memory.fixing || creep.memory.fixing.id && creep.carry.energy === 0) {
         creep.memory.fixing = {};
         creep.say('🔄 harvest');
@@ -136,7 +207,7 @@ createBrood({
           creep.repair(target);
           creep.getOutOfTheWay(target, 3);
         }
-      } else {
+      } else if (somethingToRepair) {
         findClosestEnergy(creep, false);
       }
     });

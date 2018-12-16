@@ -200,8 +200,8 @@ function* commit() {
           if (_.isFunction(need.body)) {
             body = need.body({
               appraiser: calcCreepCost,
-              available: spawner.energy + roomInfo.extensions.available,
-              max: 300 + roomInfo.extensions.max,
+              available: room.energyAvailable,
+              max: room.energyCapacityAvailable,
               extensions: {
                 ...roomInfo.extensions,
               },

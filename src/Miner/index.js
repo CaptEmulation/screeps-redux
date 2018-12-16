@@ -32,7 +32,7 @@ const unexploredRooms = createSelector(
 function* newRoomBehavior(creep) {
 }
 
-const MINER_COUNT = 3
+const MINER_COUNT = 0
 const earlyCreeps = _.range(0, MINER_COUNT).map(num => ({
   name: `Miner-${num}`,
   body: [MOVE, WORK],
@@ -50,7 +50,7 @@ createBrood({
     selectors,
   }) {
       yield put(spawnActions.need({
-        needs: earlyCreeps,
+        needs: [],
         controller: 'Miner',
       }));
       const creeps = yield select(selectors.alive);
@@ -62,7 +62,7 @@ createBrood({
           const target = Game.getObjectById(creep.memory.source.id);
           const range = creep.pos.getRangeTo(target);
           if (target && range > 1) {
-            creep.moveTo(target);
+            creep.routeTo(target);
           } else {
             creep.harvest(target);
           }
