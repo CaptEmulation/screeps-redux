@@ -16,7 +16,10 @@ global.getCreeps = function() {
 global.showCreep = function(name) {
   const creep = Game.creeps[name];
   new RoomVisual(creep.room.name).circle(creep.pos, {stroke: "blue", fill: 'transparent', opacity: 1, radius: 1});
-  return name;
+  let vitalStats = {};
+  vitalStats['task'] = creep.memory.task;
+  vitalStats['ticksToLive'] = creep.ticksToLive;
+  return name + "  \t" + JSON.stringify(vitalStats);
 }
 
 export const deadCreeps = (function () {
