@@ -13,6 +13,11 @@ global.getCreeps = function() {
   return "That's all folks!";
 }
 
+global.showCreep = function(name) {
+  const creep = Game.creeps[name];
+  new RoomVisual(creep.room.name).circle(creep.pos, {stroke: "blue", fill: 'transparent', opacity: 1, radius: 1});
+  return name;
+}
 
 export const deadCreeps = (function () {
   const selectMemoryCreeps = ({ Memory }) => Memory.creeps || {};
