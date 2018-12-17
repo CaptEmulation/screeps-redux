@@ -33,7 +33,7 @@ const unexploredRooms = createSelector(
 function* newRoomBehavior(creep) {
 }
 
-const HAULER_COUNT = 2
+const HAULER_COUNT = 1
 const earlyCreeps = _.range(0, HAULER_COUNT).map(num => ({
   name: `Hauler-${num}`,
   body: ({
@@ -43,7 +43,11 @@ const earlyCreeps = _.range(0, HAULER_COUNT).map(num => ({
   }) => {
     // console.log("available: " + available + ", max: " + max);
     const body = [MOVE, CARRY];
+    const maxSize = 14;
     while (appraiser(body) < available) {
+      if (body.length >= maxSize) {
+        break;
+      }
       if (appraiser([...body, MOVE, CARRY]) <= available) {
         body.push(MOVE, CARRY);
       } else {
@@ -54,6 +58,7 @@ const earlyCreeps = _.range(0, HAULER_COUNT).map(num => ({
   },
   memory: {
     role: 'Hauler',
+    num,
   },
   priority: 0,
   controller: 'Hauler',
@@ -104,12 +109,12 @@ createBrood({
           creep.memory.task = "empty";
         }
         if (creep.carry[RESOURCE_ENERGY] === 0 && creep.memory.task === "empty") {
-          if (creep.ticksToLive > 200) {
-            creep.say("need more");
-            creep.memory.task = "fill";
-          } else {
+          if (creep.ticksToLive < 200 && creep.memory.num < HAULER_COUNT ) {
             creep.say("help me!");
             creep.memory.task = "renew";
+          } else {
+            creep.say("need more");
+            creep.memory.task = "fill";
           }
         }
 
@@ -153,7 +158,8 @@ createBrood({
           else {
             creep.drop(RESOURCE_ENERGY);
           }
-        } else if (creep.memory.task === "fill"){
+        }
+        else if (creep.memory.task === "fill"){
 
           const targetIds = creep.room.memory.containers;
           const targets = targetIds.map(id => Game.getObjectById(id));

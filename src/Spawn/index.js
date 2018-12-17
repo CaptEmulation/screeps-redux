@@ -236,6 +236,7 @@ function* commit() {
       const err = spawner.spawnCreep(body, name, opts);
       if (err) {
         console.log('Error spawning', name, err);
+        reset();
       } else {
         console.log('Spawned new creep', name);
       }

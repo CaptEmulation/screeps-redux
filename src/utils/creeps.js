@@ -1,5 +1,19 @@
 import { createSelector } from 'reselect';
 
+
+global.getCreeps = function() {
+  const creeps = Game.creeps;
+  Object.keys(creeps).forEach(function (key) {
+    const creep = creeps[key];
+    let vitalStats = {};
+    vitalStats['task'] = creep.memory.task;
+    vitalStats['ticksToLive'] = creep.ticksToLive;
+    console.log(key + "  \t" + JSON.stringify(vitalStats));
+  });
+  return "That's all folks!";
+}
+
+
 export const deadCreeps = (function () {
   const selectMemoryCreeps = ({ Memory }) => Memory.creeps || {};
   const selectGameCreeps = ({ Game }) => Game.creeps || {};
@@ -75,7 +89,7 @@ export function findClosestEnergy(creep, dropped = true) {
       return tombstone.store[RESOURCE_ENERGY] > 0;
     }
   });
-  
+
   const sources = [...energySources, ...structureSources, ...tombstones].sort((a, b) => creep.pos.getRangeTo(a) - creep.pos.getRangeTo(b));
 
   if (sources.length) {

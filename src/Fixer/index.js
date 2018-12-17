@@ -90,7 +90,7 @@ createBrood({
         if (!creep.memory.task) {
           creep.memory.task = "fill";
         }
-        if (creep.ticksToLive < 500) {
+        if (creep.ticksToLive < 200) {
           creep.memory.task = "renew";
           creep.say("fix me!");
         }

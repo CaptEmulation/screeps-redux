@@ -83,7 +83,7 @@ createBrood({
         }
         if (creep.carry[RESOURCE_ENERGY] === 0 && creep.memory.task === "empty") {
           if (creep.ticksToLive < 200) {
-            creep.say("repair me!");
+            creep.say("fix me!");
             creep.memory.task = "renew";
           }
           else {
@@ -130,7 +130,7 @@ createBrood({
             radius: .45, fill: "transparent", stroke: "red", strokeWidth: .15, opacity: opacity
           }); */
           if (!creep.memory.source) {
-            
+
             if (_.isUndefined(creep.room.memory.lastSource))
             {
               creep.room.memory.lastSource = -1;

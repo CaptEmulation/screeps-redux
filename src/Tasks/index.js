@@ -1,5 +1,5 @@
 
-export function renewSelf(creep, minTicks = 1000) {
+export function renewSelf(creep, minTicks = 1400) {
   let targets = creep.room.find(FIND_STRUCTURES, {
     filter(structure){
       return structure.structureType === STRUCTURE_SPAWN;
@@ -16,7 +16,7 @@ export function renewSelf(creep, minTicks = 1000) {
       if (err) {
         creep.say(err);
       }
-      if (creep.ticksToLive > minTicks) {
+      if (creep.ticksToLive > minTicks || creep.room.energyAvailable < 200) {
         creep.say("all better");
         creep.memory.task = "fill";
       }

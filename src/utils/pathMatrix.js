@@ -39,4 +39,5 @@ global.resetPathMatrix = function() {
   for (let room of Object.values(Game.rooms)) {
     delete room.memory.pathMatrix;
   }
+  return "reset";
 }
