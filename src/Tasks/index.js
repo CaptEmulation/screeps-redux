@@ -17,7 +17,7 @@ export function renewSelf(creep, minTicks = 1400) {
         creep.say(err);
       }
       if (creep.ticksToLive > minTicks || creep.room.energyAvailable < 200) {
-        creep.say("all better");
+        creep.say("all better", true);
         creep.memory.task = "fill";
       }
     }
@@ -36,7 +36,7 @@ export function vanish(creep) {
     //console.log("setting target by position");
     target = creep.pos.findClosestByRange(targets);
     //const sourceNum = targets.indexOf(target);
-    creep.say("vanish");
+    creep.say("vanish", true);
     creep.memory.targetId = target.id;
   } else {
     //console.log("getting target from memory");
@@ -48,7 +48,7 @@ export function vanish(creep) {
 export function wakeup(creep) {
   if (creep.memory.targetId) {
     delete creep.memory.targetId;
-    creep.say("bzzt");
+    creep.say("bzzt", true);
   }
 }
 
