@@ -105,15 +105,15 @@ createBrood({
           creep.memory.task = "fill";
         }
         if (creep.carry[RESOURCE_ENERGY] === creep.carryCapacity && creep.memory.task === "fill") {
-          creep.say("got it");
+          creep.say("got it", true);
           creep.memory.task = "empty";
         }
         if (creep.carry[RESOURCE_ENERGY] === 0 && creep.memory.task === "empty") {
           if (creep.ticksToLive < 200 && creep.memory.num < HAULER_COUNT ) {
-            creep.say("help me!");
+            creep.say("help me!", true);
             creep.memory.task = "renew";
           } else {
-            creep.say("need more");
+            creep.say("need more", true);
             creep.memory.task = "fill";
           }
         }
@@ -152,7 +152,7 @@ createBrood({
             //creep.routeTo(target, { range:0, ignoreCreeps:false });
           } else if (target) {
             const amount = Math.min(creep.carry[RESOURCE_ENERGY], target.energyCapacity - target.energy);
-            creep.say("bloop");
+            creep.say("bloop", true);
             creep.transfer(target, RESOURCE_ENERGY, amount);
           }
           else {
@@ -200,14 +200,14 @@ createBrood({
             } else if (target instanceof Tombstone || target instanceof StructureContainer) {
               creep.withdraw(target, RESOURCE_ENERGY);
             }
-            creep.say("got it");
+            creep.say("got it", true);
             if (target instanceof StructureContainer) {
               creep.memory.task = "empty";
             }
           } else {
             const saying = Math.random() * 10;
             if (Math.floor(saying) === 1) {
-              creep.say("bored");
+              creep.say("bored", true);
             }
           }
         }

@@ -235,17 +235,17 @@ function* run() {
       if (creep.memory.building && creep.carry.energy === 0) {
         creep.memory.building = false;
         if (creep.ticksToLive < 200 && creep.memory.num < BUILDER_COUNT) {
-          creep.say("fix me!");
+          creep.say("fix me!", true);
           creep.memory.task = "renew";
         } else {
-          creep.say('need fuel');
+          creep.say('need fuel', true);
           creep.memory.task = "fill";
         }
       }
       if(!creep.memory.building && creep.carry.energy === creep.carryCapacity) {
         creep.memory.building = true;
         creep.memory.task = "build";
-        creep.say('build');
+        creep.say('build', true);
       }
 
       if (creep.memory.task === "renew") {
@@ -283,7 +283,7 @@ function* run() {
             creep.upgradeController(creep.room.controller);
             const saying = Math.random() * 10;
             if (Math.floor(saying) === 1) {
-              creep.say("UP-grade");
+              creep.say("UP-grade", true);
             }
             creep.getOutOfTheWay(creep.room.controller, 3);
           }

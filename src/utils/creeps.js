@@ -8,6 +8,7 @@ global.getCreeps = function() {
     let vitalStats = {};
     vitalStats['task'] = creep.memory.task;
     vitalStats['ticksToLive'] = creep.ticksToLive;
+    vitalStats['energy'] = creep.carry['energy'];
     console.log(key + "  \t" + JSON.stringify(vitalStats));
   });
   return "That's all folks!";
@@ -19,6 +20,7 @@ global.showCreep = function(name) {
   let vitalStats = {};
   vitalStats['task'] = creep.memory.task;
   vitalStats['ticksToLive'] = creep.ticksToLive;
+  vitalStats['energy'] = creep.carry['energy'];
   return name + "  \t" + JSON.stringify(vitalStats);
 }
 

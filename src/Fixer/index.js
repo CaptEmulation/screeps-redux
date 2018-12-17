@@ -92,14 +92,14 @@ createBrood({
         }
         if (creep.ticksToLive < 200) {
           creep.memory.task = "renew";
-          creep.say("fix me!");
+          creep.say("fix me!", true);
         }
         else if (creep.carry[RESOURCE_ENERGY] === creep.carryCapacity && creep.memory.task === "fill") {
-          creep.say("fixer");
+          creep.say("fixer", true);
           creep.memory.task = "empty";
         }
         else if (creep.carry[RESOURCE_ENERGY] === 0 && creep.memory.task === "empty") {
-            creep.say("fixer");
+            creep.say("fixer", true);
             creep.memory.task = "fill";
         }
 
@@ -164,7 +164,7 @@ createBrood({
 
       if (!creep.memory.fixing || creep.memory.fixing.id && creep.carry.energy === 0) {
         creep.memory.fixing = {};
-        creep.say('need fuel');
+        creep.say('need fuel', true);
       }
       if (creep.memory.fixing.id && creep.room.energyAvailable < 25 && dropOffEnergy(creep)) {
         // all done
@@ -199,14 +199,14 @@ createBrood({
           _.remove(notWallsToRepair, mine);
           creep.memory.fixing.id = mine.id;
           creep.memory.fixing.pos = [mine.pos.x, mine.pos.y, mine.pos.roomName];
-          creep.say('fixing');
+          creep.say('fixing', true);
         } else if (wallsToRepair && wallsToRepair.length) {
           // find weakest wall
           const mine = _.head(wallsToRepair.sort((a, b) => a.hits - b.hits));
           _.remove(wallsToRepair, mine);
           creep.memory.fixing.id = mine.id;
           creep.memory.fixing.pos = [mine.pos.x, mine.pos.y, mine.pos.roomName];
-          creep.say('fixing');
+          creep.say('fixing', true);
         }
       }
       if (creep.memory.fixing.id) {

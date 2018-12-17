@@ -78,16 +78,16 @@ createBrood({
           creep.memory.task = "fill";
         }
         if (creep.carry[RESOURCE_ENERGY] === creep.carryCapacity && creep.memory.task === "fill") {
-          creep.say("full");
+          creep.say("full", true);
           creep.memory.task = "empty";
         }
         if (creep.carry[RESOURCE_ENERGY] === 0 && creep.memory.task === "empty") {
           if (creep.ticksToLive < 200) {
-            creep.say("fix me!");
+            creep.say("fix me!", true);
             creep.memory.task = "renew";
           }
           else {
-            creep.say("hungry");
+            creep.say("hungry", true);
             creep.memory.task = "fill";
           }
         }
@@ -144,7 +144,7 @@ createBrood({
             const target = sources[newSource];
             creep.memory.source = { id: target.id, pos: [target.pos.x, target.pos.y] };
             creep.room.memory.lastSource = newSource;
-            creep.say("source " + newSource);
+            creep.say("source " + newSource, true);
           }
           const target = Game.getObjectById(creep.memory.source.id);
           const range = creep.pos.getRangeTo(target);
@@ -155,10 +155,10 @@ createBrood({
             creep.harvest(target);
             const saying = Math.random() * 10;
             if (Math.floor(saying) === 1) {
-              creep.say("yummy");
+              creep.say("yummy", true);
             }
             else if (Math.floor(saying) === 2) {
-              creep.say("nom nom");
+              creep.say("nom nom", true);
             }
 
           }
