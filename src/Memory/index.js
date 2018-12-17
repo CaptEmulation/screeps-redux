@@ -43,6 +43,7 @@ function* commit() {
   yield takeEvery(COMMIT, function * onUpdate() {
     // Assign latest state to memory
     const newState = yield(select(s => s));
+    
     commitMemory(newState);
   });
 }

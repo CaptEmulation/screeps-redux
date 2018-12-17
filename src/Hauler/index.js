@@ -27,13 +27,17 @@ const root = state => state.Creeps.Scout;
 const mapRoot = state => state.Map;
 const unexploredRooms = createSelector(
   root,
+)
 
+const selectHaulerProbes = createSelector(
+  () => Game.creeps,
+  creeps => Object.values(creeps).filter(creep => creep.memory && creep.memory.role === 'Hauler'),
 )
 
 function* newRoomBehavior(creep) {
 }
 
-const HAULER_COUNT = 1
+let HAULER_COUNT = 1
 const earlyCreeps = _.range(0, HAULER_COUNT).map(num => ({
   name: `Hauler-${num}`,
   body: ({
@@ -58,6 +62,7 @@ const earlyCreeps = _.range(0, HAULER_COUNT).map(num => ({
   },
   memory: {
     role: 'Hauler',
+    task: 'fill',
     num,
   },
   priority: 0,
@@ -82,6 +87,48 @@ function scanForContainers(room) {
       }
     }
     room.memory.containers = containersInMemory;
+}
+
+export function init(store) {
+  global.spawnHauler = function(num) {
+    if (!num) {
+      num = selectHaulerProbes().length;
+    }
+    store.dispatch({
+      type: 'EXE',
+      payload: spawnActions.spawn({
+        name: "Hauler-" + num,
+        body: ({
+          appraiser,
+          available,
+          max,
+        }) => {
+          // console.log("available: " + available + ", max: " + max);
+          const body = [MOVE, CARRY];
+          const maxSize = 14;
+          while (appraiser(body) < available) {
+            if (body.length >= maxSize) {
+              break;
+            }
+            if (appraiser([...body, MOVE, CARRY]) <= available) {
+              body.push(MOVE, CARRY);
+            } else {
+              break;
+            }
+          }
+          return body;
+        },
+        memory: {
+          role: 'Hauler',
+          task: 'fill',
+          num,
+        },
+        priority: 0,
+        controller: 'Hauler',
+        room: Game.spawns['Spawn1'].room.name,
+      }),
+    });
+  }
 }
 
 createBrood({
@@ -122,9 +169,6 @@ createBrood({
           renewSelf(creep);
         }
         else if (creep.memory.task === "empty") {
-          /* new RoomVisual(creep.room.name).circle(creep.pos, {
-            radius: .15, fill: "transparent", stroke: "green", strokeWidth: .15, opacity: 1
-          }); */
           let targets = creep.room.find(FIND_STRUCTURES, {
             filter(structure){
               return (structure.structureType === STRUCTURE_TOWER || structure.structureType === STRUCTURE_EXTENSION || structure.structureType === STRUCTURE_SPAWN) && structure.energy < structure.energyCapacity;

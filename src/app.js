@@ -9,7 +9,7 @@ import './Creeps';
 import './Scout';
 import './Fixer';
 import './Harvester';
-import './Hauler';
+import { init as initHauler } from './Hauler';
 import './Miner';
 import { init as initSpawn } from './Spawn'
 
@@ -24,6 +24,7 @@ initController(store);
 initConstruction(store);
 initMap(store);
 initMemory(store);
+initHauler(store);
 initSpawn(store);
 
 export function loop() {
