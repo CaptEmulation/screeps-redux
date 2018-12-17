@@ -236,6 +236,8 @@ function* commit() {
       const err = spawner.spawnCreep(body, name, opts);
       if (err) {
         console.log('Error spawning', name, err);
+      } else {
+        console.log('Spawned new creep', name);
       }
     }
 
@@ -245,7 +247,7 @@ function* commit() {
       name,
       hunger,
     }))));
-    if (Game.time % 25 === 0) console.log('Swpawn RUN', Game.cpu.getUsed() - now);
+    // if (Game.time % 25 === 0) console.log('Swpawn RUN', Game.cpu.getUsed() - now);
   });
 }
 

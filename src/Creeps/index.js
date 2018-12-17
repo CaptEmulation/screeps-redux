@@ -33,7 +33,7 @@ function *commit() {
           costMatrix[creep.room.name] = getPathMatrix(creep.room);
         }
         const value = costMatrix[creep.room.name].get(creep.pos.x, creep.pos.y);
-        costMatrix.set(creep.pos.x, creep.pos.y, value-1);
+        costMatrix[creep.room.name].set(creep.pos.x, creep.pos.y, value-1);
       }
     }
     for (let [roomName, pathMatrix] of Object.entries(costMatrix)) {

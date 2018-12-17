@@ -25,7 +25,8 @@ import {
 } from '../events';
 import {
   target as targetMatcher,
-} from '../utils/matchers'
+} from '../utils/matchers';
+import { renewSelf } from '../Tasks/index';
 
 const {
   mapValues,
@@ -207,8 +208,8 @@ function* run() {
             if (workCount >= 8) {
               break;
             }
-            if (appraiser([...body, MOVE, CARRY, WORK, CARRY]) <= max) {
-              body.push(MOVE, CARRY, WORK, CARRY);
+            if (appraiser([...body, MOVE, WORK, WORK, CARRY]) <= max) {
+              body.push(MOVE, WORK, WORK, CARRY);
             } else {
               break;
             }
@@ -232,13 +233,24 @@ function* run() {
     activeBuilders.forEach(creep => {
       if (creep.memory.building && creep.carry.energy === 0) {
         creep.memory.building = false;
-        creep.say('🔄 harvest');
+        if (creep.ticksToLive < 200) {
+          creep.say("fix me!");
+          creep.memory.task = "renew";
+        } else {
+          creep.say('need fuel');
+          creep.memory.task = "fill";
+        }
       }
       if(!creep.memory.building && creep.carry.energy === creep.carryCapacity) {
         creep.memory.building = true;
-        creep.say('🚧 build');
+        creep.memory.task = "build";
+        creep.say('build');
       }
-      if(creep.memory.building) {
+
+      if (creep.memory.task === "renew") {
+        renewSelf(creep);
+      }
+      else if(creep.memory.building) {
         if (creep.room.energyAvailable < 25 && dropOffEnergy(creep)) {
           // all done
           return;
@@ -268,6 +280,10 @@ function* run() {
             });
           } else {
             creep.upgradeController(creep.room.controller);
+            const saying = Math.random() * 10;
+            if (Math.floor(saying) === 1) {
+              creep.say("UP-grade");
+            }
             creep.getOutOfTheWay(creep.room.controller, 3);
           }
         }

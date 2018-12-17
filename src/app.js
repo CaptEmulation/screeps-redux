@@ -9,6 +9,7 @@ import './Creeps';
 import './Scout';
 import './Fixer';
 import './Harvester';
+import './Hauler';
 import './Miner';
 import { init as initSpawn } from './Spawn'
 

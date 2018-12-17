@@ -475,7 +475,7 @@ function* run() {
         }
       }
     }
-    if (Game.time % 25 === 0) console.log('Econ RUN', Game.cpu.getUsed() - now);
+    // if (Game.time % 25 === 0) console.log('Econ RUN', Game.cpu.getUsed() - now);
   });
 }
 

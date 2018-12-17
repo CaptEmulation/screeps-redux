@@ -21,6 +21,7 @@ import {
   scoutFlag as scoutFlagColor,
 } from '../utils/colors';
 import findPath from '../utils/findPath';
+import { renewSelf } from '../Tasks/index';
 
 const root = state => state.Creeps.Scout;
 const mapRoot = state => state.Map;
@@ -43,11 +44,11 @@ const earlyCreeps = _.range(0, HARVESTER_COUNT).map(num => ({
     const body = [MOVE, CARRY, WORK];
     while (appraiser(body) < available) {
       const workCount = body.filter(b => WORK).length;
-      if (workCount >= 8) {
+      if (workCount >= 3) {
         break;
       }
-      if (appraiser([...body, MOVE, MOVE, WORK, CARRY]) <= max) {
-        body.push(MOVE, MOVE, WORK, CARRY);
+      if (appraiser([...body, WORK]) <= max) {
+        body.push(WORK);
       } else {
         break;
       }
@@ -81,21 +82,34 @@ createBrood({
           creep.memory.task = "empty";
         }
         if (creep.carry[RESOURCE_ENERGY] === 0 && creep.memory.task === "empty") {
-          creep.say("empty");
-          creep.memory.task = "fill";
-          delete creep.memory.source;
+          if (creep.ticksToLive < 200) {
+            creep.say("repair me!");
+            creep.memory.task = "renew";
+          }
+          else {
+            creep.say("hungry");
+            creep.memory.task = "fill";
+          }
         }
 
-        if (creep.memory.task === "empty") {
+        if (creep.memory.task === "renew") {
+          renewSelf(creep);
+        }
+        else if (creep.memory.task === "empty") {
+
+          /* new RoomVisual(creep.room.name).circle(pos, {
+            radius: .45, fill: "transparent", stroke: "green", strokeWidth: .15, opacity: opacity
+          }); */
+
           let targets = creep.room.find(FIND_STRUCTURES, {
             filter(structure){
-              return (structure.structureType === STRUCTURE_EXTENSION || structure.structureType === STRUCTURE_SPAWN) && structure.energy < structure.energyCapacity;
+              return structure.structureType === STRUCTURE_CONTAINER && _.sum(structure.store) < structure.storeCapacity;
             }
           })
           if (targets.length === 0) {
-            targets = creep.room.find(FIND_STRUCTURES, {
+            let targets = creep.room.find(FIND_STRUCTURES, {
               filter(structure){
-                return structure.structureType === STRUCTURE_CONTAINER && _.sum(structure.store) < structure.storeCapacity;
+                return (structure.structureType === STRUCTURE_EXTENSION || structure.structureType === STRUCTURE_SPAWN) && structure.energy < structure.energyCapacity;
               }
             })
           }
@@ -112,7 +126,11 @@ createBrood({
             creep.drop(RESOURCE_ENERGY);
           }
         } else if (creep.memory.task === "fill"){
+          /* new RoomVisual(creep.room.name).circle(creep.pos, {
+            radius: .45, fill: "transparent", stroke: "red", strokeWidth: .15, opacity: opacity
+          }); */
           if (!creep.memory.source) {
+            
             if (_.isUndefined(creep.room.memory.lastSource))
             {
               creep.room.memory.lastSource = -1;
@@ -131,10 +149,18 @@ createBrood({
           const target = Game.getObjectById(creep.memory.source.id);
           const range = creep.pos.getRangeTo(target);
           if (target && range > 1) {
-            creep.moveTo(target, {reusePath: 5, visualizePathStyle: {}});
-            //creep.routeTo(target, { range:0, ignoreCreeps:false });
+            //creep.moveTo(target, {reusePath: 5, visualizePathStyle: {}});
+            creep.routeTo(target, { range:0, ignoreCreeps:false });
           } else {
             creep.harvest(target);
+            const saying = Math.random() * 10;
+            if (Math.floor(saying) === 1) {
+              creep.say("yummy");
+            }
+            else if (Math.floor(saying) === 2) {
+              creep.say("nom nom");
+            }
+
           }
         }
 

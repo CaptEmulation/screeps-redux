@@ -22,6 +22,7 @@ import findPath from '../utils/findPath';
 import {
   walkBox
 } from '../utils/scan';
+import { renewSelf, vanish, wakeup } from '../Tasks/index';
 
 const UPGRADER_COUNT = 1;
 
@@ -85,17 +86,21 @@ createBrood({
     activeFixers.forEach(creep => {
       const somethingToRepair = getRepairList(creep, activeFixers).length > 0;
       if (!somethingToRepair){
+        //console.log("nothing to fix");
         if (!creep.memory.task) {
           creep.memory.task = "fill";
         }
-        if (creep.carry[RESOURCE_ENERGY] === creep.carryCapacity && creep.memory.task === "fill") {
-          creep.say("full");
+        if (creep.ticksToLive < 500) {
+          creep.memory.task = "renew";
+          creep.say("fix me!");
+        }
+        else if (creep.carry[RESOURCE_ENERGY] === creep.carryCapacity && creep.memory.task === "fill") {
+          creep.say("fixer");
           creep.memory.task = "empty";
         }
-        if (creep.carry[RESOURCE_ENERGY] === 0 && creep.memory.task === "empty") {
-          creep.say("empty");
-          creep.memory.task = "fill";
-          delete creep.memory.source;
+        else if (creep.carry[RESOURCE_ENERGY] === 0 && creep.memory.task === "empty") {
+            creep.say("fixer");
+            creep.memory.task = "fill";
         }
 
         if (creep.memory.task === "empty") {
@@ -123,30 +128,43 @@ createBrood({
         } else if (creep.memory.task === "fill"){
           const energySources = creep.room.find(FIND_DROPPED_RESOURCES, {
             filter(resource) {
-              return resource.amount > creep.carryCapacity && resource.resourceType === RESOURCE_ENERGY;
+              return resource.resourceType === RESOURCE_ENERGY;
             }
           });
-
+          //console.log(JSON.stringify(energySources));
           const tombstones = creep.room.find(FIND_TOMBSTONES, {
             filter(tombstone) {
               return tombstone.store[RESOURCE_ENERGY] > 0;
             }
           });
 
-          const target = creep.pos.findClosestByRange([...energySources, ...tombstones]);
+          let target = creep.pos.findClosestByRange([...energySources, ...tombstones]);
+          if (!target) {
+            target = vanish(creep);
+          } else {
+            wakeup(creep);
+          }
           const range = creep.pos.getRangeTo(target);
           if (target && range > 1) {
             creep.moveTo(target, {reusePath: 5, visualizePathStyle: {}});
             //creep.routeTo(target, { range:0, ignoreCreeps:false });
           } else {
-            creep.harvest(target);
+            if (target instanceof Resource) {
+              creep.pickup(target, RESOURCE_ENERGY);
+            } else if (target instanceof Tombstone) {
+              creep.withdraw(target, RESOURCE_ENERGY);
+            }
           }
         }
+      }
+      if (creep.memory.task === "renew") {
+        renewSelf(creep, 1400);
+        return;
       }
 
       if (!creep.memory.fixing || creep.memory.fixing.id && creep.carry.energy === 0) {
         creep.memory.fixing = {};
-        creep.say('🔄 harvest');
+        creep.say('need fuel');
       }
       if (creep.memory.fixing.id && creep.room.energyAvailable < 25 && dropOffEnergy(creep)) {
         // all done
@@ -181,14 +199,14 @@ createBrood({
           _.remove(notWallsToRepair, mine);
           creep.memory.fixing.id = mine.id;
           creep.memory.fixing.pos = [mine.pos.x, mine.pos.y, mine.pos.roomName];
-          creep.say('🚧 fix');
+          creep.say('fixing');
         } else if (wallsToRepair && wallsToRepair.length) {
           // find weakest wall
           const mine = _.head(wallsToRepair.sort((a, b) => a.hits - b.hits));
           _.remove(wallsToRepair, mine);
           creep.memory.fixing.id = mine.id;
           creep.memory.fixing.pos = [mine.pos.x, mine.pos.y, mine.pos.roomName];
-          creep.say('🏰 fix');
+          creep.say('fixing');
         }
       }
       if (creep.memory.fixing.id) {
