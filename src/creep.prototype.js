@@ -4,7 +4,7 @@ import {
 
 // Stolen and refactored from https://github.com/bonzaiferroni/Traveler/blob/master/Traveler.js
 
-const REPORT_CPU_THRESHOLD = 1000;
+const REPORT_CPU_THRESHOLD = 5000;
 
 const DEFAULT_MAXOPS = 20000;
 const DEFAULT_STUCK_VALUE = 2;

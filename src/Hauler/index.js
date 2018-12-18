@@ -16,10 +16,6 @@ import {
   scout as roomScout,
   exits as roomExits,
 } from '../utils/room';
-import {
-  isColor,
-  scoutFlag as scoutFlagColor,
-} from '../utils/colors';
 import findPath from '../utils/findPath';
 import { renewSelf, vanish, wakeup } from '../Tasks/index';
 
@@ -128,6 +124,7 @@ export function init(store) {
         room: Game.spawns['Spawn1'].room.name,
       }),
     });
+    return "Hauler-" + num;
   }
 }
 
