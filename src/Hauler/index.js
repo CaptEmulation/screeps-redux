@@ -33,7 +33,7 @@ const unexploredRooms = createSelector(
 function* newRoomBehavior(creep) {
 }
 
-const HAULER_COUNT = 1
+const HAULER_COUNT = 2;
 const earlyCreeps = _.range(0, HAULER_COUNT).map(num => ({
   name: `Hauler-${num}`,
   body: ({
@@ -43,7 +43,7 @@ const earlyCreeps = _.range(0, HAULER_COUNT).map(num => ({
   }) => {
     // console.log("available: " + available + ", max: " + max);
     const body = [MOVE, CARRY];
-    const maxSize = 14;
+    const maxSize = 20 ;
     while (appraiser(body) < available) {
       if (body.length >= maxSize) {
         break;
@@ -94,6 +94,7 @@ createBrood({
         controller: 'Hauler',
       }));
       const creeps = yield select(selectors.alive);
+
       if (Game.time % 200 === 0 || !Game.spawns['Spawn1'].room.memory.containers) {
         const rooms = _.uniq(creeps.map(creep => creep.room));
         for (let room of rooms) {
@@ -127,9 +128,16 @@ createBrood({
           }); */
           let targets = creep.room.find(FIND_STRUCTURES, {
             filter(structure){
-              return (structure.structureType === STRUCTURE_TOWER || structure.structureType === STRUCTURE_EXTENSION || structure.structureType === STRUCTURE_SPAWN) && structure.energy < structure.energyCapacity;
+              return (structure.structureType === STRUCTURE_TOWER) && structure.energy < structure.energyCapacity;
             }
-          })
+          });
+          if (targets.length === 0) {
+            targets = creep.room.find(FIND_STRUCTURES, {
+              filter(structure){
+                return (structure.structureType === STRUCTURE_EXTENSION || structure.structureType === STRUCTURE_SPAWN) && structure.energy < structure.energyCapacity;
+              }
+            })
+          }
           if (targets.length === 0) {
             const targetIds = creep.room.memory.containers;
             targets = creep.room.find(FIND_STRUCTURES, {
@@ -160,17 +168,34 @@ createBrood({
           }
         }
         else if (creep.memory.task === "fill"){
-
-          const targetIds = creep.room.memory.containers;
-          const targets = targetIds.map(id => Game.getObjectById(id));
-          let validTargets = [];
-          for (let target of targets) {
-            //if (_.sum(target.store) > creep.carryCapacity + 100) {
-            if (_.sum(target.store) > 300) {
-              validTargets.push(target);
+          let target;
+          if (creep.room.find(FIND_STRUCTURES, {
+            filter(structure){
+              return (structure.structureType === STRUCTURE_TOWER) && structure.energy < structure.energyCapacity;
+            }
+          }).length > 0) {
+            const targets = creep.room.find(FIND_STRUCTURES, {
+              filter(structure) {
+                return (structure.structureType === STRUCTURE_STORAGE || structure.structureType === STRUCTURE_CONTAINER) && structure.store[RESOURCE_ENERGY] > 0;
+              }
+            });
+            if (targets.length) {
+              target = creep.pos.findClosestByRange(targets);
             }
           }
-          let target = creep.pos.findClosestByRange(validTargets);
+          if (!target) {
+            const targetIds = creep.room.memory.containers;
+            const targets = targetIds.map(id => Game.getObjectById(id));
+            let validTargets = [];
+            for (let target of targets) {
+              //if (_.sum(target.store) > creep.carryCapacity + 100) {
+              if (target && target.store && _.sum(target.store) > 300) {
+                validTargets.push(target);
+              }
+            }
+
+            target = creep.pos.findClosestByRange(validTargets);
+          }
           if (!target) {
             const energySources = creep.room.find(FIND_DROPPED_RESOURCES, {
               filter(resource) {
@@ -197,7 +222,7 @@ createBrood({
           } else if (target && !(target instanceof StructureExtension)) {
             if (target instanceof Resource) {
               creep.pickup(target, RESOURCE_ENERGY);
-            } else if (target instanceof Tombstone || target instanceof StructureContainer) {
+            } else if (target instanceof Tombstone || target instanceof StructureContainer || target instanceof StructureStorage) {
               creep.withdraw(target, RESOURCE_ENERGY);
             }
             creep.say("got it", true);

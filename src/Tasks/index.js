@@ -11,7 +11,7 @@ export function renewSelf(creep, minTicks = 1400) {
     //creep.moveTo(target, {reusePath: 5, visualizePathStyle: {}});
     creep.routeTo(target, { range:0, ignoreCreeps:false });
   } else {
-    if (!target.spawning) {
+    if (target && !target.spawning) {
       const err = target.renewCreep(creep);
       if (err) {
         creep.say(err);

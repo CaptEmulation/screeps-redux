@@ -69,6 +69,7 @@ function* run() {
       const badGuy = creep.pos.findClosestByRange(baddies);
       if (badGuy) {
         acquireTask(creep, creepTasks.attack(), badGuy);
+        
       }
     }
   });

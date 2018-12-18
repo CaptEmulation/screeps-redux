@@ -51,7 +51,7 @@ createBrood({
           available,
           max,
         }) => {
-          const body = [MOVE, CARRY];
+          const body = [MOVE, CARRY, WORK];
           while (appraiser(body) < available) {
             const workCount = body.filter(b => WORK).length;
             if (workCount >= 8) {
