@@ -24,7 +24,7 @@ import {
   healFlag,
 } from '../utils/colors';
 
-const root = state => state.Creeps.Scout;
+const root = state => state.Creeps.Drainer;
 const mapRoot = state => state.Map;
 const unexploredRooms = createSelector(
   root,
@@ -84,7 +84,7 @@ createBrood({
         controller: 'Drainer',
       }));
       const creeps = yield select(selectors.alive);
-      
+
       for (let creep of creeps) {
 
         if (creep.memory.task === "drain" && creep.hits / creep.hitsMax < 0.5) {
