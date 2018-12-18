@@ -145,21 +145,17 @@ createBrood({
         }
       }
       for (let creep of creeps) {
-        if (!creep.memory.task) {
-          creep.memory.task = "fill";
+
+        if (creep.ticksToLive < 200 && creep.memory.num < HAULER_COUNT && creep.carry[RESOURCE_ENERGY] < 50 ) {
+          creep.say("help me!", true);
+          creep.memory.task = "renew";
         }
-        if (creep.carry[RESOURCE_ENERGY] === creep.carryCapacity && creep.memory.task === "fill") {
-          creep.say("got it", true);
+        else if (creep.carry[RESOURCE_ENERGY] === creep.carryCapacity && creep.memory.task === "fill") {
           creep.memory.task = "empty";
         }
-        if (creep.carry[RESOURCE_ENERGY] === 0 && creep.memory.task === "empty") {
-          if (creep.ticksToLive < 200 && creep.memory.num < HAULER_COUNT ) {
-            creep.say("help me!", true);
-            creep.memory.task = "renew";
-          } else {
-            creep.say("need more", true);
-            creep.memory.task = "fill";
-          }
+        else if (creep.carry[RESOURCE_ENERGY] === 0 && creep.memory.task === "empty") {
+          creep.say("need more", true);
+          creep.memory.task = "fill";
         }
 
         if (creep.memory.task === "renew") {
@@ -207,7 +203,7 @@ createBrood({
           let validTargets = [];
           for (let target of targets) {
             //if (_.sum(target.store) > creep.carryCapacity + 100) {
-            if (_.sum(target.store) > 300) {
+            if (_.sum(target.store) > 200) {
               validTargets.push(target);
             }
           }
@@ -242,7 +238,7 @@ createBrood({
               creep.withdraw(target, RESOURCE_ENERGY);
             }
             creep.say("got it", true);
-            if (target instanceof StructureContainer) {
+            if (target instanceof StructureContainer || creep.carry[RESOURCE_ENERGY] > Math.min(200, creep.carryCapacity) ) {
               creep.memory.task = "empty";
             }
           } else {

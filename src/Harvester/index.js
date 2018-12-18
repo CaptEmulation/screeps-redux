@@ -41,19 +41,19 @@ const earlyCreeps = _.range(0, HARVESTER_COUNT).map(num => ({
     available,
     max,
   }) => {
-    console.log('available =>', available, 'max => ', max);
+    //console.log('available =>', available, 'max => ', max);
     const body = [MOVE, CARRY, WORK];
     while (appraiser(body) < available) {
-      console.log('available =>', available, 'max => ', max, 'body =>', body);
+      //console.log('available =>', available, 'max => ', max, 'body =>', body);
       const workCount = body.filter(b => b === WORK).length;
-      console.log('workCount', workCount);
+      //console.log('workCount', workCount);
       if (workCount >= 3) {
         break;
       }
       if (appraiser([...body, WORK]) <= available) {
         body.push(WORK);
       } else {
-        console.log('break')
+        //console.log('break')
         break;
       }
     }

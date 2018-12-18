@@ -39,9 +39,25 @@ function* newRoomBehavior(creep) {
 }
 
 let DRAINER_COUNT = 0
-const earlyCreeps = _.range(0, HAULER_COUNT).map(num => ({
+const earlyCreeps = _.range(0, DRAINER_COUNT).map(num => ({
   name: `Drainer-${num}`,
-  body: [TOUGH, TOUGH, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE],
+  body({
+    appraiser,
+    available,
+  }) {
+    const moveHealCost = BODYPART_COST[HEAL] + BODYPART_COST[MOVE];
+    const baseCost = 2 * (BODYPART_COST[TOUGH] + BODYPART_COST[MOVE]);
+    const moveHealParts = Math.floor((available - baseCost) / moveHealCost);
+    const finalBody = [TOUGH, TOUGH];
+    for (let i=0; i < moveHealParts; i++) {
+      finalBody.push(HEAL);
+    }
+    for (let i=0; i < moveHealParts; i++) {
+      finalBody.push(MOVE);
+    }
+    finalBody.push(MOVE, MOVE);
+    return finalBody;
+  },
   memory: {
     role: 'Drainer',
     task: 'drain',
@@ -60,7 +76,24 @@ export function init(store) {
       type: 'EXE',
       payload: spawnActions.spawn({
         name: 'Drainer-' + num,
-        body: [TOUGH, TOUGH, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE],
+        //body: [TOUGH, TOUGH, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE],
+        body({
+          appraiser,
+          available,
+        }) {
+          const moveHealCost = BODYPART_COST[HEAL] + BODYPART_COST[MOVE];
+          const baseCost = 2 * (BODYPART_COST[TOUGH] + BODYPART_COST[MOVE]);
+          const moveHealParts = Math.floor((available - baseCost) / moveHealCost);
+          const finalBody = [TOUGH, TOUGH];
+          for (let i=0; i < moveHealParts; i++) {
+            finalBody.push(HEAL);
+          }
+          for (let i=0; i < moveHealParts; i++) {
+            finalBody.push(MOVE);
+          }
+          finalBody.push(MOVE, MOVE);
+          return finalBody;
+        },
         memory: {
           role: 'Drainer',
           task: 'drain',
@@ -87,38 +120,44 @@ createBrood({
 
       for (let creep of creeps) {
 
-        if (creep.memory.task === "drain" && creep.hits / creep.hitsMax < 0.5) {
+        if (creep.memory.task === "drain" && creep.hits < creep.hitsMax * .7) {
           creep.say("ouch!", true);
+          console.log(creep.name, "taking damage", creep.hits, "of", creep.hitsMax);
           creep.memory.task = "heal";
         }
         if (creep.memory.task === "heal" && creep.hits === creep.hitsMax) {
           creep.say("hit me", true);
-          creep.memory.task = "fill";
+          creep.memory.task = "drain";
         }
 
         if (creep.memory.task === "drain") {
           const targets = Object.values(Game.flags).filter(isColor(drainFlag));
-          const target = creep.pos.findClosestByRange(targets);
-          const range = creep.pos.getRangeTo(target);
-          if (target && range > 1) {
-            creep.moveTo(target, {reusePath: 5, visualizePathStyle: {}});
-            //creep.routeTo(target, { range:0, ignoreCreeps:false });
-          } else if (target) {
-            const saying = Math.random() * 10;
-            if (Math.floor(saying) === 1) {
-              creep.say("nyah nyah", true);
+          //console.log(targets);
+          if (targets.length) {
+            const target = targets[0];
+            const range = creep.pos.getRangeTo(target);
+            if (range > 1) {
+              let err = creep.moveTo(target, {reusePath: 5, visualizePathStyle: {}});
+              //creep.routeTo(target, { range:0, ignoreCreeps:false });
+            } else {
+              creep.heal(creep);
+              const saying = Math.random() * 10;
+              if (Math.floor(saying) === 1) {
+                creep.say("nyah nyah", true);
+              }
             }
           }
         }
 
         else if (creep.memory.task === "heal") {
-          const targets = Object.values(Game.flags).filter(isColor(drainFlag));
-          const target = creep.pos.findClosestByRange(targets);
+          const targets = Object.values(Game.flags).filter(isColor(healFlag));
+          const target = targets[0];
           const range = creep.pos.getRangeTo(target);
           if (target && range > 1) {
             creep.moveTo(target, {reusePath: 5, visualizePathStyle: {}});
             //creep.routeTo(target, { range:0, ignoreCreeps:false });
           } else if (target) {
+            creep.heal(creep);
             const saying = Math.random() * 10;
             if (Math.floor(saying) === 1) {
               creep.say("next time", true);

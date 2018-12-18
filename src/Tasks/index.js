@@ -15,6 +15,7 @@ export function renewSelf(creep, minTicks = 1400) {
       const err = target.renewCreep(creep);
       if (err) {
         creep.say(err);
+        console.log(creep.name, "error renewing creep", err);
         creep.memory.task = "fill";
       }
       if (creep.ticksToLive > minTicks || creep.room.energyAvailable < 200) {

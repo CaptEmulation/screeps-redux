@@ -11,6 +11,8 @@ import './Fixer';
 import './Harvester';
 import { init as initHauler } from './Hauler';
 import { init as initDrainer } from './Drainer';
+import { init as initAttacker } from './Attacker';
+import { init as initUnbuilder } from './Unbuilder';
 import './Miner';
 import { init as initSpawn } from './Spawn'
 
@@ -27,6 +29,8 @@ initMap(store);
 initMemory(store);
 initHauler(store);
 initDrainer(store);
+initAttacker(store);
+initUnbuilder(store);
 initSpawn(store);
 
 export function loop() {
