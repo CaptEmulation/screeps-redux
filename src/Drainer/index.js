@@ -16,61 +16,117 @@ import {
   scout as roomScout,
   exits as roomExits,
 } from '../utils/room';
+import findPath from '../utils/findPath';
+import { renewSelf, vanish, wakeup } from '../Tasks/index';
 import {
   isColor,
-  scoutFlag as scoutFlagColor,
+  drainFlag,
+  healFlag,
 } from '../utils/colors';
-import findPath from '../utils/findPath';
 
-const root = state => state.Creeps.Drainer;
-const selectRooms = createSelector(
+const root = state => state.Creeps.Scout;
+const mapRoot = state => state.Map;
+const unexploredRooms = createSelector(
   root,
-  Drainer => Drainer.rooms,
-);
+)
 
-const drainerTemplate = (num) => ({
+const selectDrainers = createSelector(
+  () => Game.creeps,
+  creeps => Object.values(creeps).filter(creep => creep.memory && creep.memory.role === 'Drainer'),
+)
+
+function* newRoomBehavior(creep) {
+}
+
+let DRAINER_COUNT = 0
+const earlyCreeps = _.range(0, HAULER_COUNT).map(num => ({
   name: `Drainer-${num}`,
   body: [TOUGH, TOUGH, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE],
   memory: {
     role: 'Drainer',
+    task: 'drain',
   },
   priority: 10,
-  controller: 'Scout',
-})
+  controller: Drainer,
+}));
+
+
+export function init(store) {
+  global.spawnDrainer = function(num) {
+    if (!num) {
+      num = selectDrainers().length;
+    }
+    store.dispatch({
+      type: 'EXE',
+      payload: spawnActions.spawn({
+        name: 'Drainer-' + num,
+        body: [TOUGH, TOUGH, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE],
+        memory: {
+          role: 'Drainer',
+          task: 'drain',
+        },
+        priority: 10,
+        controller: 'Drainer',
+        room: Game.spawns['Spawn1'].room.name,
+      }),
+    });
+    return "Drainer-" + num;
+  }
+}
 
 createBrood({
   role: 'Drainer',
-  actions: ['start', 'stop'],
   * directCreeps({
     selectors,
   }) {
-    const rooms = yield select(selectRooms);
-    if (rooms) {
+      yield put(spawnActions.need({
+        needs: earlyCreeps,
+        controller: 'Drainer',
+      }));
+      const creeps = yield select(selectors.alive);
+      
+      for (let creep of creeps) {
+
+        if (creep.memory.task === "drain" && creep.hits / creep.hitsMax < 0.5) {
+          creep.say("ouch!", true);
+          creep.memory.task = "heal";
+        }
+        if (creep.memory.task === "heal" && creep.hits === creep.hitsMax) {
+          creep.say("hit me", true);
+          creep.memory.task = "fill";
+        }
+
+        if (creep.memory.task === "drain") {
+          const targets = Object.values(Game.flags).filter(isColor(drainFlag));
+          const target = creep.pos.findClosestByRange(targets);
+          const range = creep.pos.getRangeTo(target);
+          if (target && range > 1) {
+            creep.moveTo(target, {reusePath: 5, visualizePathStyle: {}});
+            //creep.routeTo(target, { range:0, ignoreCreeps:false });
+          } else if (target) {
+            const saying = Math.random() * 10;
+            if (Math.floor(saying) === 1) {
+              creep.say("nyah nyah", true);
+            }
+          }
+        }
+
+        else if (creep.memory.task === "heal") {
+          const targets = Object.values(Game.flags).filter(isColor(drainFlag));
+          const target = creep.pos.findClosestByRange(targets);
+          const range = creep.pos.getRangeTo(target);
+          if (target && range > 1) {
+            creep.moveTo(target, {reusePath: 5, visualizePathStyle: {}});
+            //creep.routeTo(target, { range:0, ignoreCreeps:false });
+          } else if (target) {
+            const saying = Math.random() * 10;
+            if (Math.floor(saying) === 1) {
+              creep.say("next time", true);
+            }
+          }
+        }
+    }
 
     }
-  },
-  initialState: {
-    rooms: [],
-  },
-  reducerHandler: actionTypes => ({
-    [actionTypes.start](state, { payload: room }) {
-      if (state.rooms.includes(room)) {
-        return state;
-      }
-      return {
-        ...state,
-        rooms: [...state.rooms, state.room],
-      };
-    },
-    [actionTypes.stop](state, { payload: room }) {
-      const index = state.rooms.indexOf(room)
-      if (index !== -1) {
-        return {
-          ...state,
-          rooms: [...state.rooms.slice(0, index), ...state.rooms.slice(index + 1)],
-        };
-      }
-      return state;
-    }
-  })
-});
+
+  });
