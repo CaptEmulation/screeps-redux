@@ -14,6 +14,17 @@ import {
 } from '../events';
 
 
+function notDrainersOrDrainersNeedingHealing(creep) {
+  const isDrainer = creep.memory && creep.memory.role === 'Drainer';
+  const isDamaged = creep.hits < creep.hitsMax;
+  const notDrainerWithDamage = !isDrainer && isDamaged;
+  const workingHealPieces = !!creep.body.find(b => b.type === HEAL && b.hits > 0);
+  const drainerThatCannotHeal = isDrainer
+    && isDamaged
+    && !workingHealPieces;
+  return notDrainerWithDamage || drainerThatCannotHeal;
+}
+
 function* run() {
   yield takeEvery(RUN, function* onRun() {
     const room = Game.spawns['Spawn1'].room;
@@ -23,7 +34,7 @@ function* run() {
     const hostiles = room.find(FIND_HOSTILE_CREEPS);
     let healed = false;
     const friendliesNeedingHealing = room.find(FIND_MY_CREEPS, {
-      filter: creep => creep.hits < creep.hitsMax,
+      filter: notDrainersOrDrainersNeedingHealing,
     }).sort((a, b) => (a.hitsMax - a.hits) - (b.hitsMax - b.hits));
     if (friendliesNeedingHealing.length) {
       const {

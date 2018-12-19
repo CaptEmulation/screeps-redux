@@ -4,8 +4,8 @@ import { appendReducer } from '../utils/createReducer';
 import { names as getModuleNames } from '../utils/createModule';
 import commitMemory from '../utils/commit';
 import {
-  UPDATE,
-  COMMIT,
+  MEMORY_LOAD,
+  MEMORY_SAVE,
 } from '../events';
 
 const CLEAN_DEAD = 'MEMORY_CLEAN_DEAD';
@@ -33,24 +33,23 @@ const memoryState = () => getModuleNames().reduce((mem, curr) => {
   return mem;
 }, {});
 
-function* update() {
-  yield takeEvery(UPDATE, function* onStart() {
+function* load() {
+  yield takeEvery(MEMORY_LOAD, function* onStart() {
     yield put(actionCreators.update(memoryState()));
   });
 }
 
-function* commit() {
-  yield takeEvery(COMMIT, function * onUpdate() {
+function* memory() {
+  yield takeEvery(MEMORY_SAVE, function * onMemory() {
     // Assign latest state to memory
     const newState = yield(select(s => s));
-    
     commitMemory(newState);
   });
 }
 
 createSaga(
-  update,
-  commit,
+  load,
+  memory,
 );
 
 appendReducer((state, action) => {

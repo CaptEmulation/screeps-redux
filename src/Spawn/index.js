@@ -267,7 +267,7 @@ function* commit() {
         const [spawner, body, name, opts] = request;
         const err = spawner.spawnCreep(body, name, opts);
         if (err) {
-          console.log('Error spawning', name, err);
+          console.log('Error spawning', name, body, err);
         } else {
           console.log('Spawned new creep', name);
         }
@@ -275,10 +275,14 @@ function* commit() {
     }
     const needs = yield select(selectNeeds);
     // Only save name and hunger
-    yield put(updateNeeds(needs.map(({ hunger, name }) => ({
-      name,
-      hunger,
-    }))));
+    const newNeeds = needs
+      .filter(a => typeof a.priority !== 'undefined')
+      .map(({ hunger, name, controller }) => ({
+        name,
+        hunger,
+        controller,
+      }));
+    yield put(updateNeeds(newNeeds));
 
     // if (Game.time % 25 === 0) console.log('Swpawn RUN', Game.cpu.getUsed() - now);
   });
