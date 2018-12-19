@@ -29,37 +29,37 @@ const unexploredRooms = createSelector(
   root,
 )
 
-const selectAttackers = createSelector(
-  () => Game.creeps,
-  creeps => Object.values(creeps).filter(creep => creep.memory && creep.memory.role === 'Attacker'),
-)
+// const selectAttackers = createSelector(
+//   () => Game.creeps,
+//   creeps => Object.values(Game.creeps).filter(creep => creep.memory && creep.memory.role === 'Attacker'),
+// )
 
 function* newRoomBehavior(creep) {
 }
 
-let ATTACKER_COUNT = 0
+let ATTACKER_COUNT = 2
 const earlyCreeps = _.range(0, ATTACKER_COUNT).map(num => ({
   name: `Attacker-${num}`,
-  body: [ATTACK, ATTACK, MOVE, MOVE],
+  body: [CLAIM, CLAIM, MOVE, MOVE],
   memory: {
     role: 'Attacker',
     task: 'move',
   },
   priority: 10,
-  controller: Attack,
+  controller: 'Attack',
 }));
 
 
 export function init(store) {
   global.spawnAttacker = function(num) {
     if (!num) {
-      num = selectAttackers().length;
+      num = Object.values(Game.creeps).filter(creep => creep.memory && creep.memory.role === 'Attacker').length;
     }
     store.dispatch({
       type: 'EXE',
       payload: spawnActions.spawn({
         name: 'Attacker-' + num,
-        body: [ATTACK, ATTACK, MOVE, MOVE],
+        body: [CLAIM, CLAIM, MOVE, MOVE],
         memory: {
           role: 'Attacker',
           task: 'move',
@@ -102,18 +102,18 @@ createBrood({
         }
 
         else if (creep.memory.task === "attack") {
-          const targets = creep.room.find(FIND_STRUCTURES, {
-            filter(structure){
-              return structure.structureType !== STRUCTURE_CONTROLLER;
-            }
-          });
+          const targets = creep.room.find(FIND_STRUCTURES);
           const target = creep.pos.findClosestByRange(targets);
           const range = creep.pos.getRangeTo(target);
           if (target && range > 1) {
             creep.moveTo(target, {reusePath: 5, visualizePathStyle: {}});
             //creep.routeTo(target, { range:0, ignoreCreeps:false });
           } else if (target) {
-            creep.attack(target);
+            if (target instanceof StructureController) {
+              creep.attackController(target);
+            } else {
+              creep.attack(target);
+            }
             const saying = Math.random() * 20;
             if (Math.floor(saying) === 1) {
               creep.say("pow", true);

@@ -13,6 +13,9 @@ import {
   scout,
 } from '../Creeps/builds';
 import {
+  isColor,
+} from '../utils/colors';
+import {
   scout as roomScout,
   exits as roomExits,
 } from '../utils/room';
@@ -86,9 +89,15 @@ function scanForContainers(room) {
 }
 
 export function init(store) {
-  global.spawnHauler = function(num) {
+  global.spawnHauler = function(num, flag=0) {
     if (!num) {
       num = selectHaulerProbes().length;
+    }
+    let task;
+    if (flag) {
+      task = 'move';
+    } else {
+      task = 'fill';
     }
     store.dispatch({
       type: 'EXE',
@@ -116,8 +125,9 @@ export function init(store) {
         },
         memory: {
           role: 'Hauler',
-          task: 'fill',
-          num,
+          task,
+          flag,
+          num
         },
         priority: 0,
         controller: 'Hauler',
@@ -146,7 +156,7 @@ createBrood({
       }
       for (let creep of creeps) {
 
-        if (creep.ticksToLive < 200 && creep.memory.num < HAULER_COUNT && creep.carry[RESOURCE_ENERGY] < 50 ) {
+        if (creep.ticksToLive < 200 && !creep.memory.dieoff && creep.carry[RESOURCE_ENERGY] < 50 ) {
           creep.say("help me!", true);
           creep.memory.task = "renew";
         }
@@ -155,13 +165,37 @@ createBrood({
         }
         else if (creep.carry[RESOURCE_ENERGY] === 0 && creep.memory.task === "empty") {
           creep.say("need more", true);
-          creep.memory.task = "fill";
+          if (creep.memory.flag) {
+            creep.memory.task = 'move';
+          } else {
+            creep.memory.task = "fill";
+          }
         }
 
         if (creep.memory.task === "renew") {
           renewSelf(creep);
+          if (creep.memory.flag) {
+            creep.memory.task = 'move';
+          }
+        }
+        else if (creep.memory.task === 'move') {
+          //console.log(creep.memory.flag);
+          //console.log(JSON.stringify(Object.values(Game.flags)));
+          const targets = Object.values(Game.flags).filter(isColor([creep.memory.flag, creep.memory.flag]));
+          console.log(targets);
+          if (targets.length) {
+            const target = targets[0];
+            const range = creep.pos.getRangeTo(target);
+            if (range > 1) {
+              let err = creep.moveTo(target, {reusePath: 5, visualizePathStyle: {}});
+              //creep.routeTo(target, { range:0, ignoreCreeps:false });
+            } else {
+              creep.memory.task = "fill";
+            }
+          }
         }
         else if (creep.memory.task === "empty") {
+          let target;
           let targets = creep.room.find(FIND_STRUCTURES, {
             filter(structure){
               return (structure.structureType === STRUCTURE_TOWER || structure.structureType === STRUCTURE_EXTENSION || structure.structureType === STRUCTURE_SPAWN) && structure.energy < structure.energyCapacity;
@@ -182,7 +216,11 @@ createBrood({
               }
             })
           }
-          const target = creep.pos.findClosestByRange(targets);
+          if (targets.length == 0) {
+            target = Game.spawns['Spawn1']
+          } else {
+            target = creep.pos.findClosestByRange(targets);
+          }
           const range = creep.pos.getRangeTo(target);
           if (target && range > 1) {
             creep.moveTo(target, {reusePath: 5, visualizePathStyle: {}});
@@ -197,17 +235,22 @@ createBrood({
           }
         }
         else if (creep.memory.task === "fill"){
-
           const targetIds = creep.room.memory.containers;
-          const targets = targetIds.map(id => Game.getObjectById(id));
           let validTargets = [];
-          for (let target of targets) {
-            //if (_.sum(target.store) > creep.carryCapacity + 100) {
-            if (_.sum(target.store) > 200) {
-              validTargets.push(target);
+          if (targetIds) {
+            const targets = targetIds.map(id => Game.getObjectById(id));
+            for (let target of targets) {
+              //if (_.sum(target.store) > creep.carryCapacity + 100) {
+              if (_.sum(target.store) > 200) {
+                validTargets.push(target);
+              }
             }
           }
-          let target = creep.pos.findClosestByRange(validTargets);
+
+          let target;
+          if (validTargets.length) {
+            target = creep.pos.findClosestByRange(validTargets);
+          }
           if (!target) {
             const energySources = creep.room.find(FIND_DROPPED_RESOURCES, {
               filter(resource) {
@@ -223,9 +266,9 @@ createBrood({
           }
           if (!target) {
             target = vanish(creep);
-          } else {
-            wakeup(creep);
           }
+
+          //console.log(target);
           const range = creep.pos.getRangeTo(target);
 
           if (target && range > 1) {
