@@ -8,8 +8,11 @@ import './Defense';
 import './Creeps';
 import './Scout';
 import './Fixer';
-import './Harvester';
-import './Hauler';
+import { init as initHarvester } from'./Harvester';
+import { init as initHauler } from './Hauler';
+import { init as initDrainer } from './Drainer';
+import { init as initAttacker } from './Attacker';
+import { init as initUnbuilder } from './Unbuilder';
 import './Miner';
 import { init as initSpawn } from './Spawn'
 
@@ -24,7 +27,12 @@ initController(store);
 initConstruction(store);
 initMap(store);
 initMemory(store);
+initHauler(store);
+initDrainer(store);
+initAttacker(store);
+initUnbuilder(store);
 initSpawn(store);
+initHarvester(store);
 
 export function loop() {
   store.dispatch({ type: LOOP });
