@@ -1,11 +1,6 @@
 
 export function renewSelf(creep, minTicks = 1400) {
-  let targets = creep.room.find(FIND_STRUCTURES, {
-    filter(structure){
-      return structure.structureType === STRUCTURE_SPAWN;
-    }
-  })
-  const target = creep.pos.findClosestByRange(targets);
+  const target = Game.spawns['Spawn1'];
   const range = creep.pos.getRangeTo(target);
   if (target && range > 1) {
     //creep.moveTo(target, {reusePath: 5, visualizePathStyle: {}});
@@ -15,6 +10,8 @@ export function renewSelf(creep, minTicks = 1400) {
       const err = target.renewCreep(creep);
       if (err) {
         creep.say(err);
+        console.log(creep.name, "error renewing creep", err);
+        creep.memory.task = "fill";
       }
       if (creep.ticksToLive > minTicks || creep.room.energyAvailable < 200) {
         creep.say("all better", true);
@@ -34,10 +31,12 @@ export function vanish(creep) {
     })
     //target = _.sample(targets);
     //console.log("setting target by position");
-    target = creep.pos.findClosestByRange(targets);
-    //const sourceNum = targets.indexOf(target);
-    creep.say("vanish", true);
-    creep.memory.targetId = target.id;
+    if (targets.length) {
+      target = creep.pos.findClosestByRange(targets);
+      //const sourceNum = targets.indexOf(target);
+      creep.say("vanish", true);
+      creep.memory.targetId = target.id;
+    }
   } else {
     //console.log("getting target from memory");
     target = Game.getObjectById(creep.memory.targetId);

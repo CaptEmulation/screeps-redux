@@ -36,7 +36,7 @@ const {
 } = _;
 
 
-const BUILDER_COUNT = 2;
+const BUILDER_COUNT = 1;
 const SPAWN = 'BUILDER_SPAWN';
 const QUEUE = 'BUILDER_QUEUE';
 const POP = 'BUILDER_POP';

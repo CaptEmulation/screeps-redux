@@ -17,10 +17,12 @@ export function init(store) {
   global.reset = function reset() {
     store.dispatch({ type: RESET });
     commit(store.getState());
+    return "reset store";
   }
   global.scan = function scan() {
     store.dispatch({ type: SCAN });
     commit(store.getState());
+    return "scan store";
   }
 }
 
