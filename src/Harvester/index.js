@@ -129,16 +129,25 @@ createBrood({
             creep.memory.task = "renew";
           }
           else {
-            creep.say("hungry", true);
-            creep.memory.task = "fill";
+            if (creep.memory.flag && !Object.values(Game.flags).filter(isColor([creep.memory.flag, creep.memory.flag])).length) {
+              creep.memory.task = "move";
+              creep.say("movin' out");
+            } else {
+              creep.say("hungry", true);
+              creep.memory.task = "fill";
+            }
           }
         }
 
         if (creep.memory.task === "renew") {
-          renewSelf(creep);
+          let task
           if (creep.memory.flag) {
-            creep.memory.task === 'move';
+            task = 'move';
           }
+          else {
+            task = 'fill';
+          }
+          renewSelf(creep, task);
         }
         else if (creep.memory.task === 'move') {
           const targets = Object.values(Game.flags).filter(isColor([creep.memory.flag, creep.memory.flag]));
@@ -155,7 +164,6 @@ createBrood({
         }
 
         else if (creep.memory.task === "empty") {
-
           let targets = creep.room.find(FIND_STRUCTURES, {
             filter(structure){
               return (structure.structureType === STRUCTURE_CONTAINER || structure.structureType === STRUCTURE_STORAGE) && _.sum(structure.store) < structure.storeCapacity;

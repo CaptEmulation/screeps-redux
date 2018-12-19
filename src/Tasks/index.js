@@ -1,21 +1,22 @@
 
-export function renewSelf(creep, minTicks = 1400) {
+export function renewSelf(creep, task='fill') {
   const target = Game.spawns['Spawn1'];
   const range = creep.pos.getRangeTo(target);
+  const minTicks = 1300;
   if (target && range > 1) {
     //creep.moveTo(target, {reusePath: 5, visualizePathStyle: {}});
     creep.routeTo(target, { range:0, ignoreCreeps:false });
   } else {
     if (target && !target.spawning) {
       const err = target.renewCreep(creep);
+      console.log("Renewing creep", creep.name, creep.ticksToLive, err);
       if (err) {
         creep.say(err);
         console.log(creep.name, "error renewing creep", err);
-        creep.memory.task = "fill";
       }
       if (creep.ticksToLive > minTicks || creep.room.energyAvailable < 200) {
         creep.say("all better", true);
-        creep.memory.task = "fill";
+        creep.memory.task = task;
       }
     }
   }

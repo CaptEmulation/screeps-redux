@@ -40,7 +40,7 @@ function* newRoomBehavior(creep) {
 let ATTACKER_COUNT = 0
 const earlyCreeps = _.range(0, ATTACKER_COUNT).map(num => ({
   name: `Attacker-${num}`,
-  body: [CLAIM, CLAIM, MOVE, MOVE],
+  body: [ATTACK, ATTACK, MOVE, MOVE],
   memory: {
     role: 'Attacker',
     task: 'move',
@@ -59,7 +59,7 @@ export function init(store) {
       type: 'EXE',
       payload: spawnActions.spawn({
         name: 'Attacker-' + num,
-        body: [CLAIM, CLAIM, MOVE, MOVE],
+        body: [CLAIM, MOVE],
         memory: {
           role: 'Attacker',
           task: 'move',
@@ -86,6 +86,10 @@ createBrood({
 
       for (let creep of creeps) {
 
+        if (creep.memory.task === "renew") {
+          renewSelf(creep, "move");
+        }
+
         if (creep.memory.task === "move") {
           const targets = Object.values(Game.flags).filter(isColor(attackFlag));
           //console.log(targets);
@@ -109,17 +113,26 @@ createBrood({
             creep.moveTo(target, {reusePath: 5, visualizePathStyle: {}});
             //creep.routeTo(target, { range:0, ignoreCreeps:false });
           } else if (target) {
+            let err;
             if (target instanceof StructureController) {
-              creep.attackController(target);
+              err = creep.attackController(target);
+              creep.say("bam", true);
+              if (!err) {
+                creep.memory.task = "renew";
+              }
             } else {
-              creep.attack(target);
+              err = creep.attack(target);
             }
-            const saying = Math.random() * 20;
-            if (Math.floor(saying) === 1) {
-              creep.say("pow", true);
-            }
-            if (Math.floor(saying) === 2) {
-              creep.say("kablam", true);
+            if (err) {
+              creep.say(err);
+            } else {
+              const saying = Math.random() * 10;
+              if (Math.floor(saying) === 1) {
+                creep.say("pow", true);
+              }
+              if (Math.floor(saying) === 2) {
+                creep.say("kablam", true);
+              }
             }
           }
         }

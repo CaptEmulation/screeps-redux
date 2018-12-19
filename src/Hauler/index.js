@@ -36,7 +36,7 @@ const selectHaulerProbes = createSelector(
 function* newRoomBehavior(creep) {
 }
 
-let HAULER_COUNT = 1
+let HAULER_COUNT = 2;
 const earlyCreeps = _.range(0, HAULER_COUNT).map(num => ({
   name: `Hauler-${num}`,
   body: ({
@@ -174,10 +174,14 @@ createBrood({
         }
 
         if (creep.memory.task === "renew") {
-          renewSelf(creep);
+          let task
           if (creep.memory.flag) {
-            creep.memory.task = 'move';
+            task = 'move';
           }
+          else {
+            task = 'fill';
+          }
+          renewSelf(creep, task);
         }
         else if (creep.memory.task === 'move') {
           //console.log(creep.memory.flag);
@@ -199,11 +203,7 @@ createBrood({
           let target;
           let targets = creep.room.find(FIND_STRUCTURES, {
             filter(structure){
-<<<<<<< HEAD
               return (structure.structureType === STRUCTURE_TOWER) && structure.energy < structure.energyCapacity;
-=======
-              return (structure.structureType === STRUCTURE_TOWER || structure.structureType === STRUCTURE_SPAWN) && structure.energy < structure.energyCapacity;
->>>>>>> origin/lauxa
             }
           });
           if (targets.length === 0) {
@@ -246,8 +246,7 @@ createBrood({
             creep.drop(RESOURCE_ENERGY);
           }
         }
-        else if (creep.memory.task === "fill"){
-<<<<<<< HEAD
+        else if (creep.memory.task === "fill") {
           let target;
           if (creep.room.find(FIND_STRUCTURES, {
             filter(structure){
@@ -264,6 +263,19 @@ createBrood({
             }
           }
           if (!target) {
+            const energySources = creep.room.find(FIND_DROPPED_RESOURCES, {
+              filter(resource) {
+                return resource.resourceType === RESOURCE_ENERGY;
+              }
+            });
+            const tombstones = creep.room.find(FIND_TOMBSTONES, {
+              filter(tombstone) {
+                return tombstone.store[RESOURCE_ENERGY] > 0;
+              }
+            });
+            target = creep.pos.findClosestByRange([...energySources, ...tombstones]);
+          }
+          if (!target) {
             const targetIds = creep.room.memory.containers;
             if (targetIds) {
               const targets = targetIds.map(id => Game.getObjectById(id));
@@ -276,37 +288,6 @@ createBrood({
               }
               target = creep.pos.findClosestByRange(validTargets);
             }
-
-=======
-          const targetIds = creep.room.memory.containers;
-          let validTargets = [];
-          if (targetIds) {
-            const targets = targetIds.map(id => Game.getObjectById(id));
-            for (let target of targets) {
-              //if (_.sum(target.store) > creep.carryCapacity + 100) {
-              if (_.sum(target.store) > 200) {
-                validTargets.push(target);
-              }
-            }
-          }
-
-          let target;
-          if (validTargets.length) {
-            target = creep.pos.findClosestByRange(validTargets);
->>>>>>> origin/lauxa
-          }
-          if (!target) {
-            const energySources = creep.room.find(FIND_DROPPED_RESOURCES, {
-              filter(resource) {
-                return resource.resourceType === RESOURCE_ENERGY;
-              }
-            });
-            const tombstones = creep.room.find(FIND_TOMBSTONES, {
-              filter(tombstone) {
-                return tombstone.store[RESOURCE_ENERGY] > 0;
-              }
-            });
-            target = creep.pos.findClosestByRange([...energySources, ...tombstones]);
           }
           if (!target) {
             target = vanish(creep);
