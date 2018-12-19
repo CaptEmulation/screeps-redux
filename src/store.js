@@ -10,7 +10,7 @@ function logMiddleware(store) {
     // console.log(action.type);
     next(action);
     // console.log(JSON.stringify(Memory.creeps));
-    // console.log(action.type, JSON.stringify(store.getState().Spawn.pending.length, null, 2));
+    // console.log(action.type, JSON.stringify(store.getState().Spawn.needs.length, null, 2));
   }
 }
 

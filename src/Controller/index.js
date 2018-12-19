@@ -8,6 +8,8 @@ import {
   RUN,
   UPDATE,
   COMMIT,
+  MEMORY_LOAD,
+  MEMORY_SAVE,
 } from '../events';
 
 export function init(store) {
@@ -27,6 +29,11 @@ export function init(store) {
 }
 
 const actionCreators = {
+  memoryLoad() {
+    return {
+      type: MEMORY_LOAD,
+    };
+  },
   scan() {
     return {
       type: SCAN,
@@ -46,7 +53,12 @@ const actionCreators = {
     return {
       type: COMMIT,
     };
-  }
+  },
+  memorySave() {
+    return {
+      type: MEMORY_SAVE,
+    };
+  },
 };
 
 function *executeAndCommit() {
@@ -58,10 +70,12 @@ function *executeAndCommit() {
 
 function* loop() {
   yield takeEvery(LOOP, function* () {
+    yield put(actionCreators.memoryLoad());
     yield put(actionCreators.scan());
     yield put(actionCreators.update());
     yield put(actionCreators.run());
     yield put(actionCreators.commit());
+    yield put(actionCreators.memorySave());
   });
 }
 

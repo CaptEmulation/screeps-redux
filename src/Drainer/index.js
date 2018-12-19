@@ -131,25 +131,33 @@ createBrood({
         }
 
         if (creep.memory.task === "drain") {
-          const targets = Object.values(Game.flags).filter(isColor(drainFlag));
-          //console.log(targets);
-          if (targets.length) {
-            const target = targets[0];
-            const range = creep.pos.getRangeTo(target);
-            if (range > 1) {
-              let err = creep.moveTo(target, {reusePath: 5, visualizePathStyle: {}});
-              //creep.routeTo(target, { range:0, ignoreCreeps:false });
-            } else {
-              creep.heal(creep);
-              const saying = Math.random() * 10;
-              if (Math.floor(saying) === 1) {
-                creep.say("nyah nyah", true);
+          // Find nearby creeps to heal
+          const nearbyCreepsToHeal = creep.room.find(FIND_MY_CREEPS, {
+            filter(c) {
+               return c !== creep && c.hits < c.hitsMax && c.pos.getRangeTo(creep) === 1;
+            }
+          });
+          if (nearbyCreepsToHeal.length) {
+            const target = nearbyCreepsToHeal[0];
+            creep.heal(target);
+          } else {
+            const targets = Object.values(Game.flags).filter(isColor(drainFlag));
+            //console.log(targets);
+            if (targets.length) {
+              const target = targets[0];
+              const range = creep.pos.getRangeTo(target);
+              if (range > 1) {
+                creep.moveTo(target);
+              } else {
+                creep.heal(creep);
+                const saying = Math.random() * 10;
+                if (Math.floor(saying) === 1) {
+                  creep.say("nyah nyah", true);
+                }
               }
             }
           }
-        }
-
-        else if (creep.memory.task === "heal") {
+        } else if (creep.memory.task === "heal") {
           const targets = Object.values(Game.flags).filter(isColor(healFlag));
           const target = targets[0];
           const range = creep.pos.getRangeTo(target);
