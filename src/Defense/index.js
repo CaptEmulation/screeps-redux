@@ -35,6 +35,16 @@ function* run() {
       });
       healed = true;
     }
+    const lowRamparts = room.find(FIND_STRUCTURES, {
+      filter(rampart) {
+        return rampart.structureType === STRUCTURE_RAMPART && rampart.hits < 1000;
+      }
+    });
+    if (lowRamparts) {
+      towers.forEach(tower => {
+        tower.repair(lowRamparts[0]);
+      });
+    }
     if (hostiles.length) {
       console.log('I see baddies', hostiles);
       yield put(spawnActions.need({
@@ -69,7 +79,6 @@ function* run() {
       const badGuy = creep.pos.findClosestByRange(baddies);
       if (badGuy) {
         acquireTask(creep, creepTasks.attack(), badGuy);
-        
       }
     }
   });

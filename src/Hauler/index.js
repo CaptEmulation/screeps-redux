@@ -185,16 +185,18 @@ createBrood({
           }
           if (!target) {
             const targetIds = creep.room.memory.containers;
-            const targets = targetIds.map(id => Game.getObjectById(id));
-            let validTargets = [];
-            for (let target of targets) {
-              //if (_.sum(target.store) > creep.carryCapacity + 100) {
-              if (target && target.store && _.sum(target.store) > 300) {
-                validTargets.push(target);
+            if (targetIds) {
+              const targets = targetIds.map(id => Game.getObjectById(id));
+              let validTargets = [];
+              for (let target of targets) {
+                //if (_.sum(target.store) > creep.carryCapacity + 100) {
+                if (target && target.store && _.sum(target.store) > 300) {
+                  validTargets.push(target);
+                }
               }
+              target = creep.pos.findClosestByRange(validTargets);
             }
 
-            target = creep.pos.findClosestByRange(validTargets);
           }
           if (!target) {
             const energySources = creep.room.find(FIND_DROPPED_RESOURCES, {
