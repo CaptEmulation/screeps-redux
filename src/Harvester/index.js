@@ -158,7 +158,7 @@ createBrood({
 
           let targets = creep.room.find(FIND_STRUCTURES, {
             filter(structure){
-              return structure.structureType === STRUCTURE_CONTAINER && _.sum(structure.store) < structure.storeCapacity;
+              return (structure.structureType === STRUCTURE_CONTAINER || structure.structureType === STRUCTURE_STORAGE) && _.sum(structure.store) < structure.storeCapacity;
             }
           })
           if (targets.length === 0) {
