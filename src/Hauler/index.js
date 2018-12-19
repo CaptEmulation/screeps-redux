@@ -182,7 +182,7 @@ createBrood({
           //console.log(creep.memory.flag);
           //console.log(JSON.stringify(Object.values(Game.flags)));
           const targets = Object.values(Game.flags).filter(isColor([creep.memory.flag, creep.memory.flag]));
-          console.log(targets);
+          //console.log(targets);
           if (targets.length) {
             const target = targets[0];
             const range = creep.pos.getRangeTo(target);
@@ -198,14 +198,14 @@ createBrood({
           let target;
           let targets = creep.room.find(FIND_STRUCTURES, {
             filter(structure){
-              return (structure.structureType === STRUCTURE_TOWER || structure.structureType === STRUCTURE_EXTENSION || structure.structureType === STRUCTURE_SPAWN) && structure.energy < structure.energyCapacity;
+              return (structure.structureType === STRUCTURE_TOWER || structure.structureType === STRUCTURE_SPAWN) && structure.energy < structure.energyCapacity;
             }
           })
           if (targets.length === 0) {
             const targetIds = creep.room.memory.containers;
             targets = creep.room.find(FIND_STRUCTURES, {
               filter(structure) {
-                return structure.structureType === STRUCTURE_CONTAINER && _.sum(structure.store) < structure.storeCapacity && !targetIds.includes(structure.id)
+                return (structure.structureType === STRUCTURE_CONTAINER || structure.structureType === STRUCTURE_EXTENSION) && _.sum(structure.store) < structure.storeCapacity && !targetIds.includes(structure.id)
               }
             })
           }

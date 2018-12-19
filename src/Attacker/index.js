@@ -37,7 +37,7 @@ const unexploredRooms = createSelector(
 function* newRoomBehavior(creep) {
 }
 
-let ATTACKER_COUNT = 2
+let ATTACKER_COUNT = 0
 const earlyCreeps = _.range(0, ATTACKER_COUNT).map(num => ({
   name: `Attacker-${num}`,
   body: [CLAIM, CLAIM, MOVE, MOVE],
