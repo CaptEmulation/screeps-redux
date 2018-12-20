@@ -129,6 +129,7 @@ createBrood({
               } else if (!target.my && !target.owner) {
                 err = creep.claimController(target);
                 creep.say("mine", true);
+                creep.memory.task = return;
               } else if (target.my) {
                 err = creep.signController(target, "screeps-redux");
               }
@@ -140,14 +141,6 @@ createBrood({
             }
             if (err) {
               creep.say(err);
-            } else {
-              const saying = Math.random() * 10;
-              if (Math.floor(saying) === 1) {
-                creep.say("pow", true);
-              }
-              if (Math.floor(saying) === 2) {
-                creep.say("kablam", true);
-              }
             }
           }
         }
