@@ -175,7 +175,12 @@ createBrood({
       }
 
       if (creep.memory.task === 'build') {
-        if (remoteConstructionSites.length && creep.carry[RESOURCE_ENERGY]) {
+        const flags = creep.room.find(FIND_FLAGS, {
+          filter(found){
+            return isColor([creep.memory.flag, creep.memory.flag]);
+          }
+        })
+        if (flags && remoteConstructionSites.length && creep.carry[RESOURCE_ENERGY]) {
           let targets = remoteConstructionSites.filter(site => site.room === creep.room);
           if (targets.length) {
             const target = creep.pos.findClosestByRange(targets);
@@ -188,9 +193,12 @@ createBrood({
               creep.getOutOfTheWay(target, 3);
             }
           }
+        } else if (creep.carry[RESOURCE_ENERGY]){
+          creep.memory.task = 'empty';
         } else {
           creep.memory.task = 'fill';
         }
+
       }
 
       if (creep.memory.task === 'empty') {
@@ -287,7 +295,7 @@ createBrood({
         //console.log(creep.name, creep.carry[RESOURCE_ENERGY]);
         //console.log(creep.name, creep.carryCapacity);
         if (creep.carry[RESOURCE_ENERGY] === creep.carryCapacity) {
-          if (remoteConstructionSites.length) {
+          if (remoteConstructionSites.length && creep.memory.flag) {
             creep.memory.task = 'build';
           } else {
             creep.memory.task = 'empty';
