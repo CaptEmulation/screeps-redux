@@ -28,11 +28,6 @@ const unexploredRooms = createSelector(
   root,
 )
 
-const selectHarvesters = createSelector(
-  () => Game.creeps,
-  creeps => Object.values(creeps).filter(creep => creep.memory && creep.memory.role === 'Harvester'),
-)
-
 function* newRoomBehavior(creep) {
 }
 
@@ -81,12 +76,12 @@ const earlyCreeps = _.range(0, HARVESTER_COUNT).map(num => ({
 
 export function init(store) {
   global.spawnHarvester = function({
-    num,
+    num=0,
     flag=0,
     size,
   }) {
     if (!num) {
-      num = selectHarvesters().length;
+      num = Object.values(Game.creeps).filter(creep => creep.memory && creep.memory.role === 'Harvester').length;
     }
     let task;
     if (flag) {
@@ -190,7 +185,7 @@ createBrood({
       if (creep.memory.task === 'move') {
         const targets = Object.values(Game.flags).filter(isColor([creep.memory.flag, creep.memory.flag]));
         if (targets.length) {
-          const target = creep.pos.findClosestByRange(targets);
+          const target = targets[0];
           if (creep.pos.getRangeTo(target) > 3) {
             creep.routeTo(target, {
               range: 3,
@@ -212,12 +207,12 @@ createBrood({
         if (targets.length) {
           target = creep.pos.findClosestByRange(targets);;
           const range = creep.pos.getRangeTo(target);
-          if (range > 1) {
+          if (target && range > 1) {
             let err = creep.moveTo(target, {reusePath: 5, visualizePathStyle: {}});
             //creep.routeTo(target, { range:0, ignoreCreeps:false });
-          } else {
-            creep.transfer(RESOURCE_ENERGY);
-            creep.memory.task = "fill";
+          } else if (target) {
+            const amount = Math.min(creep.carry[RESOURCE_ENERGY], target.energyCapacity - target.energy);
+            creep.transfer(target, RESOURCE_ENERGY, amount);
           }
         }
         else {

@@ -28,11 +28,6 @@ const unexploredRooms = createSelector(
   root,
 )
 
-const selectHaulerProbes = createSelector(
-  () => Game.creeps,
-  creeps => Object.values(creeps).filter(creep => creep.memory && creep.memory.role === 'Hauler'),
-)
-
 function* newRoomBehavior(creep) {
 }
 
@@ -57,13 +52,14 @@ function scanForContainers(room) {
 
 export function init(store) {
   global.spawnHauler = function({
-    num,
+    num=0,
     flag=0,
     size,
   }) {
     if (!num) {
-      num = selectHaulerProbes().length;
+      num = Object.values(Game.creeps).filter(creep => creep.memory && creep.memory.role === 'Hauler').length;
     }
+    console.log(num);
     let task;
     if (flag) {
       task = 'move';
@@ -98,7 +94,7 @@ export function init(store) {
           role: 'Hauler',
           task,
           flag,
-          num
+          num,
         },
         priority: 0,
         controller: 'Hauler',
