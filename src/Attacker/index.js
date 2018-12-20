@@ -17,7 +17,7 @@ import {
   exits as roomExits,
 } from '../utils/room';
 import findPath from '../utils/findPath';
-import { renewSelf, vanish, wakeup } from '../Tasks/index';
+import { renewSelf, returnSelf, vanish, wakeup } from '../Tasks/index';
 import {
   isColor,
   attackFlag,
@@ -69,7 +69,7 @@ export function init(store) {
         room: Game.spawns['Spawn1'].room.name,
       }),
     });
-    return "Attacker-" + num;
+    return "Spawned creep Attacker-" + num;
   }
 }
 
@@ -84,10 +84,18 @@ createBrood({
       }));
       const creeps = yield select(selectors.alive);
 
+      if (Game.time % 1000 === 165) {
+        console.log(spawnAttacker());
+      }
+
       for (let creep of creeps) {
 
         if (creep.memory.task === "renew") {
           renewSelf(creep, "move");
+        }
+
+        if (creep.memory.task === "return") {
+          returnSelf(creep);
         }
 
         if (creep.memory.task === "move") {
@@ -118,7 +126,8 @@ createBrood({
               err = creep.attackController(target);
               creep.say("bam", true);
               if (!err) {
-                creep.memory.task = "renew";
+                creep.memory.task = "return";
+                console.log(creep.name, "attacked target", target.targetId, "downgrade in", target.ticksToDowngrade);
               }
             } else {
               err = creep.attack(target);

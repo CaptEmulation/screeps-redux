@@ -36,35 +36,35 @@ const selectHarvesters = createSelector(
 function* newRoomBehavior(creep) {
 }
 
-function getBody({
-    appraiser,
-    available,
-    max,
-  })
-  {
-    //console.log('available =>', available, 'max => ', max);
-    const body = [MOVE, CARRY, WORK];
-    while (appraiser(body) < available) {
-      //console.log('available =>', available, 'max => ', max, 'body =>', body);
-      const workCount = body.filter(b => b === WORK).length;
-      //console.log('workCount', workCount);
-      if (workCount >= 3) {
-        break;
-      }
-      if (appraiser([...body, WORK]) <= available) {
-        body.push(WORK);
-      } else {
-        //console.log('break')
-        break;
-      }
-    }
-    return body;
-}
+
 
 const HARVESTER_COUNT = 4;
 const earlyCreeps = _.range(0, HARVESTER_COUNT).map(num => ({
   name: `Harvester-${num}`,
-  body: getBody,
+  body: ({
+      appraiser,
+      available,
+      max,
+    }) =>
+    {
+      //console.log('available =>', available, 'max => ', max);
+      const body = [MOVE, CARRY, WORK];
+      while (appraiser(body) < available) {
+        //console.log('available =>', available, 'max => ', max, 'body =>', body);
+        const workCount = body.filter(b => b === WORK).length;
+        //console.log('workCount', workCount);
+        if (workCount >= 3) {
+          break;
+        }
+        if (appraiser([...body, WORK]) <= available) {
+          body.push(WORK);
+        } else {
+          //console.log('break')
+          break;
+        }
+      }
+      return body;
+  },
   memory: {
     role: 'Harvester',
     task: 'fill',
@@ -89,7 +89,33 @@ export function init(store) {
       type: 'EXE',
       payload: spawnActions.spawn({
         name: 'Harvester-' + num,
-        body: getBody,
+        body: ({
+            appraiser,
+            available,
+            max,
+          }) =>
+          {
+            //console.log('available =>', available, 'max => ', max);
+            const body = [MOVE, CARRY, WORK];
+            while (appraiser(body) < available) {
+              //console.log('available =>', available, 'max => ', max, 'body =>', body);
+              const workCount = body.filter(b => b === WORK).length;
+              //console.log('workCount', workCount);
+              if (workCount >= 3) {
+                if (flag) {
+                  body.unshift(MOVE);
+                }
+                break;
+              }
+              if (appraiser([...body, WORK]) <= available) {
+                body.push(WORK);
+              } else {
+                //console.log('break')
+                break;
+              }
+            }
+            return body;
+        },
         memory: {
           role: 'Harvester',
           task,
@@ -149,7 +175,8 @@ createBrood({
           }
           renewSelf(creep, task);
         }
-        else if (creep.memory.task === 'move') {
+
+        if (creep.memory.task === 'move') {
           const targets = Object.values(Game.flags).filter(isColor([creep.memory.flag, creep.memory.flag]));
           if (targets.length) {
             const target = targets[0];
@@ -163,7 +190,7 @@ createBrood({
           }
         }
 
-        else if (creep.memory.task === "empty") {
+        if (creep.memory.task === "empty") {
           let targets = creep.room.find(FIND_STRUCTURES, {
             filter(structure){
               return (structure.structureType === STRUCTURE_CONTAINER || structure.structureType === STRUCTURE_STORAGE) && _.sum(structure.store) < structure.storeCapacity;
@@ -189,7 +216,8 @@ createBrood({
             creep.drop(RESOURCE_ENERGY);
           }
         }
-        else if (creep.memory.task === "fill"){
+
+        if (creep.memory.task === "fill"){
           let target;
           if (!creep.memory.source && !creep.memory.flag) {
             if (_.isUndefined(creep.room.memory.lastSource))

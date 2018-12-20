@@ -36,7 +36,7 @@ const selectHaulerProbes = createSelector(
 function* newRoomBehavior(creep) {
 }
 
-let HAULER_COUNT = 2;
+let HAULER_COUNT = 1;
 const earlyCreeps = _.range(0, HAULER_COUNT).map(num => ({
   name: `Hauler-${num}`,
   body: ({

@@ -1,14 +1,19 @@
 import { createSelector } from 'reselect';
 
+function getVitalStats(creep) {
+  let vitalStats = {};
+  vitalStats['task'] = creep.memory.task;
+  vitalStats['ticksToLive'] = creep.ticksToLive;
+  vitalStats['energy'] = creep.carry['energy'];
+  vitalStats['room'] = creep.room.name;
+  return vitalStats;
+}
 
 global.getCreeps = function() {
   const creeps = Game.creeps;
   Object.keys(creeps).forEach(function (key) {
     const creep = creeps[key];
-    let vitalStats = {};
-    vitalStats['task'] = creep.memory.task;
-    vitalStats['ticksToLive'] = creep.ticksToLive;
-    vitalStats['energy'] = creep.carry['energy'];
+    const vitalStats = getVitalStats(creep);
     console.log(key + "  \t" + JSON.stringify(vitalStats));
   });
   return "That's all folks!";
@@ -17,10 +22,7 @@ global.getCreeps = function() {
 global.showCreep = function(name) {
   const creep = Game.creeps[name];
   new RoomVisual(creep.room.name).circle(creep.pos, {stroke: "blue", fill: 'transparent', opacity: 1, radius: 1});
-  let vitalStats = {};
-  vitalStats['task'] = creep.memory.task;
-  vitalStats['ticksToLive'] = creep.ticksToLive;
-  vitalStats['energy'] = creep.carry['energy'];
+  const vitalStats = getVitalStats(creep);
   return name + "  \t" + JSON.stringify(vitalStats);
 }
 
