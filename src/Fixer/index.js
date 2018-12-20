@@ -24,7 +24,7 @@ import {
 } from '../utils/scan';
 import { renewSelf, vanish, wakeup } from '../Tasks/index';
 
-const UPGRADER_COUNT = 1;
+const UPGRADER_COUNT = 2;
 
 let lastNeeds;
 
@@ -85,14 +85,14 @@ createBrood({
     const activeFixers = yield select(selectors.alive);
     activeFixers.forEach(creep => {
       const somethingToRepair = getRepairList(creep, activeFixers).length > 0;
+      if (creep.ticksToLive < 200) {
+        creep.memory.task = "renew";
+        creep.say("fix me!", true);
+      }
       if (!somethingToRepair){
         //console.log("nothing to fix");
         if (!creep.memory.task) {
           creep.memory.task = "fill";
-        }
-        if (creep.ticksToLive < 200) {
-          creep.memory.task = "renew";
-          creep.say("fix me!", true);
         }
         else if (creep.carry[RESOURCE_ENERGY] === creep.carryCapacity && creep.memory.task === "fill") {
           creep.say("fixer", true);

@@ -89,10 +89,10 @@ createBrood({
       }
 
       for (let creep of creeps) {
-
-        if (creep.memory.task === "renew") {
-          renewSelf(creep, "move");
-        }
+        //
+        // if (creep.memory.task === "renew") {
+        //   renewSelf(creep, "move");
+        // }
 
         if (creep.memory.task === "return") {
           returnSelf(creep);
@@ -123,12 +123,18 @@ createBrood({
           } else if (target) {
             let err;
             if (target instanceof StructureController) {
-              err = creep.attackController(target);
-              creep.say("bam", true);
-              if (!err) {
-                creep.memory.task = "return";
-                console.log(creep.name, "attacked target", target.targetId, "downgrade in", target.ticksToDowngrade);
+              if (!target.my && target.owner && target.owner.username) {
+                err = creep.attackController(target);
+                creep.say("bam", true);
+              } else if (!target.my && !target.owner) {
+                err = creep.claimController(target);
+                creep.say("mine", true);
+              } else if (target.my) {
+                err = creep.signController(target, "screeps-redux");
               }
+              // if (!err) {
+              //   creep.memory.task = "renew";
+              // }
             } else {
               err = creep.attack(target);
             }

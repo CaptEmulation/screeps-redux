@@ -192,43 +192,66 @@ function* run() {
   //   }
   // });
   yield takeEvery(RUN, function* onRun() {
-    if (!lastNeeds || Game.time % 8 === 0) {
-      const builderCount = BUILDER_COUNT; //Game.spawns['Spawn1'].room.find(FIND_MY_CONSTRUCTION_SITES).length > 0 ? 5 : 2;
-      lastNeeds = range(0, builderCount).map(num => ({
-        name: `Builder-${num}`,
-        priority: -60,
-        body: ({
-          appraiser,
-          available,
-          max,
-        }) => {
-          const body = [MOVE, CARRY, WORK];
-          while (appraiser(body) < available) {
-            const workCount = body.filter(b => WORK).length;
-            if (workCount >= 8) {
-              break;
+    const mySpawnRooms = Object.values(Game.spawns).map(spawn => spawn.room);
+    const needs = [];
+    let num = 0;
+    for (let room of mySpawnRooms) {
+      for (let i = 0; i < BUILDER_COUNT; i++) {
+        needs.push({
+          name: `Builder-${num}`,
+          priority: -60,
+          body: ({
+            appraiser,
+            available,
+            max,
+          }) => {
+            const body = [MOVE, CARRY, WORK];
+            while (appraiser(body) < available) {
+              const workCount = body.filter(b => WORK).length;
+              if (workCount >= 8) {
+                break;
+              }
+              if (appraiser([...body, MOVE, WORK, WORK, CARRY]) <= max) {
+                body.push(MOVE, WORK, WORK, CARRY);
+              } else {
+                break;
+              }
             }
-            if (appraiser([...body, MOVE, WORK, WORK, CARRY]) <= max) {
-              body.push(MOVE, WORK, WORK, CARRY);
-            } else {
-              break;
-            }
-          }
-          return body;
-        },
-        memory: {
-          role: 'builder',
-          num,
-        },
-      }));
+            return body;
+          },
+          memory: {
+            role: 'builder',
+            num,
+          },
+          room: room.name,
+        });
+        num++;
+      }
+    }
+
+    const activeBuilders = yield select(selectActiveBuilders);
+
+    // Check for rooms external to spawn that need a builder
+    const remoteConstructionSites = Object.values(Game.constructionSites)
+      .filter(site => !mySpawnRooms.includes(site.room));
+    if (remoteConstructionSites.length) {
+      const remoteBuilderRoomNames = activeBuilders
+        .filter(c => _.get(c, 'memory.remote'))
+        .map(c => c.memory.remote);
+      const roomsNeedingBuilder = remoteConstructionSites.reduce((rooms, site) => {
+        if (!remoteBuilderRoomNames.includes(site.room.name)) {
+          rooms.push(site.room);
+        }
+        return rooms;
+      }, []);
+      // FIXME: not doing anything yet....
     }
 
     yield put(spawnActions.need({
-      needs: lastNeeds,
-      room: Game.spawns['Spawn1'].room.name,
+      needs,
       controller: 'Construction',
     }));
-    const activeBuilders = yield select(selectActiveBuilders);
+
     const buildQueue = yield select(selectBuildQueue);
 
     activeBuilders.forEach(creep => {
