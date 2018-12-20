@@ -129,7 +129,7 @@ createBrood({
               } else if (!target.my && !target.owner) {
                 err = creep.claimController(target);
                 creep.say("mine", true);
-                creep.memory.task = return;
+                creep.memory.task = "return";
               } else if (target.my) {
                 err = creep.signController(target, "screeps-redux");
               }

@@ -239,7 +239,7 @@ function* run() {
         .filter(c => _.get(c, 'memory.remote'))
         .map(c => c.memory.remote);
       const roomsNeedingBuilder = remoteConstructionSites.reduce((rooms, site) => {
-        if (!remoteBuilderRoomNames.includes(site.room.name)) {
+        if (remoteBuilderRoomNames && !remoteBuilderRoomNames.includes(site.room.name)) {
           rooms.push(site.room);
         }
         return rooms;
