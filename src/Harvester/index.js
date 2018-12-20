@@ -148,28 +148,6 @@ createBrood({
         remoteConstructionSites = Object.values(Game.constructionSites)
           .filter(site => !mySpawnRooms.includes(site.room));
       }
-      if (!creep.memory.task) {
-        creep.memory.task = "fill";
-      }
-      if (creep.carry[RESOURCE_ENERGY] === creep.carryCapacity && creep.memory.task === "fill") {
-        creep.say("full", true);
-        creep.memory.task = "empty";
-      }
-      if (creep.carry[RESOURCE_ENERGY] === 0 && creep.memory.task === "empty") {
-        if (creep.ticksToLive < 200 && !creep.memory.dieoff) {
-          creep.say("fix me!", true);
-          creep.memory.task = "renew";
-        }
-        else {
-          if (creep.memory.flag && !Object.values(Game.flags).filter(isColor([creep.memory.flag, creep.memory.flag])).length) {
-            creep.memory.task = "move";
-            creep.say("movin' out");
-          } else {
-            creep.say("hungry", true);
-            creep.memory.task = "fill";
-          }
-        }
-      }
 
       if (creep.memory.task === 'renew') {
         let task
@@ -191,9 +169,27 @@ createBrood({
               range: 3,
             });
           } else {
-            creep.build(target);
-            creep.getOutOfTheWay(target, 3);
+            creep.memory.task = 'fill';
           }
+        }
+      }
+
+      if (creep.memory.task === 'build') {
+        if (remoteConstructionSites.length && creep.carry[RESOURCE_ENERGY]) {
+          let targets = remoteConstructionSites.filter(site => site.room === creep.room);
+          if (targets.length) {
+            const target = creep.pos.findClosestByRange(targets);
+            if (creep.pos.getRangeTo(target) > 3) {
+              creep.routeTo(target, {
+                range: 3,
+              });
+            } else {
+              creep.build(target);
+              creep.getOutOfTheWay(target, 3);
+            }
+          }
+        } else {
+          creep.memory.task = 'fill';
         }
       }
 
@@ -218,8 +214,26 @@ createBrood({
         else {
           creep.drop(RESOURCE_ENERGY);
         }
+        if (creep.carry[RESOURCE_ENERGY] === 0) {
+          if (creep.ticksToLive < 200) {
+            creep.say("fix me!", true);
+            creep.memory.task = "renew";
+          }
+          else  {
+            const flags = creep.room.find(FIND_FLAGS, {
+              filter(found){
+                return isColor([creep.memory.flag, creep.memory.flag]);
+              }
+            })
+            if (creep.memory.flag && !flags)
+            {
+              creep.memory.task = 'move';
+            } else {
+              creep.memory.task = 'fill';
+            }
+          }
+        }
       }
-
 
       if (creep.memory.task === "fill"){
         let target;
@@ -246,10 +260,11 @@ createBrood({
         else {
           target = Game.getObjectById(creep.memory.source.id);
         }
+
         const range = creep.pos.getRangeTo(target);
         if (target && range > 1) {
-          //creep.moveTo(target, {reusePath: 5, visualizePathStyle: {}});
-          creep.routeTo(target, { range:0, ignoreCreeps:false });
+          creep.moveTo(target, {reusePath: 5, visualizePathStyle: {}});
+          //creep.routeTo(target, { range:0, ignoreCreeps:false });
         } else {
           const err = creep.harvest(target);
           //if (creep.name === 'Harvester-4') {
@@ -266,6 +281,16 @@ createBrood({
             else if (Math.floor(saying) === 2) {
               creep.say("nom nom", true);
             }
+          }
+        }
+
+        //console.log(creep.name, creep.carry[RESOURCE_ENERGY]);
+        //console.log(creep.name, creep.carryCapacity);
+        if (creep.carry[RESOURCE_ENERGY] === creep.carryCapacity) {
+          if (remoteConstructionSites.length) {
+            creep.memory.task = 'build';
+          } else {
+            creep.memory.task = 'empty';
           }
         }
       }
