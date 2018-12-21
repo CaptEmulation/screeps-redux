@@ -158,7 +158,7 @@ createBrood({
         creep.memory.task = "empty";
       }
       if (creep.carry[RESOURCE_ENERGY] === 0 && creep.memory.task === "empty") {
-        if (creep.ticksToLive < 200 && !creep.memory.dieoff) {
+        if (creep.ticksToLive < 250 && !creep.memory.dieoff) {
           creep.say("fix me!", true);
           creep.memory.task = "renew";
         }
@@ -210,7 +210,6 @@ createBrood({
               });
             } else {
               creep.build(target);
-              creep.getOutOfTheWay(target, 3);
             }
           }
         }
@@ -235,8 +234,12 @@ createBrood({
           creep.moveTo(target, {reusePath: 5, visualizePathStyle: {}});
           //creep.routeTo(target, { range:0, ignoreCreeps:false });
         } else if (target) {
-          const amount = Math.min(creep.carry[RESOURCE_ENERGY], target.energyCapacity - target.energy);
-          creep.transfer(target, RESOURCE_ENERGY, amount);
+          if (target instanceof StructureContainer && (target.hits / target.hitsMax) < 0.95) {
+            creep.repair(target);
+          } else {
+            const amount = Math.min(creep.carry[RESOURCE_ENERGY], target.energyCapacity - target.energy);
+            creep.transfer(target, RESOURCE_ENERGY, amount);
+          }
         }
         else {
           creep.drop(RESOURCE_ENERGY);
@@ -244,7 +247,7 @@ createBrood({
       }
       else if (creep.memory.task === "fill"){
         let target;
-        if (!creep.memory.source && !creep.memory.flag) {
+        if (!creep.memory.source) {
           if (_.isUndefined(creep.room.memory.lastSource))
           {
             creep.room.memory.lastSource = -1;
@@ -259,10 +262,6 @@ createBrood({
           creep.memory.source = { id: target.id, pos: [target.pos.x, target.pos.y] };
           creep.room.memory.lastSource = newSource;
           creep.say("source " + newSource, true);
-        }
-        else if (creep.memory.flag) {
-          const sources = creep.room.find(FIND_SOURCES);
-          target = creep.pos.findClosestByRange(sources);
         }
         else {
           target = Game.getObjectById(creep.memory.source.id);
