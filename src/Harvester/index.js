@@ -206,14 +206,13 @@ createBrood({
       }
 
       if (creep.memory.task === 'empty') {
-        let targets;
-        if (targets && targets.length === 0) {
-          targets = creep.room.find(FIND_STRUCTURES, {
-            filter(structure){
-              return (structure.structureType === STRUCTURE_CONTAINER || structure.structureType === STRUCTURE_STORAGE) && _.sum(structure.store) < structure.storeCapacity;
-            }
-          })
-        }
+        let targets = creep.room.find(FIND_STRUCTURES, {
+          filter(structure){
+            return (structure.structureType === STRUCTURE_CONTAINER
+                || structure.structureType === STRUCTURE_STORAGE)
+                && _.sum(structure.store) < structure.storeCapacity;
+          }
+        });
         if (targets && targets.length === 0) {
           targets = creep.room.find(FIND_STRUCTURES, {
             filter(structure){
