@@ -238,14 +238,14 @@ createBrood({
           })
         }
         if (targets.length == 0) {
-          target = creep.pos.findClosestByRange(creep.room.find(FIND_MY_STRUCTURES, {
+          targets = creep.room.find(FIND_MY_STRUCTURES, {
             fitler(structure) {
               return structure.structureType === STRUCTURE_SPAWN;
             },
-          }));
-        } else {
-          target = creep.pos.findClosestByRange(targets);
+          });
         }
+
+        const target = creep.pos.findClosestByRange(targets);
         const range = creep.pos.getRangeTo(target);
         if (target && range > 1) {
           creep.moveTo(target, {reusePath: 5, visualizePathStyle: {}});
