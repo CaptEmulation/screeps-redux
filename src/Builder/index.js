@@ -234,7 +234,7 @@ function* run() {
     // Check for rooms external to spawn that need a builder
     const remoteConstructionSites = Object.values(Game.constructionSites)
       .filter(site => !mySpawnRooms.includes(site.room));
-    if (remoteConstructionSites.length) {
+/*    if (remoteConstructionSites.length) {
       const remoteBuilderRoomNames = activeBuilders
         .filter(c => _.get(c, 'memory.remote'))
         .map(c => c.memory.remote);
@@ -245,7 +245,7 @@ function* run() {
         return rooms;
       }, []);
       // FIXME: not doing anything yet....
-    }
+    } */
 
     yield put(spawnActions.need({
       needs,

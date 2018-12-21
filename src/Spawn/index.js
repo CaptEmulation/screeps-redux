@@ -250,9 +250,10 @@ function* commit() {
             };
             const cost = calcCreepCost(body);
             if (cost <= (roomInfo.extensions.available + spawner.energy)) {
+              const myMemory = _.isFunction(memory) ? memory({body}) : memory;
               requestSpawn.push([spawner, body, name, {
                 memory: {
-                  ...memory,
+                  ...myMemory,
                   home: roomName,
                 },
               }]);

@@ -95,11 +95,7 @@ createBrood({
         // }
 
         if (creep.memory.task === "return") {
-          returnSelf(creep, "suicide");
-        }
-
-        if (creep.memory.task === "suicide") {
-          creep.suicide();
+          returnSelf(creep);
         }
 
         if (creep.memory.task === "move") {

@@ -61,14 +61,21 @@ function getBody(size, flag=0) {
   }
 }
 
+function getMemory(task = 'fill', flag) {
+  return ({ body }) => ({
+    dieoff : body.filter(b => b === WORK).length < 3,
+    role: 'Harvester',
+    task,
+    flag,
+  })
+}
+
+
 const HARVESTER_COUNT = 4;
 const earlyCreeps = _.range(0, HARVESTER_COUNT).map(num => ({
   name: `Harvester-${num}`,
   body: getBody(),
-  memory: {
-    role: 'Harvester',
-    task: 'fill',
-  },
+  memory: getMemory(),
   priority: -600,
   controller: 'Harvester',
   room: Game.spawns['Spawn1'].room.name,
@@ -78,7 +85,7 @@ export function init(store) {
   global.spawnHarvester = function({
     num=0,
     flag=0,
-    size,
+    size
   } = {}) {
     if (!num) {
       num = Object.values(Game.creeps).filter(creep => creep.memory && creep.memory.role === 'Harvester').length;
@@ -94,11 +101,7 @@ export function init(store) {
       payload: spawnActions.spawn({
         name: 'Harvester-' + num,
         body: getBody(size, flag),
-        memory: {
-          role: 'Harvester',
-          task,
-          flag,
-        },
+        memory: getMemory(task, flag),
         priority: 10,
         controller: 'Harvester',
         room: Game.spawns['Spawn1'].room.name,
@@ -125,7 +128,7 @@ createBrood({
           body: getBody(),
           memory: {
             role: 'Harvester',
-            task: 'fill',
+            task: 'fill'
           },
           priority: -600,
           controller: 'Harvester',

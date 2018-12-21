@@ -300,8 +300,10 @@ createBrood({
         }
         if (!target) {
           target = vanish(creep);
-          creep.getOutOfTheWay(target);
-          return;
+          creep.moveTo(target, {reusePath: 5, visualizePathStyle: {}});
+        }
+        else if (creep.memory.targetId) {
+          wakeup(creep);
         }
 
         //console.log(target);

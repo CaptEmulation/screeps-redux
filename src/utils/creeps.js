@@ -6,6 +6,7 @@ function getVitalStats(creep) {
   vitalStats['ticksToLive'] = creep.ticksToLive;
   vitalStats['energy'] = creep.carry['energy'];
   vitalStats['room'] = creep.room.name;
+  vitalStats['size'] = creep.body.length;
   return vitalStats;
 }
 
