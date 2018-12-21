@@ -36,7 +36,7 @@ const {
 } = _;
 
 
-const BUILDER_COUNT = 2;
+const BUILDER_COUNT = 3;
 const SPAWN = 'BUILDER_SPAWN';
 const QUEUE = 'BUILDER_QUEUE';
 const POP = 'BUILDER_POP';
@@ -239,7 +239,7 @@ function* run() {
         .filter(c => _.get(c, 'memory.remote'))
         .map(c => c.memory.remote);
       const roomsNeedingBuilder = remoteConstructionSites.reduce((rooms, site) => {
-        if (!remoteBuilderRoomNames.includes(site.room.name)) {
+        if (remoteBuilderRoomNames && !remoteBuilderRoomNames.includes(site.room.name)) {
           rooms.push(site.room);
         }
         return rooms;
@@ -286,7 +286,7 @@ function* run() {
             creep.routeTo(target, {
               range: 3,
             });
-          } else {
+          } else if (!(target instanceof StructureController)){
             creep.build(target);
             creep.getOutOfTheWay(target, 3);
           }

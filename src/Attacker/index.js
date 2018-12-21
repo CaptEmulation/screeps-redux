@@ -17,7 +17,7 @@ import {
   exits as roomExits,
 } from '../utils/room';
 import findPath from '../utils/findPath';
-import { renewSelf, vanish, wakeup } from '../Tasks/index';
+import { renewSelf, returnSelf, vanish, wakeup } from '../Tasks/index';
 import {
   isColor,
   attackFlag,
@@ -69,7 +69,7 @@ export function init(store) {
         room: Game.spawns['Spawn1'].room.name,
       }),
     });
-    return "Attacker-" + num;
+    return "Spawned creep Attacker-" + num;
   }
 }
 
@@ -84,11 +84,23 @@ createBrood({
       }));
       const creeps = yield select(selectors.alive);
 
+      if (Game.time % 1000 === 165) {
+        console.log(spawnAttacker());
+      }
+
       for (let creep of creeps) {
         //
         // if (creep.memory.task === "renew") {
         //   renewSelf(creep, "move");
         // }
+
+        if (creep.memory.task === "return") {
+          returnSelf(creep, "suicide");
+        }
+
+        if (creep.memory.task === "suicide") {
+          creep.suicide();
+        }
 
         if (creep.memory.task === "move") {
           const targets = Object.values(Game.flags).filter(isColor(attackFlag));
@@ -118,6 +130,10 @@ createBrood({
               if (!target.my && target.owner && target.owner.username) {
                 err = creep.attackController(target);
                 creep.say("bam", true);
+                console.log(creep.name, "attacked controller in room", creep.room.name, "ticks to downgrade", target.ticksToDowngrade);
+                if (err) {
+                  creep.memory.task = "return";
+                }
               } else if (!target.my && !target.owner) {
                 err = creep.claimController(target);
                 creep.say("mine", true);
@@ -132,14 +148,6 @@ createBrood({
             }
             if (err) {
               creep.say(err);
-            } else {
-              const saying = Math.random() * 10;
-              if (Math.floor(saying) === 1) {
-                creep.say("pow", true);
-              }
-              if (Math.floor(saying) === 2) {
-                creep.say("kablam", true);
-              }
             }
           }
         }
