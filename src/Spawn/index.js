@@ -250,7 +250,12 @@ function* commit() {
             };
             const cost = calcCreepCost(body);
             if (cost <= (roomInfo.extensions.available + spawner.energy)) {
-              requestSpawn.push([spawner, body, name, { memory }]);
+              requestSpawn.push([spawner, body, name, {
+                memory: {
+                  ...memory,
+                  home: roomName,
+                },
+              }]);
             }
             // Earmark energy for use on this creep if cost is possible
             if (cost <= (roomInfo.extensions.max + spawner.energy)) {
