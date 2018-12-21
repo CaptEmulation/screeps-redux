@@ -305,7 +305,8 @@ createBrood({
 
         //console.log(creep.name, creep.carry[RESOURCE_ENERGY]);
         //console.log(creep.name, creep.carryCapacity);
-        if (creep.carry[RESOURCE_ENERGY] === creep.carryCapacity) {
+        //console.log(creep.name, creep.body.filter(b => b.type === WORK).length * 2);
+        if (creep.carry[RESOURCE_ENERGY] > (creep.carryCapacity - creep.body.filter(b => b.type === WORK).length * 2)) {
           if (remoteConstructionSites.length && creep.memory.flag) {
             creep.memory.task = 'build';
           } else {
