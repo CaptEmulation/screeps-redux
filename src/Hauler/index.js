@@ -300,6 +300,8 @@ createBrood({
         }
         if (!target) {
           target = vanish(creep);
+          creep.getOutOfTheWay(target);
+          return;
         }
 
         //console.log(target);

@@ -2,7 +2,7 @@
 export function renewSelf(creep, task='fill') {
   const target = Game.spawns['Spawn1'];
   const range = creep.pos.getRangeTo(target);
-  const minTicks = 1350;
+  const minTicks = 1400;
   if (creep.memory.dieoff === true) {
     creep.memory.task = task;
   }
@@ -52,11 +52,14 @@ export function returnSelf(creep, task) {
 export function vanish(creep) {
   let target;
   if (!creep.memory.targetId) {
-    const targets = creep.room.find(FIND_STRUCTURES, {
+    let targets = creep.room.find(FIND_STRUCTURES, {
       filter(structure){
         return structure.structureType === STRUCTURE_EXTENSION;
       }
     })
+    if (!targets.length) {
+      targets = creep.room.find(FIND_FLAGS);
+    }
     //target = _.sample(targets);
     //console.log("setting target by position");
     if (targets.length) {
