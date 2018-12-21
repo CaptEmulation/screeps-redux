@@ -25,71 +25,82 @@ function notDrainersOrDrainersNeedingHealing(creep) {
   return notDrainerWithDamage || drainerThatCannotHeal;
 }
 
+
+
 function* run() {
   yield takeEvery(RUN, function* onRun() {
-    const room = Game.spawns['Spawn1'].room;
-    const towers = room.find(FIND_STRUCTURES, {
-      filter: (target) => target.structureType === STRUCTURE_TOWER,
-    });
-    const hostiles = room.find(FIND_HOSTILE_CREEPS);
-    let healed = false;
-    const friendliesNeedingHealing = room.find(FIND_MY_CREEPS, {
-      filter: notDrainersOrDrainersNeedingHealing,
-    }).sort((a, b) => (a.hitsMax - a.hits) - (b.hitsMax - b.hits));
-    if (friendliesNeedingHealing.length) {
-      const {
-        hits,
-        hitsMax,
-      } = friendliesNeedingHealing[0];
-      towers.forEach(tower => {
-        tower.heal(friendliesNeedingHealing[0]);
+    const needs = [];
+    let num = 0;
+
+    for (let room of Object.values(Game.rooms)) {
+      const towers = room.find(FIND_STRUCTURES, {
+        filter: (target) => target.structureType === STRUCTURE_TOWER,
       });
-      healed = true;
-    }
-    const lowRamparts = room.find(FIND_STRUCTURES, {
-      filter(rampart) {
-        return rampart.structureType === STRUCTURE_RAMPART && rampart.hits < 1000;
+      const hostiles = room.find(FIND_HOSTILE_CREEPS);
+      let healed = false;
+      const friendliesNeedingHealing = room.find(FIND_MY_CREEPS, {
+        filter: notDrainersOrDrainersNeedingHealing,
+      }).sort((a, b) => (a.hitsMax - a.hits) - (b.hitsMax - b.hits));
+      if (friendliesNeedingHealing.length) {
+        const {
+          hits,
+          hitsMax,
+        } = friendliesNeedingHealing[0];
+        towers.forEach(tower => {
+          tower.heal(friendliesNeedingHealing[0]);
+        });
+        healed = true;
       }
-    });
-    if (lowRamparts) {
-      towers.forEach(tower => {
-        tower.repair(lowRamparts[0]);
+      const lowRamparts = room.find(FIND_STRUCTURES, {
+        filter(rampart) {
+          return rampart.structureType === STRUCTURE_RAMPART && rampart.hits < 1000;
+        }
       });
+      if (lowRamparts) {
+        towers.forEach(tower => {
+          tower.repair(lowRamparts[0]);
+        });
+      }
+      if (!healed) {
+        towers.forEach(tower => {
+          tower.attack(hostiles[0]);
+        });
+      }
+      if (hostiles.length) {
+        needs.push(..._.range(hostiles.length).map(() => ({
+          name: `Defense-${num++}`,
+          body({ appraiser, available }) {
+            if (appraiser([TOUGH, TOUGH, MOVE, MOVE, MOVE, ATTACK, MOVE, ATTACK, MOVE, ATTACK, MOVE, ATTACK, MOVE, ATTACK]) <= available) {
+              return [TOUGH, TOUGH, MOVE, MOVE, MOVE, ATTACK, MOVE, ATTACK, MOVE, ATTACK, MOVE, ATTACK, MOVE, ATTACK];
+            }
+            return [MOVE, RANGED_ATTACK];
+          },
+          priority: -100,
+          memory: {
+            role: 'Defense'
+          },
+          room: room.name,
+        })))
+      }
     }
-    if (hostiles.length) {
-      console.log('I see baddies', hostiles);
-      yield put(spawnActions.need({
-        needs: [
-          ..._.range(hostiles.length).map(num => ({
-            name: `Defense-${num}`,
-            body: [TOUGH, TOUGH, MOVE, MOVE, MOVE, ATTACK, MOVE, ATTACK, MOVE, ATTACK, MOVE, ATTACK, MOVE, ATTACK],
-            priority: -100,
-            memory: {
-              role: 'Defense'
-            },
-          })),
-        ],
-        room: Game.spawns['Spawn1'].room.name,
-        controller: 'Defense',
-      }));
-    } else {
-      yield put(spawnActions.need({
-        needs: [],
-        controller: 'Defense',
-      }));
-    }
-    if (!healed) {
-      towers.forEach(tower => {
-        tower.attack(hostiles[0]);
-      });
-    }
+    yield put(spawnActions.need({
+      needs,
+      controller: 'Defense',
+    }));
+
     const myDefCreeps = Object.values(Game.creeps).filter(c => c.memory && c.memory.role === 'Defense');
     for (let i = 0; i < myDefCreeps.length; i++) {
       const creep = myDefCreeps[i];
       const baddies = creep.room.find(FIND_HOSTILE_CREEPS);
       const badGuy = creep.pos.findClosestByRange(baddies);
       if (badGuy) {
-        acquireTask(creep, creepTasks.attack(), badGuy);
+        if (creep.body.find(b => b.type === RANGED_ATTACK)) {
+          creep.routeTo(badGuy, { range: 3 });
+          creep.rangedAttack(badGuy);
+        } else {
+          acquireTask(creep, creepTasks.attack(), badGuy);
+        }
+
       }
     }
   });

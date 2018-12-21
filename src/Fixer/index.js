@@ -223,7 +223,7 @@ createBrood({
           });
         } else {
           creep.repair(target);
-          creep.getOutOfTheWay(target, 3);
+          //creep.getOutOfTheWay(target, 3);
         }
       } else if (somethingToRepair) {
         findClosestEnergy(creep, false);

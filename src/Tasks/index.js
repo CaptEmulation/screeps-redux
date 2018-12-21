@@ -38,7 +38,15 @@ export function renewSelf(creep, task='fill') {
 }
 
 export function returnSelf(creep, task) {
-  const target = Game.spawns['Spawn1'];
+  let target = creep.room.find(FIND_MY_STRUCTURES, {
+    filter(structure) {
+      return structure.structureType === STRUCTURE_SPAWN;
+    }
+  });
+  if (!target) {
+    target = Game.spawns['Spawn1'];
+  }
+
   const range = creep.pos.getRangeTo(target);
   if (target && range > 3) {
     //creep.moveTo(target, {reusePath: 5, visualizePathStyle: {}});
