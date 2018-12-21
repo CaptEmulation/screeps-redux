@@ -9,6 +9,13 @@ export function renewSelf(creep, task='fill') {
   if (target && range > 1) {
     //creep.moveTo(target, {reusePath: 5, visualizePathStyle: {}});
     creep.routeTo(target, { range:0, ignoreCreeps:false });
+    const saying = Math.random() * 4;
+    if (Math.floor(saying) === 1) {
+      creep.say("help me!", true);
+    }
+    else if (Math.floor(saying) === 2) {
+      creep.say("fix me!", true);
+    }
   } else {
     if (target && !target.spawning) {
       if (creep.ticksToLive > minTicks || creep.room.energyAvailable < 200) {
@@ -21,6 +28,7 @@ export function renewSelf(creep, task='fill') {
           creep.say(err);
           console.log(creep.name, "error renewing creep", err);
           if (err === -8) {
+            console.log(creep.name, "renewed creep to", creep.ticksToLive);
             creep.memory.task = task;
           }
         }
@@ -29,12 +37,14 @@ export function renewSelf(creep, task='fill') {
   }
 }
 
-export function returnSelf(creep) {
+export function returnSelf(creep, task) {
   const target = Game.spawns['Spawn1'];
   const range = creep.pos.getRangeTo(target);
-  if (target && range > 9) {
+  if (target && range > 3) {
     //creep.moveTo(target, {reusePath: 5, visualizePathStyle: {}});
     creep.routeTo(target, { range:0, ignoreCreeps:false });
+  } else if (task) {
+    creep.memory.task = task;
   }
 
 }

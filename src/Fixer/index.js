@@ -85,11 +85,11 @@ createBrood({
     const activeFixers = yield select(selectors.alive);
     activeFixers.forEach(creep => {
       const somethingToRepair = getRepairList(creep, activeFixers).length > 0;
-      if (creep.ticksToLive < 200) {
+      if (creep.ticksToLive < 200 && !creep.storage[RESOURCE_ENERGY] && creep.memory.task !== 'renew') {
         creep.memory.task = "renew";
         creep.say("fix me!", true);
       }
-      if (!somethingToRepair){
+      else if (!somethingToRepair){
         //console.log("nothing to fix");
         if (!creep.memory.task) {
           creep.memory.task = "fill";

@@ -95,7 +95,11 @@ createBrood({
         // }
 
         if (creep.memory.task === "return") {
-          returnSelf(creep);
+          returnSelf(creep, "suicide");
+        }
+
+        if (creep.memory.task === "suicide") {
+          creep.suicide();
         }
 
         if (creep.memory.task === "move") {
@@ -126,10 +130,13 @@ createBrood({
               if (!target.my && target.owner && target.owner.username) {
                 err = creep.attackController(target);
                 creep.say("bam", true);
+                console.log(creep.name, "attacked controller in room", creep.room.name, "ticks to downgrade", target.ticksToDowngrade);
+                if (err) {
+                  creep.memory.task = "return";
+                }
               } else if (!target.my && !target.owner) {
                 err = creep.claimController(target);
                 creep.say("mine", true);
-                creep.memory.task = "return";
               } else if (target.my) {
                 err = creep.signController(target, "screeps-redux");
               }
