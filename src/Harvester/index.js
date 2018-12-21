@@ -79,7 +79,7 @@ export function init(store) {
     num=0,
     flag=0,
     size,
-  }) {
+  } = {}) {
     if (!num) {
       num = Object.values(Game.creeps).filter(creep => creep.memory && creep.memory.role === 'Harvester').length;
     }
@@ -196,7 +196,12 @@ createBrood({
         } else if (creep.carry[RESOURCE_ENERGY]){
           creep.memory.task = 'empty';
         } else {
-          creep.memory.task = 'fill';
+          if (creep.ticksToLive < 200) {
+            creep.say("fix me!", true);
+            creep.memory.task = 'renew';
+          } else {
+            creep.memory.task = 'fill';
+          }
         }
 
       }
