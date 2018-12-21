@@ -238,7 +238,11 @@ createBrood({
           })
         }
         if (targets.length == 0) {
-          target = Game.spawns['Spawn1']
+          target = creep.pos.findClosestByRange(creep.room.find(FIND_MY_STRUCTURES, {
+            fitler(structure) {
+              return structure.structureType === STRUCTURE_SPAWN;
+            },
+          }));
         } else {
           target = creep.pos.findClosestByRange(targets);
         }
