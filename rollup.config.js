@@ -27,7 +27,7 @@ function deploy(host) {
         console.log('Writing', mainjs);
         fs.writeFileSync(mainjs, bundles['main.js'].code, 'utf8');
         const map = `module.exports.d=${bundles['main.js'].map}`;
-        fs.writeFileSync(path.resolve(os.homedir(), ROOT, host, 'default/main.js.map'), map, 'utf8');
+        fs.writeFileSync(path.resolve(os.homedir(), ROOT, host, 'default/main.map.js'), map, 'utf8');
       }
     }
   }
@@ -44,6 +44,7 @@ export default ({
   },
   watch: {
     include: ['src/**/*.js'],
+    chokidar: false,
   },
   plugins: [
     resolve(),

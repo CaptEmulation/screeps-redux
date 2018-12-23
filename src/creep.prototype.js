@@ -1,6 +1,7 @@
 import {
   walkBox,
 } from './utils/scan';
+import { target as targetMatchers } from './utils/matchers';
 
 // Stolen and refactored from https://github.com/bonzaiferroni/Traveler/blob/master/Traveler.js
 
@@ -20,6 +21,9 @@ const structureMatrixCache = {};
 const creepMatrixCache = {};
 let structureMatrixTick;
 let creepMatrixTick;
+
+let lastTick = Game.time;
+let movingCreeps = {};
 
 function deserializeState(travelData, destination) {
   const state = {};
@@ -429,6 +433,11 @@ export function moveTo({
   ignoreRoads,
   ensurePath,
 }) {
+  if (lastTick !== Game.time) {
+    lastTick = Game.time;
+    movingCreeps = {};
+  }
+  movingCreeps[creep.name] = { target };
   const destination = normalizePos(target);
   const pathOptions = {
     creep,
@@ -452,14 +461,12 @@ export function moveTo({
     ignoreRoads,
     ensurePath,
   };
-  creep.memory.moving = true;
   if (creep.fatigue > 0) {
     circle(creep.pos, "aqua", .3);
     return null;
   }
   const rangeToDestination = creep.pos.getRangeTo(destination);
   if (range && rangeToDestination <= range) {
-    delete creep.memory.moving;
     return null;
   } else if (rangeToDestination <= 1) {
     if (rangeToDestination === 1 && !range) {
@@ -550,9 +557,7 @@ export function moveTo({
     returnData.state = state;
     returnData.path = travelData.path;
   }
-  if (travelData.length === 1 || (range && (range - 1) === rangeToDestination)) {
-    delete creep.memory.moving;
-  }
+  movingCreeps[creep.name].nextPosition = positionAtDirection(creep.pos, nextDirection);
   return creep.move(nextDirection);
 }
 
@@ -572,6 +577,106 @@ Creep.prototype.routeTo = function routeCreep(target, opts) {
     ...opts,
   });
 };
+
+function getTargetAndRange(creep) {
+  let range = 1;
+  let target;
+  if (creep.memory.target) {
+    target = Game.getObjectById(creep.memory.target)
+    if (_.isNumber(creep.memory.range)) {
+      range = creep.memory.range;
+    }
+  }
+  return [target, range];
+}
+
+function moveCreepOutOfTheWay(creep, from, target, range, creepsToMove, creepMoves) {
+  let newPos;
+  for (let [x, y] of walkBox(creep.pos)) {
+    if (from.find(fromCreep => fromCreep.pos.x === x && fromCreep.pos.y === y)) {
+      continue;
+    }
+    newPos = new RoomPosition(x, y, creep.room.name);
+    if (target && newPos.getRangeTo(target) > range) {
+      continue;
+    }
+    let isImpassable = false;
+    for (let curr of newPos.look()) {
+      if (
+        (curr.type === 'terrain' && curr.terrain === 'wall')
+        || (curr.type === 'structure' && !curr.structure instanceof StructureContainer)
+      ) {
+        isImpassable = true;
+        break;
+      }
+    }
+    if (isImpassable) {
+      continue;
+    }
+    const creepsAtMySpot = newPos.lookFor(LOOK_CREEPS);
+    if (creepsAtMySpot.length) {
+      const creepAtMySpot = creepsAtMySpot[0];
+      if (creepAtMySpot.my && creepsToMove[creepAtMySpot.name]) {
+        creepMoves.push(creep, newPos);
+        break;
+      } else if (!creepAtMySpot.my) {
+        continue;
+      } else if (creepAtMySpot.my) {
+        // Try to move this creep out of the way....
+        const [target, range] = getTargetAndRange(creepAtMySpot);
+        console.log('target =>', target, 'range =>', range);
+        const from = [creep];
+        creepsToMove[creepAtMySpot.name] = { from, target, range }
+        moveCreepOutOfTheWay(creepAtMySpot, from, target, range, creepsToMove, creepMoves);
+        break;
+      }
+    }
+    creepMoves.push([creep, newPos]);
+    break;
+  }
+}
+
+Creep.getOutOfTheWay = function getAllCreepsOutOfTheWay() {
+  if (lastTick !== Game.time) {
+    lastTick = Game.time;
+    movingCreeps = {};
+  }
+  const creepsToMove = {};
+  const creepMoves = [];
+  for (let [creepName, { target, nextPosition }] of Object.entries(movingCreeps)) {
+    const creep = Game.creeps[creepName];
+    const nextPosCreeps = nextPosition.lookFor(LOOK_CREEPS);
+    if (nextPosCreeps) {
+      const creepsAtNextPos = nextPosCreeps.filter(creep => creep.my);
+      if (creepsAtNextPos.length) {
+        const creepAtNextPos = creepsAtNextPos[0];
+        if (creepAtNextPos !== creep) {
+          console.log(`Found creep ${creepAtNextPos.name} in the way of ${creepName}`);
+          if (creepsToMove[creepAtNextPos.name]) {
+            // creep is already trying to move.... ignore
+            continue;
+          }
+          if (!creepsToMove[creepAtNextPos.name]) {
+            const [target, range] = getTargetAndRange(creepAtNextPos);
+            console.log('target =>', target, 'range =>', range);
+            creepsToMove[creepAtNextPos.name] = { from: [], target, range };
+          }
+          creepsToMove[creepAtNextPos.name].from.push(creep);
+        }
+      }
+    }
+  }
+  for (let [creepName, { from, target, range }] of Object.entries(creepsToMove)) {
+    const creep = Game.creeps[creepName];
+    console.log('creepName =>', creepName, 'from =>', from, 'target =>', target, 'range =>', range);
+    moveCreepOutOfTheWay(creep, from, target, range, creepsToMove, creepMoves);
+  }
+  for (let [creep, newPos] of creepMoves) {
+    const direction = creep.pos.getDirectionTo(newPos);
+    console.log(`Moving ${creep.name} ${direction}`)
+    creep.move(direction);
+  }
+}
 
 Creep.prototype.getOutOfTheWay = function getOutOfTheWay(target, range) {
   const onStructures = this.pos.lookFor(LOOK_STRUCTURES);
