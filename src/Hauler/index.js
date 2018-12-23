@@ -171,6 +171,7 @@ createBrood({
         creep.memory.task = "renew";
       }
       else if (creep.carry[RESOURCE_ENERGY] === creep.carryCapacity && creep.memory.task === "fill") {
+        delete creep.memory.target;
         creep.memory.task = "empty";
       }
       else if (creep.carry[RESOURCE_ENERGY] === 0 && creep.memory.task === "empty") {
@@ -263,47 +264,51 @@ createBrood({
       }
       else if (creep.memory.task === "fill") {
         let target;
-        if (creep.room.find(FIND_STRUCTURES, {
-          filter(structure){
-            return (structure.structureType === STRUCTURE_TOWER) && structure.energy < structure.energyCapacity;
-          }
-        }).length > 0) {
-          const targets = creep.room.find(FIND_STRUCTURES, {
-            filter(structure) {
-              return (structure.structureType === STRUCTURE_STORAGE || structure.structureType === STRUCTURE_CONTAINER) && structure.store[RESOURCE_ENERGY] > 0;
+        if (!creep.memory.target) {
+          if (creep.room.find(FIND_STRUCTURES, {
+            filter(structure){
+              return (structure.structureType === STRUCTURE_TOWER) && structure.energy < structure.energyCapacity;
             }
-          });
-          if (targets.length) {
-            target = creep.pos.findClosestByRange(targets);
-          }
-        }
-        if (!target) {
-          const energySources = creep.room.find(FIND_DROPPED_RESOURCES, {
-            filter(resource) {
-              return resource.resourceType === RESOURCE_ENERGY;
-            }
-          });
-          const tombstones = creep.room.find(FIND_TOMBSTONES, {
-            filter(tombstone) {
-              return tombstone.store[RESOURCE_ENERGY] > 0;
-            }
-          });
-          target = creep.pos.findClosestByRange([...energySources, ...tombstones]);
-        }
-        if (!target) {
-          const targetIds = creep.room.memory.containers;
-          if (targetIds) {
-            const targets = targetIds.map(id => Game.getObjectById(id));
-            let validTargets = [];
-            for (let target of targets) {
-              //if (_.sum(target.store) > creep.carryCapacity + 100) {
-              if (target && target.store && _.sum(target.store) > 300) {
-                validTargets.push(target);
+          }).length > 0) {
+            const targets = creep.room.find(FIND_STRUCTURES, {
+              filter(structure) {
+                return (structure.structureType === STRUCTURE_STORAGE || structure.structureType === STRUCTURE_CONTAINER) && structure.store[RESOURCE_ENERGY] > 0;
               }
+            });
+            if (targets.length) {
+              target = creep.pos.findClosestByRange(targets);
             }
-            target = _.max(validTargets, target => t.store[RESOURCE_ENERGY]);
           }
+          if (!target) {
+            const energySources = creep.room.find(FIND_DROPPED_RESOURCES, {
+              filter(resource) {
+                return resource.resourceType === RESOURCE_ENERGY;
+              }
+            });
+            const tombstones = creep.room.find(FIND_TOMBSTONES, {
+              filter(tombstone) {
+                return tombstone.store[RESOURCE_ENERGY] > 0;
+              }
+            });
+            target = creep.pos.findClosestByRange([...energySources, ...tombstones]);
+          }
+          if (!target) {
+            const targetIds = creep.room.memory.containers;
+            if (targetIds) {
+              const targets = targetIds.map(id => Game.getObjectById(id));
+              let validTargets = [];
+              for (let target of targets) {
+                //if (_.sum(target.store) > creep.carryCapacity + 100) {
+                if (target && target.store && _.sum(target.store) > 300) {
+                  validTargets.push(target);
+                }
+              }
+              target = _.max(validTargets, target => t.store[RESOURCE_ENERGY]);
+            }
+          }
+          creep.memory.target = target.id;
         }
+        target = Game.getObjectById(creep.memory.target);
         if (!target) {
           target = vanish(creep);
         }
@@ -322,6 +327,7 @@ createBrood({
           }
           creep.say("got it", true);
           if (target instanceof StructureContainer || creep.carry[RESOURCE_ENERGY] > Math.min(200, creep.carryCapacity) ) {
+            delete creep.memory.target;
             creep.memory.task = "empty";
           }
         } else {

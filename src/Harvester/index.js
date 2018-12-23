@@ -235,8 +235,7 @@ createBrood({
             const amount = Math.min(creep.carry[RESOURCE_ENERGY], target.energyCapacity - target.energy);
             creep.transfer(target, RESOURCE_ENERGY, amount);
           }
-        }
-        else {
+        } else {
           creep.drop(RESOURCE_ENERGY);
         }
         if (creep.carry[RESOURCE_ENERGY] === 0) {
