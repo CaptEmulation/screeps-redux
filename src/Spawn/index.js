@@ -183,7 +183,11 @@ function* run() {
       const spawner = spawners[0];
       if (!isDone && !spawner.spawning) {
         const body = makeBody(pending, room);
-        const err = spawner.spawnCreep(body, pending.name, { memory: pending.memory });
+        const memory = pending.memory;
+        const myMemory = _.isFunction(memory) ? memory({body}) : memory;
+        const err = spawner.spawnCreep(body, pending.name, {
+          memory: {...myMemory, home: spawner.room.name}
+        });
         if (!err) {
           yield put(pop());
           isDone = true;

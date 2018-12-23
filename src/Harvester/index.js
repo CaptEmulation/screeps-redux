@@ -164,6 +164,7 @@ createBrood({
       }
 
       if (creep.memory.task === 'move') {
+        creep.say('move');
         const targets = Object.values(Game.flags).filter(isColor([creep.memory.flag, creep.memory.flag]));
         if (targets.length) {
           const target = targets[0];
