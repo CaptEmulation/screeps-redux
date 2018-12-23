@@ -303,7 +303,7 @@ createBrood({
                   validTargets.push(target);
                 }
               }
-              target = _.max(validTargets, target => t.store[RESOURCE_ENERGY]);
+              target = _.max(validTargets, t => t.store[RESOURCE_ENERGY]);
             }
           }
           creep.memory.target = target.id;
