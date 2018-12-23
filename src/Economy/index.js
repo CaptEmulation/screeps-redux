@@ -414,7 +414,7 @@ function* run() {
                 && resource.amount > (creep.carryCapacity - creep.carry[RESOURCE_ENERGY]))
             }
           });
-          if (creep.room.memory.extensions.available < (0.9 * creep.room.memory.extensions.max)) {
+          if (creep.room.energyAvailable < (0.9 * creep.room.energyCapacityAvailable)) {
             const tombstones = creep.room.find(FIND_TOMBSTONES, {
               filter(target) {
                 return _.sum(target.store) > 0;

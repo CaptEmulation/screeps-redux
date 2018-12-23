@@ -1,6 +1,18 @@
 
 export function renewSelf(creep, task='fill') {
-  const target = Game.spawns['Spawn1'];
+  let target;
+
+  const targets = creep.room.find(FIND_MY_STRUCTURES, {
+    filter(structure) {
+      return structure.structureType === STRUCTURE_SPAWN;
+    }
+  });
+  if (targets.length) {
+    target = creep.pos.findClosestByRange(targets);
+  }
+  if (!target) {
+    target = Game.spawns['Spawn1'];
+  }
   const range = creep.pos.getRangeTo(target);
   if (creep.memory.dieoff === true) {
     creep.memory.task = task;
@@ -37,8 +49,21 @@ export function renewSelf(creep, task='fill') {
   }
 }
 
-export function returnSelf(creep) {
-  const target = Game.spawns['Spawn1'];
+export function returnSelf(creep, task) {
+  let target
+
+  const targets = creep.room.find(FIND_MY_STRUCTURES, {
+    filter(structure) {
+      return structure.structureType === STRUCTURE_SPAWN;
+    }
+  });
+  if (targets.length) {
+    target = creep.pos.findClosestByRange(targets);
+  }
+  if (!target) {
+    target = Game.spawns['Spawn1'];
+  }
+
   const range = creep.pos.getRangeTo(target);
   if (target && range > 1) {
     //creep.moveTo(target, {reusePath: 5, visualizePathStyle: {}});

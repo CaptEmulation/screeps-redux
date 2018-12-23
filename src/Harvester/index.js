@@ -210,14 +210,13 @@ createBrood({
       }
 
       if (creep.memory.task === 'empty') {
-        let targets;
-        if (targets && targets.length === 0) {
-          targets = creep.room.find(FIND_STRUCTURES, {
-            filter(structure){
-              return (structure.structureType === STRUCTURE_CONTAINER || structure.structureType === STRUCTURE_STORAGE) && _.sum(structure.store) < structure.storeCapacity;
-            }
-          })
-        }
+        let targets = creep.room.find(FIND_STRUCTURES, {
+          filter(structure){
+            return (structure.structureType === STRUCTURE_CONTAINER
+                || structure.structureType === STRUCTURE_STORAGE)
+                && _.sum(structure.store) < structure.storeCapacity;
+          }
+        });
         if (targets && targets.length === 0) {
           targets = creep.room.find(FIND_STRUCTURES, {
             filter(structure){
@@ -233,12 +232,14 @@ createBrood({
         } else if (target) {
           if (target instanceof StructureContainer && (target.hits / target.hitsMax) < 0.95) {
             creep.repair(target);
+          } else if (target instanceof StructureContainer || target instanceof StructureStorage) {
+            const amount = Math.min(creep.carry[RESOURCE_ENERGY], target.storeCapacity - _.sum(target.store));
+            creep.transfer(target, RESOURCE_ENERGY, amount);
           } else {
             const amount = Math.min(creep.carry[RESOURCE_ENERGY], target.energyCapacity - target.energy);
             creep.transfer(target, RESOURCE_ENERGY, amount);
           }
-        }
-        else {
+        } else {
           creep.drop(RESOURCE_ENERGY);
         }
         if (creep.carry[RESOURCE_ENERGY] === 0) {
