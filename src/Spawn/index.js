@@ -177,7 +177,7 @@ function* run() {
         filter: target => target.structureType === STRUCTURE_SPAWN
       });
       const spawner = spawners[0];
-      if (!isDone && !spawner.spawning) {
+      if (!spawner.spawning) {
         const body = makeBody(pending, room);
         const err = spawner.spawnCreep(body, pending.name, { memory: pending.memory });
         if (!err) {
