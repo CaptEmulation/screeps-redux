@@ -228,6 +228,9 @@ createBrood({
         } else if (target) {
           if (target instanceof StructureContainer && (target.hits / target.hitsMax) < 0.95) {
             creep.repair(target);
+          } else if (target instanceof StructureContainer || target instanceof StructureStorage) {
+            const amount = Math.min(creep.carry[RESOURCE_ENERGY], target.storeCapacity - _.sum(target.store));
+            creep.transfer(target, RESOURCE_ENERGY, amount);
           } else {
             const amount = Math.min(creep.carry[RESOURCE_ENERGY], target.energyCapacity - target.energy);
             creep.transfer(target, RESOURCE_ENERGY, amount);

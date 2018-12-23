@@ -24,7 +24,7 @@ import {
 } from '../utils/scan';
 import { renewSelf, vanish, wakeup } from '../Tasks/index';
 
-const UPGRADER_COUNT = 2;
+const UPGRADER_COUNT = 1;
 
 let lastNeeds;
 

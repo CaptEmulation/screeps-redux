@@ -228,7 +228,7 @@ createBrood({
             filter(structure) {
               return (structure.structureType === STRUCTURE_CONTAINER || structure.structureType === STRUCTURE_EXTENSION) && _.sum(structure.store) < structure.storeCapacity && !targetIds.includes(structure.id)
             }
-          })
+          });
         }
         if (targets.length == 0) {
           targets = creep.room.find(FIND_STRUCTURES, {
@@ -245,7 +245,9 @@ createBrood({
           });
         }
 
-        const target = creep.pos.findClosestByRange(targets);
+        if (!target) {
+          target = creep.pos.findClosestByRange(targets);
+        }
         const range = creep.pos.getRangeTo(target);
         if (target && range > 1) {
           creep.moveTo(target, {reusePath: 5, visualizePathStyle: {}});
@@ -299,7 +301,7 @@ createBrood({
                 validTargets.push(target);
               }
             }
-            target = creep.pos.findClosestByRange(validTargets);
+            target = _.max(validTargets, target => t.store[RESOURCE_ENERGY]);
           }
         }
         if (!target) {
