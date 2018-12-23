@@ -61,14 +61,21 @@ function getBody(size, flag=0) {
   }
 }
 
+function getMemory(task = 'fill', flag) {
+  return ({ body }) => ({
+    dieoff : body.filter(b => b === WORK).length < 3,
+    role: 'Harvester',
+    task,
+    flag,
+  })
+}
+
+
 const HARVESTER_COUNT = 4;
 const earlyCreeps = _.range(0, HARVESTER_COUNT).map(num => ({
   name: `Harvester-${num}`,
   body: getBody(),
-  memory: {
-    role: 'Harvester',
-    task: 'fill',
-  },
+  memory: getMemory(),
   priority: -600,
   controller: 'Harvester',
   room: Game.spawns['Spawn1'].room.name,
@@ -78,7 +85,7 @@ export function init(store) {
   global.spawnHarvester = function({
     num=0,
     flag=0,
-    size,
+    size
   } = {}) {
     if (!num) {
       num = Object.values(Game.creeps).filter(creep => creep.memory && creep.memory.role === 'Harvester').length;
@@ -94,11 +101,7 @@ export function init(store) {
       payload: spawnActions.spawn({
         name: 'Harvester-' + num,
         body: getBody(size, flag),
-        memory: {
-          role: 'Harvester',
-          task,
-          flag,
-        },
+        memory: getMemory(task, flag),
         priority: 10,
         controller: 'Harvester',
         room: Game.spawns['Spawn1'].room.name,
@@ -125,7 +128,7 @@ createBrood({
           body: getBody(),
           memory: {
             role: 'Harvester',
-            task: 'fill',
+            task: 'fill'
           },
           priority: -600,
           controller: 'Harvester',
@@ -161,6 +164,7 @@ createBrood({
       }
 
       if (creep.memory.task === 'move') {
+        creep.say('move');
         const targets = Object.values(Game.flags).filter(isColor([creep.memory.flag, creep.memory.flag]));
         if (targets.length) {
           const target = targets[0];
@@ -206,14 +210,13 @@ createBrood({
       }
 
       if (creep.memory.task === 'empty') {
-        let targets;
-        if (targets && targets.length === 0) {
-          targets = creep.room.find(FIND_STRUCTURES, {
-            filter(structure){
-              return (structure.structureType === STRUCTURE_CONTAINER || structure.structureType === STRUCTURE_STORAGE) && _.sum(structure.store) < structure.storeCapacity;
-            }
-          })
-        }
+        let targets = creep.room.find(FIND_STRUCTURES, {
+          filter(structure){
+            return (structure.structureType === STRUCTURE_CONTAINER
+                || structure.structureType === STRUCTURE_STORAGE)
+                && _.sum(structure.store) < structure.storeCapacity;
+          }
+        });
         if (targets && targets.length === 0) {
           targets = creep.room.find(FIND_STRUCTURES, {
             filter(structure){
@@ -229,12 +232,14 @@ createBrood({
         } else if (target) {
           if (target instanceof StructureContainer && (target.hits / target.hitsMax) < 0.95) {
             creep.repair(target);
+          } else if (target instanceof StructureContainer || target instanceof StructureStorage) {
+            const amount = Math.min(creep.carry[RESOURCE_ENERGY], target.storeCapacity - _.sum(target.store));
+            creep.transfer(target, RESOURCE_ENERGY, amount);
           } else {
             const amount = Math.min(creep.carry[RESOURCE_ENERGY], target.energyCapacity - target.energy);
             creep.transfer(target, RESOURCE_ENERGY, amount);
           }
-        }
-        else {
+        } else {
           creep.drop(RESOURCE_ENERGY);
         }
         if (creep.carry[RESOURCE_ENERGY] === 0) {
@@ -305,7 +310,8 @@ createBrood({
 
         //console.log(creep.name, creep.carry[RESOURCE_ENERGY]);
         //console.log(creep.name, creep.carryCapacity);
-        if (creep.carry[RESOURCE_ENERGY] === creep.carryCapacity) {
+        //console.log(creep.name, creep.body.filter(b => b.type === WORK).length * 2);
+        if (creep.carry[RESOURCE_ENERGY] > (creep.carryCapacity - creep.body.filter(b => b.type === WORK).length * 2)) {
           if (remoteConstructionSites.length && creep.memory.flag) {
             creep.memory.task = 'build';
           } else {

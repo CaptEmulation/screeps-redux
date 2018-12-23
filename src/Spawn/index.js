@@ -161,11 +161,8 @@ function makeBody(need, room) {
   return body;
 }
 
-let isDone = false;
-
 function* run() {
   yield takeEvery(RUN, function *onSpawnRun() {
-    isDone = false;
     const pendings = yield select(state => state.Spawn.pending);
     if (pendings.length) {
       const pending = pendings[0];
@@ -173,7 +170,6 @@ function* run() {
         creep => creep.name === pending.name
       )) {
         yield put(pop());
-        isDone = true;
         return;
       }
       const room = Game.rooms[pending.room];
@@ -183,10 +179,13 @@ function* run() {
       const spawner = spawners[0];
       if (!isDone && !spawner.spawning) {
         const body = makeBody(pending, room);
-        const err = spawner.spawnCreep(body, pending.name, { memory: pending.memory });
+        const memory = pending.memory;
+        const myMemory = _.isFunction(memory) ? memory({body}) : memory;
+        const err = spawner.spawnCreep(body, pending.name, {
+          memory: {...myMemory, home: spawner.room.name}
+        });
         if (!err) {
           yield put(pop());
-          isDone = true;
         }
       }
     }
@@ -201,91 +200,69 @@ function* commit() {
     let requestSpawn = [];
     let waitingForEnergy;
 
-    if (spawnNeeds.length === 0 && Game.time % 5 === 0) {
-      Object.values(Game.rooms).forEach(room => {
-        room.memory.extensions = extensionEnergyStatus(room);
-      });
-    }
-
-    if (!isDone) {
-      for (let need of spawnNeeds) {
-        const { name, memory, room: roomName } = need;
-        const room = Game.rooms[roomName];
-        if (!room) {
-          continue;
-        }
-        let roomInfo;
-        if (spawnersInRoom[roomName]) {
-          roomInfo = spawnersInRoom[roomName];
-        } else {
-          roomInfo = spawnersInRoom[roomName] = {
-            extensions: extensionEnergyStatus(room),
-            spawners: Game.rooms[roomName].find(FIND_MY_STRUCTURES, {
-              filter: target => target.structureType === STRUCTURE_SPAWN
-            }),
-          };
-        }
-        if (roomInfo.spawners.length) {
-          const spawner = roomInfo.spawners.shift();
-          if (!spawner.spawning) {
-            let body;
-            if (_.isFunction(need.body)) {
-              body = need.body({
-                appraiser: calcCreepCost,
-                available: room.energyAvailable,
-                max: room.energyCapacityAvailable,
-                extensions: {
-                  ...roomInfo.extensions,
-                },
-                spawner: {
-                  max: 300,
-                  available: spawner.energy,
-                },
-              });
-            } else {
-              body = need.body;
-            }
-            room.memory.extensions = {
-              ...roomInfo.extensions,
-            };
-            const cost = calcCreepCost(body);
-            if (cost <= (roomInfo.extensions.available + spawner.energy)) {
-              requestSpawn.push([spawner, body, name, {
-                memory: {
-                  ...memory,
-                  home: roomName,
-                },
-              }]);
-            }
-            // Earmark energy for use on this creep if cost is possible
-            if (cost <= (roomInfo.extensions.max + spawner.energy)) {
-              const extensionEnergy = cost - spawner.energy;
-              roomInfo.extensions.available -= extensionEnergy;
-            }
-          } else if (Game.time % 10 === 0) {
-            // This creep wants to spawn but is being held back for later
-            need.hunger++;
-          }
-          }
+    for (let need of spawnNeeds) {
+      const { name, memory, room: roomName } = need;
+      const room = Game.rooms[roomName];
+      if (!room) {
+        continue;
       }
-      for (let request of requestSpawn) {
-        const [spawner, body, name, opts] = request;
-        const err = spawner.spawnCreep(body, name, opts);
-        if (err) {
-          console.log('Error spawning', name, body, err);
-        } else {
-          console.log('Spawned new creep', name);
+      let roomInfo;
+      if (spawnersInRoom[roomName] && spawnersInRoom[roomName].spawners && spawnersInRoom[roomName].spawners.length) {
+        roomInfo = spawnersInRoom[roomName];
+      } else {
+        roomInfo = spawnersInRoom[roomName] = {
+          spawners: Game.rooms[roomName].find(FIND_MY_STRUCTURES, {
+            filter: target => target.structureType === STRUCTURE_SPAWN
+          }),
+        };
+      }
+      if (roomInfo.spawners.length) {
+        const spawner = roomInfo.spawners.shift();
+        if (!spawner.spawning) {
+          let body;
+          if (_.isFunction(need.body)) {
+            body = need.body({
+              appraiser: calcCreepCost,
+              available: room.energyAvailable,
+              max: room.energyCapacityAvailable,
+            });
+          } else {
+            body = need.body;
+          }
+          const cost = calcCreepCost(body);
+          if (cost <= room.energyAvailable) {
+            const myMemory = _.isFunction(memory) ? memory({body}) : memory;
+            requestSpawn.push([spawner, body, name, {
+              memory: {
+                ...myMemory,
+                home: roomName,
+              },
+            }]);
+          }
+        } else if (Game.time % 10 === 0) {
+          // This creep wants to spawn but is being held back for later
+          need.hunger++;
         }
+      }
+    }
+    for (let request of requestSpawn) {
+      const [spawner, body, name, opts] = request;
+      const err = spawner.spawnCreep(body, name, opts);
+      if (err) {
+        console.log('Error spawning', name, body, err);
+      } else {
+        console.log('Spawned new creep', name);
       }
     }
     const needs = yield select(selectNeeds);
     // Only save name and hunger
     const newNeeds = needs
       .filter(a => typeof a.priority !== 'undefined')
-      .map(({ hunger, name, controller }) => ({
+      .map(({ hunger, name, controller, room }) => ({
         name,
         hunger,
         controller,
+        room,
       }));
     yield put(updateNeeds(newNeeds));
 

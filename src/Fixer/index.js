@@ -24,7 +24,7 @@ import {
 } from '../utils/scan';
 import { renewSelf, vanish, wakeup } from '../Tasks/index';
 
-const UPGRADER_COUNT = 2;
+const UPGRADER_COUNT = 1;
 
 let lastNeeds;
 
@@ -223,7 +223,7 @@ createBrood({
           });
         } else {
           creep.repair(target);
-          creep.getOutOfTheWay(target, 3);
+          //creep.getOutOfTheWay(target, 3);
         }
       } else if (somethingToRepair) {
         findClosestEnergy(creep, false);
