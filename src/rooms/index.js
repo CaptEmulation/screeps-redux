@@ -3,23 +3,23 @@ import { eventChannel, END } from 'redux-saga';
 import createSaga from '../utils/createSaga';
 import createReducer from '../utils/createReducer';
 import runTasks from '../tasks';
-import { handlers } from './tasks';
+import * as handlers from './tasks';
 import {
   LOOP,
 } from '../events';
 
-export const ADD_TASK = 'CREEP_ADD_TASK';
-export const REMOVE_TASK = 'CREEP_REMOVE_TASK';
+export const ADD_TASK = 'ROOM_ADD_TASK';
+export const REMOVE_TASK = 'ROOM_REMOVE_TASK';
 
 export const actionCreators = {
-  addTask(creepName, task) {
+  addTask(roomName, task) {
     if (_.isString(task)) {
       task = { action: task };
     }
     return {
       type: ADD_TASK,
       payload: {
-        creepName,
+        roomName,
         task,
       },
     };
@@ -29,11 +29,11 @@ export const actionCreators = {
 createSaga(
   function* () {
     const chan = eventChannel(emitter => {
-      global.addCreepTask = function addTask(creep, task) {
-        emitter(actionCreators.addTask(creep, task));
+      global.addRoomTask = function addTask(room, task) {
+        emitter(actionCreators.addTask(room, task));
       }
       return () => {
-        delete global.addTask;
+        delete global.addRoomTask;
       };
     })
     while (true) {
@@ -41,34 +41,34 @@ createSaga(
     }
   },
   function* () {
-    yield takeEvery(LOOP, function* creepRunTasks() {
-      for (let creep of Object.values(Game.creeps)) {
-        yield call(runTasks, creep, handlers);
+    yield takeEvery(LOOP, function* roomRunTasks() {
+      for (let room of Object.values(Game.rooms)) {
+        yield call(runTasks, room, handlers);
       }
     })
   }
 );
 
 
-createReducer('creeps', Memory.creeps || {}, {
-  [ADD_TASK](creeps, { payload: { creepName, task } }) {
+createReducer('rooms', Memory.rooms || {}, {
+  [ADD_TASK](rooms, { payload: { roomName, task } }) {
     const newTasks = Array.isArray(task) ? task : [task];
-    const oldTasks = creeps[creepName] && creeps[creepName].tasks || [];
+    const oldTasks = rooms[roomName] && rooms[roomName].tasks || [];
     return {
-      ...creeps,
-      [creepName]: {
-        ...creeps[creepName],
+      ...rooms,
+      [roomName]: {
+        ...rooms[roomName],
         tasks: [...oldTasks, ...newTasks],
       },
     }
   },
-  [REMOVE_TASK](creeps, { payload: { creepName, task } }) {
+  [REMOVE_TASK](rooms, { payload: { roomName, task } }) {
     const newTasks = Array.isArray(task) ? task : [];
-    const oldTasks = creeps[creepName] && creeps[creepName].tasks || [];
+    const oldTasks = rooms[roomName] && rooms[roomName].tasks || [];
     return {
-      ...creeps,
-      [creepName]: {
-        ...creeps[creepName],
+      ...rooms,
+      [roomName]: {
+        ...rooms[roomName],
         tasks: _.difference(oldTasks, newTasks),
       },
     };

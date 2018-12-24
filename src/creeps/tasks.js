@@ -3,146 +3,6 @@ import {
   target as targetMatchers,
 } from '../utils/matchers';
 
-const PRIORITY = 'PRIORITY';
-const DONE = 'DONE';
-const SUBTASK = 'SUBTASK';
-
-function createSubContext(task, context) {
-  function Context() {
-    Object.assign(this, task);
-  }
-  Context.prototype = Object.create(context.constructor.prototype);
-  return new Context();
-}
-
-function resolveTask(task) {
-  let myTask = task;
-  let context = task;
-  while(myTask.subTask) {
-    context = createSubContext(myTask.subTask, context);
-    myTask = myTask.subTask;
-  }
-  return { myTask, context };
-}
-
-function pop(task) {
-  let myTask = task;
-  while(myTask.subTask) {
-    const nextTask = myTask.subTask;
-    if (!nextTask.subTask) {
-      break;
-    }
-    myTask = nextTask;
-  }
-  delete myTask.subTask;
-}
-
-function runTasks(creep, tasks, _handlers = handlers) {
-  // Obtain priority for every task
-  const taskPriorities = [];
-  const taskDone = [];
-  const taskGens = tasks.map((task, index) => {
-    const { myTask, context } = resolveTask(task);
-    const handler = _handlers[myTask.action];
-
-    if (!handler) {
-      throw new Error(`Task ${myTask.action} is not defined`);
-    }
-
-    function priority(num) {
-      taskPriorities[index] = num || 0;
-      return PRIORITY;
-    }
-
-    function done(result) {
-      Object.assign(context, result);
-      return DONE;
-    }
-
-    function subTask(newHandler, opts) {
-      myTask.subTask = {
-        action: newHandler.name,
-        ...opts,
-      };
-      creep.say(newHandler.name);
-      return SUBTASK;
-    }
-
-    return {
-      name: myTask.action,
-      task,
-      myTask,
-      context,
-      gen: handler({
-        creep,
-        priority,
-        done,
-        subTask,
-        context,
-        done,
-      })
-    };
-  });
-  const priorityResults = taskGens.map(({ name, gen, context, task, myTask }, index) => {
-    const result = gen.next();
-    if (result.done) {
-      return { task: tasks[index], priority: Infinity };
-    }
-    if (result.value !== PRIORITY || !_.isNumber(taskPriorities[index])) {
-      throw new Error(`Task handler ${name} did not yield a numeric priority`);
-    }
-    return {
-      name,
-      gen,
-      priority: taskPriorities[index],
-      index,
-      context,
-      task,
-      myTask,
-    };
-  });
-  const highestPriorityTask = _.min(priorityResults, a => a.priority);
-  const { gen, context, myTask, task, index } = highestPriorityTask;
-  let result;
-  let subTaskResults;
-  let canRunMore = false;
-  do {
-    result = gen.next(subTaskResults);
-    if (result.value === DONE) {
-      pop(task);
-      canRunMore = true;
-      break;
-    } else if (result.value === SUBTASK) {
-      const [newTask, newTaskCanRunMore] = runTasks(creep, tasks, _handlers);
-      subTaskResults = newTask;
-    } else {
-      subTaskResults = null;
-    }
-  } while(!result.done);
-  Object.assign(myTask, context);
-  // Remove any deleted props
-  _.difference(Object.keys(myTask), Object.keys(context)).forEach(key => {
-    delete myTask[key];
-  })
-  return [myTask, canRunMore];
-}
-
-export default function runCreepTask(creep, _handlers = handlers) {
-  if (!_.get(creep, 'memory.tasks.length')) {
-    console.log(`No task assigned to ${creep.name}`);
-    return null;
-  }
-  const tasks = creep.memory.tasks;
-  let canRunMore = true;
-  let prevTaskTask;
-  let lastRunTask = 0;
-  let count = 0;
-  while(canRunMore && count < 10) {
-    prevTaskTask = lastRunTask;
-    [lastRunTask, canRunMore] = runTasks(creep, tasks, _handlers);
-    count++;
-  }
-}
 
 function assignMostEnergySource({ creep, context }) {
   const sources = creep.room.find(FIND_SOURCES);
@@ -160,8 +20,7 @@ function assignClosestEnergySource({ creep, context }) {
   }
 }
 
-export function* mine({
-  creep,
+export function* pioneer(creep, {
   priority,
   subTask,
   context,
@@ -177,8 +36,7 @@ export function* mine({
   }
 }
 
-export function *renewSelf({
-  creep,
+export function* renewSelf(creep, {
   done,
   priority,
   context,
@@ -219,8 +77,7 @@ export function *renewSelf({
   }
 }
 
-export function* harvest({
-  creep,
+export function* harvest(creep, {
   priority,
   done,
   subTask,
@@ -244,8 +101,7 @@ export function* harvest({
   }
 }
 
-export function* upgradeController({
-  creep,
+export function* upgradeController(creep, {
   priority,
   done,
   subTask,
@@ -271,8 +127,7 @@ export function* upgradeController({
   }
 }
 
-export function* supplySpawn({
-  creep,
+export function* supplySpawn(creep, {
   priority,
   done,
   moveTo,
@@ -307,8 +162,7 @@ export function* supplySpawn({
   }
 }
 
-export function* dropResources({
-  creep,
+export function* dropResources(creep, {
   priority,
   done,
   subTask,
@@ -322,8 +176,35 @@ export function* dropResources({
   creep.drop(resourceType);
 }
 
+export function* patrol(creep, {
+  priority,
+  done,
+  context,
+}) {
+  if (!context.locs) {
+    throw new Error('Locations (locs) not defined');
+  }
+  yield priority(-1);
+  if (!context.i) {
+    context.i = 0;
+  }
+  let target = new RoomPosition(...context.locs[context.i]);
+  const range = creep.pos.getRangeTo(target);
+  if (range <= 1) {
+    if (context.i >= (context.locs.length - 1)) {
+      context.i = 0;
+    } else {
+      context.i++
+    }
+    target = new RoomPosition(...context.locs[context.i]);
+  }
+  if (range > 0) {
+    creep.routeTo(target);
+  }
+}
+
 export const handlers = {
-  mine,
+  pioneer,
   harvest,
   supplySpawn,
   dropResources,

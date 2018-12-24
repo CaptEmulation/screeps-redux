@@ -1,6 +1,8 @@
 import './prototypes';
 import './Memory';
-import './Creeps';
+import './rooms'
+import './creeps';
+import './spawns';
 import store from './store';
 
 import {
