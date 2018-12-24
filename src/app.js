@@ -36,4 +36,5 @@ initHarvester(store);
 
 export function loop() {
   store.dispatch({ type: LOOP });
+  Creep.getOutOfTheWay();
 }
