@@ -4,6 +4,7 @@ import createSaga from '../utils/createSaga';
 import createReducer from '../utils/createReducer';
 import runTasks from '../tasks';
 import * as handlers from './tasks';
+import './planner';
 import {
   LOOP,
 } from '../events';

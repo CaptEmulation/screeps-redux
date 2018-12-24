@@ -7,7 +7,6 @@ import { target as targetMatchers } from './utils/matchers';
 
 const REPORT_CPU_THRESHOLD = 5000;
 
-const DEFAULT_MAXOPS = 20000;
 const DEFAULT_STUCK_VALUE = 2;
 const STATE_PREV_X = 0;
 const STATE_PREV_Y = 1;

@@ -1,4 +1,7 @@
 import './creep.prototype';
+import './spawn.prototype';
+import './room.prototype';
+import './roomVisual.prototype';
 
 // From bencbartlett/creep-tasks
 

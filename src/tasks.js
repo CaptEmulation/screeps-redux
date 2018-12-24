@@ -123,7 +123,6 @@ function runTasks(gameObjectWithMemory, tasks, handlers) {
 
 export default function runTask(gameObjectWithMemory, handlers) {
   if (!_.get(gameObjectWithMemory, 'memory.tasks.length')) {
-    console.log(`No task assigned to ${gameObjectWithMemory}`);
     return null;
   }
   const tasks = gameObjectWithMemory.memory.tasks;
