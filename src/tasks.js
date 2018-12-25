@@ -1,5 +1,7 @@
 
+const LOOP_PROTECTION = 5;
 const PRIORITY = 'PRIORITY';
+const SLEEP = 'SLEEP';
 const DONE = 'DONE';
 const SUBTASK = 'SUBTASK';
 
@@ -53,6 +55,11 @@ function runTasks(gameObjectWithMemory, tasks, handlers) {
       return PRIORITY;
     }
 
+    function sleep() {
+      taskPriorities[index] = Infinity;
+      return SLEEP;
+    }
+
     function done(result) {
       Object.assign(context, result);
       return DONE;
@@ -98,33 +105,36 @@ function runTasks(gameObjectWithMemory, tasks, handlers) {
       myTask,
     };
   });
-  const highestPriorityTask = _.min(priorityResults, a => a.priority);
-  const { gen, context, myTask, task, index } = highestPriorityTask;
-  let result;
-  let subTaskResults;
-  let canRunMore = false;
-  do {
-    if (!(gen && gen.next)) {
-      throw new Error(`Not a generator? ${JSON.stringify(highestPriorityTask)}`);
-    }
-    result = gen.next(subTaskResults);
-    if (result.value === DONE) {
-      pop(task);
-      canRunMore = true;
-      break;
-    } else if (result.value === SUBTASK) {
-      const [newTask, newTaskCanRunMore] = runTasks(gameObjectWithMemory, tasks, handlers);
-      subTaskResults = newTask;
-    } else {
-      subTaskResults = null;
-    }
-  } while(!result.done);
-  Object.assign(myTask, context);
-  // Remove any deleted props
-  _.difference(Object.keys(myTask), Object.keys(context)).forEach(key => {
-    delete myTask[key];
-  })
-  return [myTask, canRunMore && resolveTask(task).myTask !== myTask];
+  const highestPriorityTask = _.min(priorityResults.filter(a => a.priority !== Infinity), a => a.priority);
+  if (highestPriorityTask) {
+    const { gen, context, myTask, task, index } = highestPriorityTask;
+    let result;
+    let subTaskResults;
+    let canRunMore = false;
+    do {
+      if (!(gen && gen.next)) {
+        throw new Error(`Not a generator? ${JSON.stringify(highestPriorityTask)}`);
+      }
+      result = gen.next(subTaskResults);
+      if (result.value === DONE) {
+        pop(task);
+        canRunMore = true;
+        break;
+      } else if (result.value === SUBTASK) {
+        const [newTask, newTaskCanRunMore] = runTasks(gameObjectWithMemory, tasks, handlers);
+        subTaskResults = newTask;
+      } else {
+        subTaskResults = null;
+      }
+    } while(!result.done);
+    Object.assign(myTask, context);
+    // Remove any deleted props
+    _.difference(Object.keys(myTask), Object.keys(context)).forEach(key => {
+      delete myTask[key];
+    })
+    return [myTask, canRunMore && resolveTask(task).myTask !== myTask];
+  }
+  return [null, false];
 }
 
 export default function runTask(gameObjectWithMemory, handlers) {
@@ -136,9 +146,12 @@ export default function runTask(gameObjectWithMemory, handlers) {
   let prevTaskTask;
   let lastRunTask = 0;
   let count = 0;
-  while(canRunMore && count < 10) {
+  while(canRunMore && count < LOOP_PROTECTION) {
     prevTaskTask = lastRunTask;
     [lastRunTask, canRunMore] = runTasks(gameObjectWithMemory, tasks, handlers);
     count++;
+  }
+  if (count >= LOOP_PROTECTION) {
+    console.log(`Loop detected in tasks for ${gameObjectWithMemory}`);
   }
 }
