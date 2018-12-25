@@ -3,7 +3,7 @@ import { eventChannel, END } from 'redux-saga';
 import createSaga from '../utils/createSaga';
 import createReducer from '../utils/createReducer';
 import runTasks from '../tasks';
-import { handlers } from './tasks';
+import * as handlers from './tasks';
 import {
   LOOP,
 } from '../events';

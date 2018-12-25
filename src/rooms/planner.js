@@ -43,7 +43,7 @@ function drawBunker(anchor, rcl, opts = {}) {
 }
 global.drawBunker = drawBunker;
 
-function getBunkerLocation(room, visualize) {
+export function getBunkerLocation(room, visualize) {
   let colony = room.memory;
   if (colony && colony.bunker && colony.bunker.anchor) {
     return colony.bunker.anchor;
@@ -154,36 +154,41 @@ function bunkerIntersectsWith(anchor, obstacle, padding = 1) {
   return false;
 }
 
-function getStructureMapForBunkerAt(anchor, level = 8) {
+function getStructureMapForBunkerAt(anchor, room, level = 8) {
 	let dx = anchor.x - bunkerLayout.data.anchor.x;
 	let dy = anchor.y - bunkerLayout.data.anchor.y;
 	let structureLayout = _.mapValues(bunkerLayout[level] && bunkerLayout[level].buildings, obj => obj.pos);
 	return _.mapValues(structureLayout, coordArr =>
-		_.map(coordArr, coord => new RoomPosition(coord.x + dx, coord.y + dy, this.colony.name)));
+		_.map(coordArr, coord => new RoomPosition(coord.x + dx, coord.y + dy, room.name)));
 }
 
 function canBuild(structureType, pos) {
-		if (!pos.room) return false;
-		let buildings = _.filter(pos.lookFor(LOOK_STRUCTURES), s => s && s.structureType == structureType);
-		let sites = pos.lookFor(LOOK_CONSTRUCTION_SITES);
-		if (!buildings || buildings.length == 0) {
-			if (!sites || sites.length == 0) {
-				return true;
-			}
+	if (!pos.roomName) return false;
+	let buildings = _.filter(pos.lookFor(LOOK_STRUCTURES), s => s && s.structureType == structureType);
+	let sites = pos.lookFor(LOOK_CONSTRUCTION_SITES);
+	if (!buildings || buildings.length == 0) {
+		if (!sites || sites.length == 0) {
+      console.log('true')
+			return true;
 		}
-		return false;
 	}
+  console.log('false')
+	return false;
+}
 
 export function placeConstructionSites(room, anchor, level) {
-  const map = getStructureMapForBunkerAt(anchor, level);
-  for (let structureType of BuildPriorities) {
+  const map = getStructureMapForBunkerAt(anchor, room, level);
+  for (let structureType of buildPriorities) {
     if (map[structureType]) {
       for (let pos of map[structureType]) {
-        if (count > 0 && canBuild(structureType, pos)) {
+        const buildable = canBuild(structureType, pos);
+        console.log('checking', pos, buildable);
+        if (buildable) {
+          console.log('placing', pos, structureType);
           let result = pos.createConstructionSite(structureType);
           if (result != OK) {
-						log.warning(`${this.colony.name}: couldn't create construction site of type ` +
-									`"${structureType}" at ${pos.print}. Result: ${result}`);
+						console.log(`${room.name}: couldn't create construction site of type ` +
+									`"${structureType}" at ${pos}. Result: ${result}`);
 					}
         }
       }

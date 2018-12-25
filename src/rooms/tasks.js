@@ -5,6 +5,10 @@ import {
 import {
   bunkerLayout,
 } from './layout';
+import {
+  getBunkerLocation,
+  placeConstructionSites,
+} from './planner';
 
 export function* bootstrap(room, {
   priority,
@@ -15,6 +19,15 @@ export function* bootstrap(room, {
   if (!context.scanned) {
     context.scanned = true;
     yield subTask(scan);
+  }
+  if (!context.anchor) {
+    const spawns = room.find(FIND_MY_SPAWNS);
+    if (spawns.length) {
+      const spawn = spawns[0];
+      context.anchor = { x: spawn.pos.x - 4, y: spawn.pos.y };
+    } else {
+      context.anchor = getBunkerLocation(room, true);
+    }
   }
   if (room.controller && room.controller.my) {
     switch (room.controller.level) {
@@ -58,12 +71,20 @@ function bootstrapWithNoCreeps(room) {
     const myCreepsInRoom = room.find(FIND_MY_CREEPS);
     const hostileCreepsInRoom = room.find(FIND_HOSTILE_CREEPS);
     // Make this better...
-    if (myCreepsInRoom.length === 0 && hostileCreepsInRoom.length === 0) {
+    if (room.name === 'sim' || myCreepsInRoom.length === 0 && hostileCreepsInRoom.length === 0) {
       spawnsWithoutBootstrap.forEach(spawn => spawn.addTask('bootstrap'));
       return true;
     }
   }
   return false;
+}
+
+function ensureBuilder(room) {
+  const spawns = room.find(FIND_MY_SPAWNS);
+  const spawnsWithoutBuilder = spawns.filter(not(hasTask('builder')));
+  if (spawnsWithoutBuilder.length) {
+    spawnsWithoutBuilder.forEach(spawn => spawn.addTask('builder'));
+  }
 }
 
 export function* rcl1(room, {
@@ -89,7 +110,6 @@ export function* rcl1(room, {
     }));
   }
   bootstrapWithNoCreeps(room);
-
 }
 
 export function* rcl2(room, {
@@ -99,8 +119,11 @@ export function* rcl2(room, {
   done,
 }) {
   yield priority();
-  if (room.controller && (room.controller.my && room.controller.level !== 1) || !room.controller.my) {
+  if (room.controller && (room.controller.my && room.controller.level !== 2) || !room.controller.my) {
     yield done();
   }
-
+  if (context.anchor && Game.time % 25 === 0) {
+    placeConstructionSites(room, context.anchor, 2)
+  }
+  ensureBuilder(room);
 }

@@ -7,7 +7,10 @@ function createSubContext(task, context) {
   function Context() {
     Object.assign(this, task);
   }
-  Context.prototype = Object.create(context.constructor.prototype);
+  Context.prototype = Object.create({
+    ...context,
+    ...context.constructor.prototype,
+  });
   return new Context();
 }
 
@@ -101,6 +104,9 @@ function runTasks(gameObjectWithMemory, tasks, handlers) {
   let subTaskResults;
   let canRunMore = false;
   do {
+    if (!(gen && gen.next)) {
+      throw new Error(`Not a generator? ${JSON.stringify(highestPriorityTask)}`);
+    }
     result = gen.next(subTaskResults);
     if (result.value === DONE) {
       pop(task);

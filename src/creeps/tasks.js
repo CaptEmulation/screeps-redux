@@ -2,18 +2,19 @@ import {
   and,
   target as targetMatchers,
 } from '../utils/matchers';
+import {
+  findWorkSites,
+} from '../utils/find';
 
 
-function assignMostEnergySource({ creep, context }) {
-  const sources = creep.room.find(FIND_SOURCES);
+function assignMostEnergySource({ sources, creep, context }) {
   const source = _.max(sources, source => source.energy);
   if (source) {
     context.sourceId = source.id;
   }
 }
 
-function assignClosestEnergySource({ creep, context }) {
-  const sources = creep.room.find(FIND_SOURCES);
+function assignClosestEnergySource({ sources, creep, context }) {
   const source = creep.pos.findClosestByRange(sources);
   if (source) {
     context.sourceId = source.id;
@@ -88,8 +89,9 @@ export function* harvest(creep, {
     delete creep.memory.target;
     return yield done();
   }
-  if (!context.sourceId) {
-    assignClosestEnergySource({ creep, context });
+  if (!context.sourceId && creep.room.memory.sources) {
+    const sources = creep.room.memory.sources.map(a => Game.getObjectById(a.id));
+    assignMostEnergySource({ sources, creep, context });
   }
   const source = Game.getObjectById(context.sourceId);
   const range = creep.pos.getRangeTo(source);
@@ -126,6 +128,49 @@ export function* upgradeController(creep, {
     creep.upgradeController(target);
   }
 }
+
+export function* earlyBuilder(creep, {
+  priority,
+  done,
+  subTask,
+  context,
+}) {
+  yield priority();
+  const myConstructionSites = creep.room.find(FIND_MY_CONSTRUCTION_SITES);
+  if (_.sum(creep.carry) === creep.carryCapacity && myConstructionSites.length) {
+    yield subTask(construct);
+  } else {
+    return yield subTask(harvest);
+  }
+}
+
+export function* construct(creep, {
+  priority,
+  done,
+  subTask,
+  context,
+}) {
+  yield priority();
+  if (_.sum(creep.carry) === 0) {
+    delete creep.memory.target;
+    delete creep.memory.range;
+    yield done();
+  }
+  const myConstructionSites = creep.room.find(FIND_MY_CONSTRUCTION_SITES);
+  if (!myConstructionSites.length) {
+    yield done();
+  }
+  const target = findWorkSites(creep.room);
+  const range = creep.pos.getRangeTo(target);
+  if (range > 3) {
+    creep.routeTo(target, { range: 3 });
+  } else {
+    creep.memory.target = target.id;
+    creep.memory.range = 3;
+    creep.build(target);
+  }
+}
+
 
 export function* supplySpawn(creep, {
   priority,
@@ -202,12 +247,3 @@ export function* patrol(creep, {
     creep.routeTo(target);
   }
 }
-
-export const handlers = {
-  pioneer,
-  harvest,
-  supplySpawn,
-  dropResources,
-  upgradeController,
-  renewSelf,
-};

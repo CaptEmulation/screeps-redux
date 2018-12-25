@@ -36,8 +36,8 @@ export const attackStructurePriorities = [
 	STRUCTURE_WALL,
 ];
 
-export const attackStructureScores = _.zipObject(_.map(AttackStructurePriorities, type =>
-	[type, AttackStructurePriorities.length - _.indexOf(AttackStructurePriorities, type)]));
+export const attackStructureScores = _.zipObject(_.map(attackStructurePriorities, type =>
+	[type, attackStructurePriorities.length - _.indexOf(attackStructurePriorities, type)]));
 
 // Prioritized list of what order owned structures should be demolished (and then moved) in
 export const demolishStructurePriorities = [

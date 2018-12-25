@@ -111,4 +111,27 @@ describe('tasks', () => {
     expect(prePri2).toHaveBeenCalledTimes(1);
     expect(end).toHaveBeenCalledTimes(1);
   });
-})
+
+  it('prototypes context', () => {
+    runTasks({
+      memory: {
+        tasks: [{
+          action: 'test',
+          foo: 'bar',
+          subTask: {
+            action: 'test1',
+          }
+        }]
+      }
+    }, {
+       test: function *(target, { priority, context }) {
+        expect(context.foo).toEqual('bar');
+        yield priority();
+      },
+      test1: function *(target, { priority, context }) {
+        yield priority();
+        expect(context.foo).toEqual('bar');
+      },
+    });
+  });
+});

@@ -105,7 +105,7 @@ function positionAtDirection(origin, direction) {
   try {
     return new RoomPosition(x, y, origin.roomName);
   } catch (e) {
-    console.log('Failed to set position', x, y, origin.roomName, e);
+    console.log('Failed to set position', 'x =>', x, 'y =>', y, 'origin.x =>', origin.x, 'origin.y =>', origin.y, 'direction =>', direction, e);
   }
 }
 
@@ -261,23 +261,25 @@ export function moveTo({
       return ERR_NO_PATH;
   }
   // consume path
+  console.log('before path =>', travelData.path, 'stuckCount =>', state.stuckCount)
   if (state.stuckCount === 0 && !newPath) {
     travelData.path = travelData.path.substr(1);
   }
+  console.log('after path =>', travelData.path)
   let nextDirection = parseInt(travelData.path[0], 10);
-  if (returnData) {
-    if (nextDirection) {
+  if (nextDirection) {
+    if (returnData) {
       let nextPos = positionAtDirection(creep.pos, nextDirection);
       if (nextPos) {
         returnData.nextPos = nextPos;
       }
+      returnData.state = state;
+      returnData.path = travelData.path;
     }
-    returnData.state = state;
-    returnData.path = travelData.path;
+    movingCreeps[creep.name].nextPosition = positionAtDirection(creep.pos, nextDirection);
+    const err = creep.move(nextDirection);
+    return err;
   }
-  movingCreeps[creep.name].nextPosition = positionAtDirection(creep.pos, nextDirection);
-  const err = creep.move(nextDirection);
-  return err;
 }
 
 Creep.prototype.nextPos = function () {
@@ -454,4 +456,4 @@ Creep.prototype.getOutOfTheWay = function getOutOfTheWay(target, range) {
   }
 }
 
-Spawn.prototype.addTask = function addSpawnTask(...args) { return global.addCreepTask(this.name, ...args) };
+Creep.prototype.addTask = function addCreepTask(...args) { return global.addCreepTask(this.name, ...args) };
