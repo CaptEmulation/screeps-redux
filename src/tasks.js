@@ -80,6 +80,7 @@ function runTasks(gameObjectWithMemory, tasks, handlers) {
       context,
       gen: handler(gameObjectWithMemory, {
         priority,
+        sleep,
         done,
         subTask,
         context,
@@ -92,8 +93,8 @@ function runTasks(gameObjectWithMemory, tasks, handlers) {
     if (result.done) {
       return { task: tasks[index], priority: Infinity };
     }
-    if (result.value !== PRIORITY || !_.isNumber(taskPriorities[index])) {
-      throw new Error(`Task handler ${name} did not yield a numeric priority`);
+    if (!(result.value === SLEEP || result.value === PRIORITY || _.isNumber(taskPriorities[index]))) {
+      throw new Error(`Task handler ${name} did not yield a numeric priority.  Instead yielded ${result.value} with priority ${taskPriorities[index]}`);
     }
     return {
       name,
@@ -105,34 +106,37 @@ function runTasks(gameObjectWithMemory, tasks, handlers) {
       myTask,
     };
   });
-  const highestPriorityTask = _.min(priorityResults.filter(a => a.priority !== Infinity), a => a.priority);
-  if (highestPriorityTask) {
-    const { gen, context, myTask, task, index } = highestPriorityTask;
-    let result;
-    let subTaskResults;
-    let canRunMore = false;
-    do {
-      if (!(gen && gen.next)) {
-        throw new Error(`Not a generator? ${JSON.stringify(highestPriorityTask)}`);
-      }
-      result = gen.next(subTaskResults);
-      if (result.value === DONE) {
-        pop(task);
-        canRunMore = true;
-        break;
-      } else if (result.value === SUBTASK) {
-        const [newTask, newTaskCanRunMore] = runTasks(gameObjectWithMemory, tasks, handlers);
-        subTaskResults = newTask;
-      } else {
-        subTaskResults = null;
-      }
-    } while(!result.done);
-    Object.assign(myTask, context);
-    // Remove any deleted props
-    _.difference(Object.keys(myTask), Object.keys(context)).forEach(key => {
-      delete myTask[key];
-    })
-    return [myTask, canRunMore && resolveTask(task).myTask !== myTask];
+  const validPriTasks = priorityResults.filter(a => a.priority !== Infinity && _.isNumber(a.priority));
+  if (validPriTasks.length) {
+    const highestPriorityTask = _.min(validPriTasks, a => a.priority);
+    if (highestPriorityTask) {
+      const { gen, context, myTask, task, index } = highestPriorityTask;
+      let result;
+      let subTaskResults;
+      let canRunMore = false;
+      do {
+        if (!(gen && gen.next)) {
+          throw new Error(`Not a generator? ${JSON.stringify(highestPriorityTask)}`);
+        }
+        result = gen.next(subTaskResults);
+        if (result.value === DONE) {
+          pop(task);
+          canRunMore = true;
+          break;
+        } else if (result.value === SUBTASK) {
+          const [newTask, newTaskCanRunMore] = runTasks(gameObjectWithMemory, tasks, handlers);
+          subTaskResults = newTask;
+        } else {
+          subTaskResults = null;
+        }
+      } while(!result.done);
+      Object.assign(myTask, context);
+      // Remove any deleted props
+      _.difference(Object.keys(myTask), Object.keys(context)).forEach(key => {
+        delete myTask[key];
+      })
+      return [myTask, canRunMore && resolveTask(task).myTask !== myTask];
+    }
   }
   return [null, false];
 }

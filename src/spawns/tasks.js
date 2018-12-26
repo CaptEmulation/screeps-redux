@@ -5,6 +5,7 @@ import {
 
 export function* bootstrap(spawn, {
   priority,
+  sleep,
   subTask,
   context,
   done,
@@ -28,23 +29,22 @@ export function* bootstrap(spawn, {
       if (!err) {
         context.needs.pioneers--;
       }
-    } else {
-      yield priority(Infinity);
+      return;
     }
-  } else {
-    yield priority(Infinity);
   }
+  yield sleep();
 }
 
 export function* builder(spawn, {
   priority,
+  sleep,
   subTask,
   context,
   done,
 }) {
   if (!spawn.spawning) {
     const allCreeps = Object.values(Game.creeps);
-    const builderCreeps = allCreeps.filter(hasTask('earlyBuilder'));
+    const builderCreeps = allCreeps.filter(hasTask('builder'));
     const myConstructionSites = spawn.room.find(FIND_MY_CONSTRUCTION_SITES);
     context.needs = context.needs || {};
     context.needs.builders = context.needs.builders || myConstructionSites.length ? Math.min(myConstructionSites.length, 3) : 0;
@@ -53,17 +53,16 @@ export function* builder(spawn, {
       const err = spawn.spawnCreep([MOVE, MOVE, CARRY, WORK], sillyname(), {
         memory: {
           tasks: [{
-            action: 'earlyBuilder',
+            action: 'builder',
+            early: true,
           }],
         },
       });
       if (!err) {
         context.needs.builders--;
       }
-    } else {
-      yield priority(Infinity);
+      return;
     }
-  } else {
-    yield priority(Infinity);
   }
+  yield sleep();
 }

@@ -5,6 +5,9 @@ import {
 import {
   findWorkSites,
 } from '../utils/find';
+import {
+  walkBox,
+} from '../utils/scan';
 
 
 function assignMostEnergySource({ sources, creep, context }) {
@@ -78,6 +81,11 @@ export function* renewSelf(creep, {
   }
 }
 
+function freeSpotsAtSource(source) {
+  const terrain = new Room.Terrain(source.room.name);
+  return [...walkBox(source.pos, 1)].filter(([x, y]) => terrain.get(x, y) !== 1);
+}
+
 export function* harvest(creep, {
   priority,
   done,
@@ -89,17 +97,38 @@ export function* harvest(creep, {
     delete creep.memory.target;
     return yield done();
   }
-  if (!context.sourceId && creep.room.memory.sources) {
-    const sources = creep.room.memory.sources.map(a => Game.getObjectById(a.id));
-    assignMostEnergySource({ sources, creep, context });
+  let target;
+  if (!context.sourceId && creep.room.memory.sources && creep.room) {
+    if (_.isUndefined(creep.room.memory.lastSource)) {
+      creep.room.memory.lastSource = 0;
+    }
+    const sources = creep.room.memory.sources;
+    let index = creep.room.memory.lastSource;
+    do {
+      index++;
+      if (index >= sources.length) {
+        index = 0;
+      }
+      const sourceCheck = Game.getObjectById(sources[index].id);
+      if (freeSpotsAtSource(sourceCheck).find(spot => new RoomPosition(...spot, creep.room.name).lookFor(LOOK_CREEPS).length === 0)) {
+        target = sourceCheck;
+        creep.room.memory.lastSource = index;
+        context.sourceId = sourceCheck.id;
+      }
+      if (!target && index === creep.room.memory.lastSource){
+        break;
+      }
+    } while (!target)
+  } else if (context.sourceId) {
+    target = Game.getObjectById(context.sourceId);
   }
-  const source = Game.getObjectById(context.sourceId);
-  const range = creep.pos.getRangeTo(source);
-  if (range > 1) {
-    creep.routeTo(source, { range: 1 });
-  } else {
-    creep.memory.target = source.id;
-    creep.harvest(source);
+  if (target) {
+    const range = creep.pos.getRangeTo(target);
+    if (range > 1) {
+      creep.routeTo(target, { range: 1 });
+    } else {
+      creep.harvest(target);
+    }
   }
 }
 
@@ -129,7 +158,7 @@ export function* upgradeController(creep, {
   }
 }
 
-export function* earlyBuilder(creep, {
+export function* builder(creep, {
   priority,
   done,
   subTask,
@@ -139,8 +168,10 @@ export function* earlyBuilder(creep, {
   const myConstructionSites = creep.room.find(FIND_MY_CONSTRUCTION_SITES);
   if (_.sum(creep.carry) === creep.carryCapacity && myConstructionSites.length) {
     yield subTask(construct);
-  } else {
+  } else if (context.early){
     return yield subTask(harvest);
+  } else {
+    throw new Exception('Please tell me how to get stuff for midgame');
   }
 }
 

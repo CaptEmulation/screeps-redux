@@ -257,15 +257,14 @@ export function moveTo({
     state.stuckCount = 0;
   }
   serializeState(creep, destination, state, travelData);
-  if (!travelData.path || travelData.path.length === 0) {
+  console.log('path', JSON.stringify(travelData.path), 'path length', travelData.path.length);
+  if (!travelData.path || travelData.path.length <= 0) {
       return ERR_NO_PATH;
   }
   // consume path
-  console.log('before path =>', travelData.path, 'stuckCount =>', state.stuckCount)
   if (state.stuckCount === 0 && !newPath) {
-    travelData.path = travelData.path.substr(1);
+    travelData.path = travelData.path.substring(1);
   }
-  console.log('after path =>', travelData.path)
   let nextDirection = parseInt(travelData.path[0], 10);
   if (nextDirection) {
     if (returnData) {
@@ -276,10 +275,12 @@ export function moveTo({
       returnData.state = state;
       returnData.path = travelData.path;
     }
-    movingCreeps[creep.name].nextPosition = positionAtDirection(creep.pos, nextDirection);
-    const err = creep.move(nextDirection);
-    return err;
   }
+  const nextPosition = positionAtDirection(creep.pos, nextDirection);
+  console.log(`${creep.name} moving to ${nextPosition}`)
+  movingCreeps[creep.name].nextPosition = nextPosition;
+  const err = creep.move(nextDirection);
+  return err;
 }
 
 Creep.prototype.nextPos = function () {
