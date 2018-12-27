@@ -36,6 +36,7 @@ export default function* scan(room, {
   }
   if (room.controller && room.controller.my) {
     const noContainerSources = room.memory.sources.filter(s => !s.containerId);
+
     if (noContainerSources.length) {
       const containers = room.find(FIND_STRUCTURES, {
         filter: targetMatchers.isContainer,
@@ -45,14 +46,15 @@ export default function* scan(room, {
           const { id: sourceId } = noContainerSources[i];
           const source = Game.getObjectById(sourceId);
           if (source) {
-            const container = source.pos.findInRange(containers, 1);
-            if (container) {
-              noContainerSources[i].containerId = container.id;
+            const inRangeContainers = source.pos.findInRange(containers, 1);
+            if (inRangeContainers.length) {
+              noContainerSources[i].containerId = inRangeContainers[0].id;
             }
           }
         }
       }
     }
+
     if (!room.memory.bunker) {
       room.memory.bunker = {};
     }
