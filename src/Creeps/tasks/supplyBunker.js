@@ -1,9 +1,10 @@
 import {
   and,
+  needsEnergy,
   target as targetMatchers,
 } from '../../utils/matchers';
 
-export default function* supplySpawn(creep, {
+export default function* supplyBunker(creep, {
   priority,
   done,
   moveTo,
@@ -15,14 +16,18 @@ export default function* supplySpawn(creep, {
     delete creep.memory.target;
     return yield done();
   }
-  const targets = creep.room.find(FIND_MY_STRUCTURES, {
-    filter: and(
-      targetMatchers.isSpawnSupply,
-      targetMatchers.needsEnergy,
-    ),
-  });
-  if (targets.length) {
-    const target = creep.pos.findClosestByRange(targets);
+  let target;
+  let targets;
+  if (_.get(creep, 'room.memory.bunker.containers')) {
+    targets = creep.room.memory.bunker.containers
+      .map(c => Game.getObjectById(c))
+      .filter(c => !!c && needsEnergy(c));
+    if (targets.length) {
+      target = creep.pos.findClosestByRange(targets);
+    }
+  }
+
+  if (target) {
     const range = creep.pos.getRangeTo(target);
     if (range > 1) {
       creep.routeTo(target, { range: 1 });

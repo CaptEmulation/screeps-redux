@@ -1,4 +1,5 @@
 import upgradeController from './upgradeController';
+import fix from './fix';
 import harvest from './harvest';
 import renewSelf from './renewSelf';
 import supplySpawn from './supplySpawn';
@@ -22,9 +23,12 @@ export default function* pioneer(creep, {
     }
   }
   if (_.sum(creep.carry) === creep.carryCapacity) {
-    const results = yield subTask(supplySpawn);
-    if (_.get(results, 'targets.length') === 0) {
-      yield subTask(upgradeController);
+    let results = yield subTask(supplySpawn);
+    if (results.noTarget) {
+      results = yield subTask(fix);
+      if (results.noTarget) {
+        yield subTask(upgradeController);
+      }
     }
   } else {
     return yield subTask(harvest);

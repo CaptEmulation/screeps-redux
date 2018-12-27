@@ -14,9 +14,9 @@ export default function* rcl3(room, {
   if (room.controller && (room.controller.my && room.controller.level !== 2) || !room.controller.my) {
     yield done();
   }
-  if (context.anchor && Game.time % 25 === 0) {
-    placeConstructionSites(room, context.anchor, 3);
-    placeUpgradeContainer(room, context.anchor);
-    placeSourceContainers(room, context.anchor);
+  if (room.memory.anchor && Game.time % 25 === 0) {
+    placeConstructionSites(room, room.memory.bunker.anchor, 3);
+    placeUpgradeContainer(room, room.memory.bunker.anchor);
+    placeSourceContainers(room, room.memory.bunker.anchor);
   }
 }

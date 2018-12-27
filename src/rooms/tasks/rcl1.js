@@ -20,8 +20,6 @@ export default function* rcl1(room, {
   done,
 }) {
   yield priority();
-  if (room.controller && (room.controller.my && room.controller.level !== 1) || !room.controller.my) {
-    yield done();
-  }
   bootstrapWithNoCreeps(room);
+  yield done();
 }

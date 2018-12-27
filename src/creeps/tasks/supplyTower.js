@@ -1,3 +1,8 @@
+import {
+  and,
+  target as targetMatchers,
+} from '../../utils/matchers';
+
 export default function* supplyTower(creep, {
   priority,
   done,
@@ -28,7 +33,7 @@ export default function* supplyTower(creep, {
     }
   } else {
     yield done({
-      targets,
+      noTarget: true,
     });
   }
 }

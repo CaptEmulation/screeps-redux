@@ -1,9 +1,14 @@
 import {
   target as targetMatchers,
 } from '../../utils/matchers';
+import {
+  getStructureOfTypeMapForBunkerAt,
+} from '../planner';
 
 export default function* scan(room, {
   priority,
+  context,
+  done,
 }) {
   yield priority(context.priority);
   if (_.isUndefined(room.memory.sk)) {
@@ -46,6 +51,26 @@ export default function* scan(room, {
             }
           }
         }
+      }
+    }
+    if (!room.memory.bunker) {
+      room.memory.bunker = {};
+    }
+    if (!room.memory.bunker.anchor) {
+      const spawns = room.find(FIND_MY_SPAWNS);
+      if (spawns.length) {
+        const spawn = spawns[0];
+        room.memory.bunker.anchor = { x: spawn.pos.x - 4, y: spawn.pos.y };
+      } else {
+        room.memory.bunker.anchor = getBunkerLocation(room, true);
+      }
+    }
+    const containerPositions = getStructureOfTypeMapForBunkerAt(room.memory.bunker.anchor, room, STRUCTURE_CONTAINER, room.controller.level);
+    room.memory.bunker.containers = [];
+    for (let containerPos of containerPositions) {
+      const containers = containerPos.lookFor(LOOK_STRUCTURES);
+      if (containers.length) {
+        room.memory.bunker.containers.push(containers[0].id);
       }
     }
   }

@@ -16,7 +16,9 @@ export default function* construct(creep, {
   }
   const myConstructionSites = creep.room.find(FIND_MY_CONSTRUCTION_SITES);
   if (!myConstructionSites.length) {
-    yield done();
+    yield done({
+      noTarget: true,
+    });
   }
   const target = findWorkSites(creep.room);
   const range = creep.pos.getRangeTo(target);

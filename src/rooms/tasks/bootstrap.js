@@ -1,6 +1,7 @@
 import rcl1 from './rcl1';
 import rcl2 from './rcl2';
 import rcl3 from './rcl3';
+import scan from './scan';
 import {
   getBunkerLocation,
 } from '../planner';
@@ -11,18 +12,9 @@ export default function* bootstrap(room, {
   context,
 }) {
   yield priority();
-  if (!context.scanned || Game.time % 50 === 0) {
+  if (!context.scanned || Game.time % 25 === 0) {
     context.scanned = true;
     yield subTask(scan);
-  }
-  if (!context.anchor) {
-    const spawns = room.find(FIND_MY_SPAWNS);
-    if (spawns.length) {
-      const spawn = spawns[0];
-      context.anchor = { x: spawn.pos.x - 4, y: spawn.pos.y };
-    } else {
-      context.anchor = getBunkerLocation(room, true);
-    }
   }
   if (room.controller && room.controller.my) {
     switch (room.controller.level) {

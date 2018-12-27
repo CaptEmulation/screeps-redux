@@ -1,3 +1,4 @@
+import './lodash.prototype';
 import './creep.prototype';
 import './spawn.prototype';
 import './room.prototype';

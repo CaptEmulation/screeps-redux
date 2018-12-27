@@ -12,7 +12,9 @@ export default function* upgradeController(creep, {
   }
   const target = creep.room.controller;
   if (!target) {
-    yield done();
+    yield done({
+      noTarget: true,
+    });
   }
   const range = creep.pos.getRangeTo(target);
   if (range > 3) {

@@ -1,9 +1,14 @@
 import {
   ensureBuilder,
+  ensureQueen,
+  ensureDropMiner,
 } from './common';
 import {
   placeConstructionSites,
+  placeSourceContainers,
+  placeUpgradeContainer
 } from '../planner';
+
 
 export default function* rcl2(room, {
   priority,
@@ -12,11 +17,17 @@ export default function* rcl2(room, {
   done,
 }) {
   yield priority();
-  if (room.controller && (room.controller.my && room.controller.level !== 2) || !room.controller.my) {
-    yield done();
-  }
-  if (context.anchor && Game.time % 25 === 0) {
-    placeConstructionSites(room, context.anchor, 2)
+  if (_.get(room, 'memory.bunker.anchor') && Game.time % 25 === 0) {
+    placeConstructionSites(room, room.memory.bunker.anchor, 2)
+    if (_.get(room, 'memory.bunker.containers.length') ===  1) {
+      ensureQueen(room);
+      ensureDropMiner(room);
+      placeUpgradeContainer(room, room.memory.bunker.anchor);
+      if (_.get(room, 'memory.upgradeContainer')) {
+        placeSourceContainers(room, room.memory.bunker.anchor);
+      }
+    }
   }
   ensureBuilder(room);
+  yield done();
 }

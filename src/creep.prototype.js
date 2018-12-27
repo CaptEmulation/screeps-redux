@@ -337,7 +337,7 @@ function moveCreepOutOfTheWay(creep, from, target, range, creepsToMove, nextPosi
       const creepAtMySpot = creepsAtMySpot[0];
       if (!creepAtMySpot.my) {
         return false;
-      } else if (creepAtMySpot.my && !creepsToMove[creepAtMySpot.name]) {
+      } else if (creepAtMySpot.my && !creepsToMove[creepAtMySpot.name] && !movingCreeps[creepAtMySpot.name]) {
         // Try to move this creep out of the way....
         const [target, range] = getTargetAndRange(creepAtMySpot);
         const from = [creep];
@@ -397,15 +397,9 @@ Creep.getOutOfTheWay = function getAllCreepsOutOfTheWay() {
         const creepsAtNextPos = nextPosCreeps.filter(creep => creep.my);
         if (creepsAtNextPos.length) {
           const creepAtNextPos = creepsAtNextPos[0];
-          if (creepAtNextPos !== creep) {
-            if (creepsToMove[creepAtNextPos.name]) {
-              // creep is already trying to move.... ignore
-              continue;
-            }
-            if (!creepsToMove[creepAtNextPos.name]) {
-              const [target, range] = getTargetAndRange(creepAtNextPos);
-              creepsToMove[creepAtNextPos.name] = { from: [], target, range };
-            }
+          if (creepAtNextPos !== creep && !movingCreeps[creepAtNextPos.name] && !creepsToMove[creepAtNextPos.name]) {
+            const [target, range] = getTargetAndRange(creepAtNextPos);
+            creepsToMove[creepAtNextPos.name] = { from: [], target, range };
             creepsToMove[creepAtNextPos.name].from.push(creep);
           }
         }

@@ -8,6 +8,11 @@ import {
   buildPriorities,
 } from '../utils/priorities';
 import {
+  isGameObject,
+  isInstanceOf,
+  and,
+  not,
+  withGameId,
   target as targetMatchers,
 } from '../utils/matchers';
 
@@ -159,12 +164,19 @@ function bunkerIntersectsWith(anchor, obstacle, padding = 1) {
   return false;
 }
 
-function getStructureMapForBunkerAt(anchor, room, level = 8) {
+export function getStructureMapForBunkerAt(anchor, room, level = 8) {
 	let dx = anchor.x - bunkerLayout.data.anchor.x;
 	let dy = anchor.y - bunkerLayout.data.anchor.y;
 	let structureLayout = _.mapValues(bunkerLayout[level] && bunkerLayout[level].buildings, obj => obj.pos);
 	return _.mapValues(structureLayout, coordArr =>
 		_.map(coordArr, coord => new RoomPosition(coord.x + dx, coord.y + dy, room.name)));
+}
+
+export function getStructureOfTypeMapForBunkerAt(anchor, room, structureType, level = 8) {
+  let dx = anchor.x - bunkerLayout.data.anchor.x;
+	let dy = anchor.y - bunkerLayout.data.anchor.y;
+	let structureLayout = _.get(bunkerLayout, `${level}.buildings.${structureType}.pos`, []);
+  return structureLayout.map(coord => new RoomPosition(coord.x + dx, coord.y + dy, room.name));
 }
 
 function canBuild(structureType, pos) {
@@ -198,66 +210,86 @@ export function placeConstructionSites(room, anchor, level) {
 }
 
 export function placeUpgradeContainer(room, anchor) {
-  if (!room.memory.upgradeContainer && room.controller) {
-    console.log('Placing upgrade container');
-    let target;
-    const path = PathFinder.search(anchor, room.controller, {
-      range: 3,
-    });
-    if (!path.incomplete) {
-      console.log('found path');
-      target = _.tail(path.path);
-    }
-    if (target) {
-      const err = target.createConstructionSite(STRUCTURE_CONTAINER);
-      if (!err) {
-        console.log('Created construction site');
-        room.memory.upgradeContainer = {
-          pos: [target.x, target.y],
-        };
+  if (room.controller) {
+    if (_.get(room, 'memory.bunker.upgradeContainerPos')) {
+      const target = new RoomPosition(...room.memory.bunker.upgradeContainerPos, room.name);
+      const structures = target.lookFor(LOOK_STRUCTURES);
+      const container = structures.find(targetMatchers.isContainer);
+      if (container) {
+        delete room.memory.bunker.upgradeContainerPos;
+        room.memory.bunker.upgradeContainer = container.id;
+      } else {
+        const constructionSites = new RoomPosition(...room.memory.bunker.upgradeContainerPos, room.name).lookFor(LOOK_CONSTRUCTION_SITES);
+        if (constructionSites.length === 0) {
+          target.createConstructionSite(STRUCTURE_CONTAINER);
+        }
       }
     }
-  } else if (room.memory.upgradeContainer && !room.memory.upgradeContainer.id) {
-    const structures = new RoomPosition(...room.memory.upgradeContainer.pos, room.name).lookFor(LOOK_STRUCTURES);
-    const container = structures.find(targetMatchers.isContainer);
-    if (container) {
-      console.log('Resolving id');
-      room.memory.upgradeContainer.id = container.id;
-    }
-  }
-}
-
-export function placeSourceContainers(room, anchor) {
-  if (!room.memory.sourceContainers) {
-    console.log('Placing source containers');
-    for (let { id: sourceId } of room.memory.sources) {
+    if (!room.memory.bunker.upgradeContainerPos) {
       let target;
-      const path = PathFinder.search(anchor, Game.getObjectById(sourceId), {
-        range: 1,
+      const path = PathFinder.search(new RoomPosition(anchor.x, anchor.y, room.name), {
+        pos: room.controller.pos,
+        range: 3,
+      }, {
+        swampCost: 1,
       });
       if (!path.incomplete) {
-        console.log('found path');
-        target = _.tail(path.path);
+        target = _.last(path.path);
       }
       if (target) {
         const err = target.createConstructionSite(STRUCTURE_CONTAINER);
         if (!err) {
-          console.log('Created construction site');
-          room.memory.sourceContainers = room.memory.sourceContainers || [];
-          room.memory.sourceContainers.push({
+          room.memory.bunker.upgradeContainerPos = {
             pos: [target.x, target.y],
-          });
+          };
         }
       }
     }
-  } else if (room.memory.sourceContainers.length && room.memory.sourceContainers.find(a => !a.id)) {
-    for (let i = 0; i < room.memory.sourceContainers.length; i++) {
-      const { pos } = room.memory.sourceContainers[i];
-      const structures = new RoomPosition(...pos, room.name).lookFor(LOOK_STRUCTURES);
+  }
+}
+
+const notFinishedId = and(
+  isGameObject,
+  withGameId(isInstanceOf(ConstructionSite))
+);
+
+export function placeSourceContainers(room, anchor) {
+  if (room.memory.sources.length && room.memory.sources.find(a => a.containerPos)) {
+    for (let i = 0; i < room.memory.sources.length; i++) {
+      const { containerPos } = room.memory.sources[i];
+      const target = new RoomPosition(...containerPos, room.name);
+      const structures = target.lookFor(LOOK_STRUCTURES);
       const container = structures.find(targetMatchers.isContainer);
       if (container) {
-        console.log('Resolving id');
-        room.memory.sourceContainers[i].id = container.id;
+        delete memory.sources[i].containerPos;
+        room.memory.sources[i].container = container.id;
+      } else {
+        const constructionSites = new RoomPosition(...containerPos, room.name).lookFor(LOOK_CONSTRUCTION_SITES);
+        if (constructionSites.length === 0) {
+          target.createConstructionSite(STRUCTURE_CONTAINER);
+        }
+      }
+    }
+  }
+
+  if (room.memory.sources && !room.memory.sources.find(s => s.containerPos || s.container)) {
+    for (let i = 0; i < room.memory.sources.length; i++) {
+      const { id: sourceId } = room.memory.sources[i];
+      let target;
+      const path = PathFinder.search(new RoomPosition(anchor.x, anchor.y, room.name), {
+        pos: Game.getObjectById(sourceId).pos,
+        range: 1,
+      }, {
+        swampCost: 1,
+      });
+      if (!path.incomplete) {
+        target = _.last(path.path);
+      }
+      if (target) {
+        const err = target.createConstructionSite(STRUCTURE_CONTAINER);
+        if (!err) {
+          room.memory.sources[i].containerPos = [target.x, target.y];
+        }
       }
     }
   }

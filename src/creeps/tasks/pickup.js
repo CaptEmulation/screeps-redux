@@ -8,8 +8,8 @@ export default function* pickup(creep, {
   if (_.sum(creep.carry) === creep.carryCapacity) {
     return yield done();
   }
-  let target;
-  if (!creep.memory.target) {
+  let target = Game.getObjectById(creep.memory.target);
+  if (!target) {
     if (creep.room.find(FIND_STRUCTURES, {
       filter(structure){
         return (structure.structureType === STRUCTURE_TOWER) && structure.energy < structure.energyCapacity;
@@ -37,27 +37,19 @@ export default function* pickup(creep, {
       });
       target = creep.pos.findClosestByRange([...energySources, ...tombstones]);
     }
+
     if (!target) {
-      const targetIds = creep.room.find(FIND_STRUCTURES, {
-        filter: targetMatchers.isContainer,
-      });
-      if (targetIds) {
-        const targets = targetIds.map(id => Game.getObjectById(id));
-        let validTargets = [];
-        for (let target of targets) {
-          //if (_.sum(target.store) > creep.carryCapacity + 100) {
-          if (target && target.store && _.sum(target.store) > 300) {
-            validTargets.push(target);
-          }
-        }
-        target = _.max(validTargets, t => t.store[RESOURCE_ENERGY]);
-      }
+      const sourceContainers = _.get(creep, 'room.memory.sources', [])
+        .filter(s => s.containerId)
+        .map(s => Game.getObjectById(s))
+        .filter(s => !!s && s.store[RESOURCE_ENERGY] > 100);
+      target = _.maxBy(sourceContainers, t => t.store[RESOURCE_ENERGY]);
     }
   }
   if (target) {
     creep.memory.target = target.id;
   }
-  if (target && range > 1) {
+  if (target && creep.pos.getRangeTo(target) > 1) {
     creep.routeTo(target);
   } else if (target && !(target instanceof StructureExtension)) {
     if (target instanceof Resource) {
@@ -66,6 +58,8 @@ export default function* pickup(creep, {
       creep.withdraw(target, RESOURCE_ENERGY);
     }
   } else {
-    yield done();
+    yield done({
+      noTarget: true,
+    });
   }
 }

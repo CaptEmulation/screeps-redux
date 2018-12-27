@@ -78,6 +78,26 @@ export function isStructureOfType(type) {
   });
 }
 
+export function isInstanceOf(instance) {
+  return createMatcher({
+    matcher(target) {
+      return target instanceof instance;
+    },
+    describe(target, m) {
+      return `isInstanceOf(${instance}) === ${m(target)}`;
+    },
+  });
+}
+
+export const isGameObject = createMatcher({
+  matcher(id) {
+    return Game.getObjectById(id);
+  },
+  describe(id, m) {
+    return `isGameObject(${id}) === ${m(id)}`;
+  },
+});
+
 export const isMine = createMatcher({
   matcher(target) {
     return target.my === true;
@@ -106,6 +126,30 @@ export function hasTask(name) {
     },
     describe(target, m) {
       return `hasTask(${target}) === ${m(target)}`;
+    },
+  });
+}
+
+export function matchProp(prop, matcher) {
+  return createMatcher({
+    matcher(value) {
+      return matcher(_.get(value, prop));
+    },
+    describe(value, m) {
+      const p = m(value);
+      return `matchProp(${prop}) with ${matcher.describe(p, matcher(p))}`;
+    },
+  });
+}
+
+export function withGameId(matcher) {
+  return createMatcher({
+    matcher(id) {
+      return matcher(Game.getObjectById(id));
+    },
+    describe(id, m) {
+      const p = Game.getObjectById(id);
+      return `withGameId(${id}) with ${matcher.describe(p, matcher(p))}`;
     },
   });
 }
@@ -148,6 +192,8 @@ export const target = {
   isMySpawn: and(isStructureOfType(STRUCTURE_SPAWN), isMine),
   isExtension: isStructureOfType(STRUCTURE_EXTENSION),
   isContainer: isStructureOfType(STRUCTURE_CONTAINER),
+  isStorage: isStructureOfType(STRUCTURE_STORAGE),
+  isMyStorage: and(isStructureOfType(STRUCTURE_STORAGE), isMine),
   isMyContainer: and(isStructureOfType(STRUCTURE_CONTAINER), isMine),
 };
 
