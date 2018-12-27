@@ -1,5 +1,9 @@
 import { createSelector } from 'reselect';
 
+export function calcCreepCost(bodyParts = []) {
+  return _.sum(bodyParts.map(part => BODYPART_COST[part]));
+}
+
 function getVitalStats(creep) {
   let vitalStats = {};
   vitalStats['task'] = creep.memory.task;

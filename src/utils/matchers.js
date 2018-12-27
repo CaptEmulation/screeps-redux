@@ -130,6 +130,7 @@ export const target = {
   needsEnergy,
   isMine,
   isSpawn: isStructureOfType(STRUCTURE_SPAWN),
+  isMyTower: and(isStructureOfType(STRUCTURE_TOWER), isMine),
   isImpassable: or(
     isStructureOfType(STRUCTURE_TOWER),
     isStructureOfType(STRUCTURE_TERMINAL),

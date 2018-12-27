@@ -12,4 +12,9 @@ import {
 export function loop() {
   store.dispatch({ type: LOOP });
   Creep.getOutOfTheWay();
+  Object.keys(Memory.creeps).forEach(name => {
+    if (!Game.creeps[name]) {
+      delete Memory.creeps[name];
+    }
+  });
 }

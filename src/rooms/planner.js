@@ -7,6 +7,9 @@ import {
 import {
   buildPriorities,
 } from '../utils/priorities';
+import {
+  target as targetMatchers,
+} from '../utils/matchers';
 
 function coordName(coord) {
 	return coord.x + ':' + coord.y;
@@ -26,7 +29,7 @@ function minBy(objects, iteratee) {
 	return minObj;
 }
 
-const MAX_SAMPLE = 10;
+const MAX_SAMPLE = 20;
 const MAX_TOTAL_PATH_LENGTH = 25 * 4;
 
 function drawBunker(anchor, rcl, opts = {}) {
@@ -44,7 +47,7 @@ function drawBunker(anchor, rcl, opts = {}) {
 global.drawBunker = drawBunker;
 
 export function getBunkerLocation(room, visualize) {
-  let colony = room.memory;
+  let colony = room && room.memory;
   if (colony && colony.bunker && colony.bunker.anchor) {
     return colony.bunker.anchor;
   }
@@ -67,13 +70,15 @@ export function getBunkerLocation(room, visualize) {
     return totalDistance;
   };
   let bestAnchor = minBy(allowableLocations, pos => totalPathLength(pos));
-  if (bestAnchor && totalPathLength(bestAnchor) <= MAX_TOTAL_PATH_LENGTH) {
-    return bestAnchor;
-  }
+  return bestAnchor;
 }
 
 global.getBunkerLocation = getBunkerLocation;
 
+/*
+ * Example usage from console
+ * getSpawnLocation({ name: 'W32N45', sources: [{ pos: {x: 11, y: 45, roomName: 'W32N45' }}, { pos: { x: 17, y: 29, roomName: 'W32N45' }}], mineral: [{ pos: { x: 24, y: 44, roomName: 'W32N45' }}]})
+ */
 function getSpawnLocation(room, visualize = true) {
   const anchor = getBunkerLocation(room, visualize);
   if (anchor) {
@@ -101,7 +106,7 @@ function getAllowableBunkerLocations(room, visualize) {
                   anchor => !_.any(sitesAndMineral,
                            pos => bunkerIntersectsWith(anchor, pos, 1)));
   if (visualize) {
-    let vis = room.visual;
+    let vis = new RoomVisual();
     for (let pos of allowableLocations) {
       vis.circle(pos.x, pos.y, {fill: 'purple'});
     }
@@ -168,11 +173,9 @@ function canBuild(structureType, pos) {
 	let sites = pos.lookFor(LOOK_CONSTRUCTION_SITES);
 	if (!buildings || buildings.length == 0) {
 		if (!sites || sites.length == 0) {
-      console.log('true')
 			return true;
 		}
 	}
-  console.log('false')
 	return false;
 }
 
@@ -182,15 +185,79 @@ export function placeConstructionSites(room, anchor, level) {
     if (map[structureType]) {
       for (let pos of map[structureType]) {
         const buildable = canBuild(structureType, pos);
-        console.log('checking', pos, buildable);
         if (buildable) {
-          console.log('placing', pos, structureType);
           let result = pos.createConstructionSite(structureType);
           if (result != OK) {
 						console.log(`${room.name}: couldn't create construction site of type ` +
 									`"${structureType}" at ${pos}. Result: ${result}`);
 					}
         }
+      }
+    }
+  }
+}
+
+export function placeUpgradeContainer(room, anchor) {
+  if (!room.memory.upgradeContainer && room.controller) {
+    console.log('Placing upgrade container');
+    let target;
+    const path = PathFinder.search(anchor, room.controller, {
+      range: 3,
+    });
+    if (!path.incomplete) {
+      console.log('found path');
+      target = _.tail(path.path);
+    }
+    if (target) {
+      const err = target.createConstructionSite(STRUCTURE_CONTAINER);
+      if (!err) {
+        console.log('Created construction site');
+        room.memory.upgradeContainer = {
+          pos: [target.x, target.y],
+        };
+      }
+    }
+  } else if (room.memory.upgradeContainer && !room.memory.upgradeContainer.id) {
+    const structures = new RoomPosition(...room.memory.upgradeContainer.pos, room.name).lookFor(LOOK_STRUCTURES);
+    const container = structures.find(targetMatchers.isContainer);
+    if (container) {
+      console.log('Resolving id');
+      room.memory.upgradeContainer.id = container.id;
+    }
+  }
+}
+
+export function placeSourceContainers(room, anchor) {
+  if (!room.memory.sourceContainers) {
+    console.log('Placing source containers');
+    for (let { id: sourceId } of room.memory.sources) {
+      let target;
+      const path = PathFinder.search(anchor, Game.getObjectById(sourceId), {
+        range: 1,
+      });
+      if (!path.incomplete) {
+        console.log('found path');
+        target = _.tail(path.path);
+      }
+      if (target) {
+        const err = target.createConstructionSite(STRUCTURE_CONTAINER);
+        if (!err) {
+          console.log('Created construction site');
+          room.memory.sourceContainers = room.memory.sourceContainers || [];
+          room.memory.sourceContainers.push({
+            pos: [target.x, target.y],
+          });
+        }
+      }
+    }
+  } else if (room.memory.sourceContainers.length && room.memory.sourceContainers.find(a => !a.id)) {
+    for (let i = 0; i < room.memory.sourceContainers.length; i++) {
+      const { pos } = room.memory.sourceContainers[i];
+      const structures = new RoomPosition(...pos, room.name).lookFor(LOOK_STRUCTURES);
+      const container = structures.find(targetMatchers.isContainer);
+      if (container) {
+        console.log('Resolving id');
+        room.memory.sourceContainers[i].id = container.id;
       }
     }
   }

@@ -1,6 +1,9 @@
 import {
   walkBox,
 } from './utils/scan';
+import {
+  calcCreepCost,
+} from './utils/creeps';
 import { target as targetMatchers } from './utils/matchers';
 import {
   findRoute,
@@ -257,7 +260,7 @@ export function moveTo({
     state.stuckCount = 0;
   }
   serializeState(creep, destination, state, travelData);
-  console.log('path', JSON.stringify(travelData.path), 'path length', travelData.path.length);
+  // console.log('path', JSON.stringify(travelData.path), 'path length', travelData.path.length);
   if (!travelData.path || travelData.path.length <= 0) {
       return ERR_NO_PATH;
   }
@@ -277,7 +280,7 @@ export function moveTo({
     }
   }
   const nextPosition = positionAtDirection(creep.pos, nextDirection);
-  console.log(`${creep.name} moving to ${nextPosition}`)
+//  console.log(`${creep.name} moving to ${nextPosition}`)
   movingCreeps[creep.name].nextPosition = nextPosition;
   const err = creep.move(nextDirection);
   return err;
@@ -363,9 +366,17 @@ function moveCreepOutOfTheWay(creep, from, target, range, creepsToMove, nextPosi
     });
     if (newPos && keepRangeSpot) {
       creepMoves.push([creep, newPos]);
+    } else {
+      newPos = _.sample(availableSpots);
+      if (newPos) {
+        creepMoves.push([creep, new RoomPosition(...newPos, creep.room.name)]);
+      }
     }
   } else if (availableSpots.length) {
-    creepMoves.push([creep, availableSpots[0]]);
+    const newPos = _.sample(availableSpots);
+    if (newPos) {
+      creepMoves.push([creep, new RoomPosition(...newPos, creep.room.name)]);
+    }
   }
 }
 
@@ -407,54 +418,17 @@ Creep.getOutOfTheWay = function getAllCreepsOutOfTheWay() {
   }
   if (creepMoves.length)
   for (let [creep, newPos] of creepMoves) {
-    const direction = creep.pos.getDirectionTo(newPos);
-
-    const err = creep.move(direction);
-  }
-}
-
-Creep.prototype.getOutOfTheWay = function getOutOfTheWay(target, range) {
-  const onStructures = this.pos.lookFor(LOOK_STRUCTURES);
-  const road = onStructures.find(s => s.structureType === STRUCTURE_ROAD);
-  let movedFromRoad = false;
-  const shuffled = _.shuffle([...walkBox(this.pos)]);
-  if (road) {
-    for (let coords of shuffled) {
-      const pos = new RoomPosition(...coords, this.room.name);
-      if (pos.getRangeTo(target) <= range
-        && !pos.lookFor(LOOK_CREEPS).length
-        && !pos.lookFor(LOOK_STRUCTURES).find(s => s.structureType === STRUCTURE_ROAD)) {
-        this.move(this.pos.getDirectionTo(pos));
-        movedFromRoad = true;
-        break;
-      }
-    }
-  }
-  if (!movedFromRoad) {
-    let creepNearby = false;
-    for (let coords of shuffled) {
-      const pos = new RoomPosition(...coords, this.room.name);
-      const creeps = pos.lookFor(LOOK_CREEPS);
-      if (creeps.length) {
-        creepNearby = creeps[0];
-        break;
-      }
-    }
-    if (creepNearby) {
-      let foundOpenSpot = false;
-      for (let coords of shuffled) {
-        const pos = new RoomPosition(...coords, this.room.name);
-        if (pos.getRangeTo(target) <= range) {
-          foundOpenSpot = true;
-          this.move(this.pos.getDirectionTo(pos));
-          break;
-        }
-      }
-      if (!foundOpenSpot) {
-        this.move(this.pos.getDirectionTo(creepNearby));
-      }
+    if (newPos) {
+      const direction = creep.pos.getDirectionTo(newPos);
+      circle(newPos, "white");
+      const err = creep.move(direction);
     }
   }
 }
 
+Object.defineProperty(Creep.prototype, 'cost', {
+  get() {
+    return calcCreepCost(this.body.map(b => b.type));
+  }
+});
 Creep.prototype.addTask = function addCreepTask(...args) { return global.addCreepTask(this.name, ...args) };
