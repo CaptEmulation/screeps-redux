@@ -1,4 +1,6 @@
-
+/*
+ * Adapted from https://github.com/bencbartlett/Overmind/tree/master/src/roomPlanner
+ */
 function coordName(coord) {
 	return coord.x + ':' + coord.y;
 }

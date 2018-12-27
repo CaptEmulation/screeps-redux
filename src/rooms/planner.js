@@ -1,4 +1,6 @@
-
+/*
+ * Adapted from https://github.com/bencbartlett/Overmind/tree/master/src/roomPlanner
+ */
 import {allBunkerCoords, bunkerCoordLookup, bunkerLayout} from './layout';
 import {distanceTransform} from '../utils/distanceTransform';
 import {
