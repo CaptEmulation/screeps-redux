@@ -1,3 +1,11 @@
+function targetHasEnergy(target) {
+  if (target instanceof Tombstone || target instanceof StructureContainer || target instanceof StructureStorage) {
+    return target.store[RESOURCE_ENERGY] > 0;
+  } else if (target instanceof Resource) {
+    return target.amount > 0;
+  }
+}
+
 export default function* pickup(creep, {
   priority,
   done,
@@ -9,7 +17,7 @@ export default function* pickup(creep, {
     return yield done();
   }
   let target = Game.getObjectById(creep.memory.target);
-  if (!target) {
+  if (!target || !targetHasEnergy(target)) {
     if (creep.room.find(FIND_STRUCTURES, {
       filter(structure){
         return (structure.structureType === STRUCTURE_TOWER) && structure.energy < structure.energyCapacity;
@@ -41,7 +49,7 @@ export default function* pickup(creep, {
     if (!target) {
       const sourceContainers = _.get(creep, 'room.memory.sources', [])
         .filter(s => s.containerId)
-        .map(s => Game.getObjectById(s))
+        .map(s => Game.getObjectById(s.containerId))
         .filter(s => !!s && s.store[RESOURCE_ENERGY] > 100);
       target = _.maxBy(sourceContainers, t => t.store[RESOURCE_ENERGY]);
     }

@@ -241,9 +241,7 @@ export function placeUpgradeContainer(room, anchor) {
       if (target) {
         const err = target.createConstructionSite(STRUCTURE_CONTAINER);
         if (!err) {
-          room.memory.bunker.upgradeContainerPos = {
-            pos: [target.x, target.y],
-          };
+          room.memory.bunker.upgradeContainerPos = [target.x, target.y];
         }
       }
     }

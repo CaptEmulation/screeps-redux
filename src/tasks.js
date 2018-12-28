@@ -141,11 +141,11 @@ function runTasks(gameObjectWithMemory, tasks, handlers) {
   return [null, false];
 }
 
-export default function runTask(gameObjectWithMemory, handlers) {
-  if (!_.get(gameObjectWithMemory, 'memory.tasks.length')) {
+export default function runTask(gameObjectWithMemory, handlers, memoryGetter) {
+  if (!memoryGetter && !_.get(gameObjectWithMemory, 'memory.tasks.length')) {
     return null;
   }
-  const tasks = gameObjectWithMemory.memory.tasks;
+  const tasks = _.isFunction(memoryGetter) ? memoryGetter(gameObjectWithMemory) : gameObjectWithMemory.memory.tasks;
   let canRunMore = true;
   let prevTaskTask;
   let lastRunTask = 0;

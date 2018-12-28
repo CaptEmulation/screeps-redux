@@ -19,7 +19,7 @@ export default function* pioneer(creep, {
   if (Game.time % 50) {
     // Check if we still need to live....
     if (calcCreepCost([MOVE, MOVE, CARRY, WORK]) + creep.cost <= creep.room.energyAvailable) {
-      _.remove(creep.memory.tasks, hasTask('renewSelf'));
+      _.remove(creep.memory.tasks, task => task.action === 'renewSelf');
     }
   }
   if (_.sum(creep.carry) === creep.carryCapacity) {

@@ -1,8 +1,17 @@
 import {
+  ensureBuilder,
+  ensureQueen,
+  ensureDropMiner,
+  ensureUpgrader,
+} from './common';
+import {
   placeConstructionSites,
   placeUpgradeContainer,
   placeSourceContainers,
 } from '../planner';
+import {
+  hasTask,
+} from '../../utils/matchers';
 
 export default function* rcl3(room, {
   priority,
@@ -11,12 +20,28 @@ export default function* rcl3(room, {
   done,
 }) {
   yield priority();
-  if (room.controller && (room.controller.my && room.controller.level !== 2) || !room.controller.my) {
-    yield done();
-  }
-  if (room.memory.anchor && Game.time % 25 === 0) {
+  if (_.get(room, 'memory.bunker.anchor') && Game.time % 2 === 0) {
     placeConstructionSites(room, room.memory.bunker.anchor, 3);
-    placeUpgradeContainer(room, room.memory.bunker.anchor);
-    placeSourceContainers(room, room.memory.bunker.anchor);
+    if (_.get(room, 'memory.bunker.containers.length') ===  1) {
+      ensureQueen(room);
+      ensureDropMiner(room);
+      ensureUpgrader(room);
+      placeUpgradeContainer(room, room.memory.bunker.anchor);
+      if (_.get(room, 'memory.bunker.upgradeContainer')) {
+        placeSourceContainers(room, room.memory.bunker.anchor);
+        const sources = _.get(room, 'memory.sources', []);
+        if (sources.length && sources.every(s => s.containerId)) {
+          // convert to container mining
+          const spawns = room.find(FIND_MY_SPAWNS, {
+            filter: hasTask('bootstrap')
+          })
+          console.log(spawns);
+          spawns.forEach(spawn => _.remove(spawn.memory.tasks, task => task.action === 'bootstrap'));
+          Object.values(Game.creeps).filter(hasTask('pioneer')).forEach(creep => creep.suicide());
+        }
+      }
+    }
   }
+  ensureBuilder(room);
+  yield done();
 }

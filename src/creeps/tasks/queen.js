@@ -1,6 +1,7 @@
 import supplySpawn from './supplySpawn';
 import supplyTower from './supplyTower';
 import supplyBunker from './supplyBunker';
+import supplyUpgrade from './supplyUpgrade';
 import pickup from './pickup';
 
 export default function* queen(creep, {
@@ -12,7 +13,9 @@ export default function* queen(creep, {
   if (_.sum(creep.carry) > 0) {
     if ((yield subTask(supplyTower)).noTarget) {
       if ((yield subTask(supplySpawn)).noTarget) {
-        yield subTask(supplyBunker);
+        if ((yield subTask(supplyBunker)).noTarget) {
+          yield subTask(supplyUpgrade);
+        }
       }
     }
   } else {

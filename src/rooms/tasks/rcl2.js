@@ -23,7 +23,7 @@ export default function* rcl2(room, {
       ensureQueen(room);
       ensureDropMiner(room);
       placeUpgradeContainer(room, room.memory.bunker.anchor);
-      if (_.get(room, 'memory.upgradeContainer')) {
+      if (_.get(room, 'memory.bunker.upgradeContainer')) {
         placeSourceContainers(room, room.memory.bunker.anchor);
       }
     }

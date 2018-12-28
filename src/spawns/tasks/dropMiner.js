@@ -6,6 +6,9 @@ import {
   hasTask,
 } from '../../utils/matchers';
 
+const small = [MOVE, CARRY, WORK, WORK];
+const large = [ WORK, WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE, MOVE];
+
 export default function* dropMiner(spawn, {
   priority,
   sleep,
@@ -16,17 +19,15 @@ export default function* dropMiner(spawn, {
   if (!spawn.spawning) {
     const allCreeps = Object.values(Game.creeps);
     const dropMinerCreeps = allCreeps.filter(hasTask('dropMiner'));
-    const max = 1;
-    context.needs = context.needs || {};
-    context.needs.dropMiner = max - dropMinerCreeps.length;
-    if (context.needs.dropMiner > 0) {
+    const max = context.count || 1;
+    if (max - dropMinerCreeps.length > 0) {
       yield priority();
-      const body = [MOVE, CARRY, WORK, WORK];
-      const additionals = Math.floor(spawn.room.energyAvailable / calcCreepCost(body));
-      for (let i = 0; i < additionals - 1; i++) {
-        body.push(MOVE, CARRY, WORK, WORK);
+      let body;
+      if (calcCreepCost(large) <= spawn.room.energyAvailableCapacity && (!context.wait || context.wait < 25)) {
+        body = large;
+      } else {
+        body = small;
       }
-
       const err = spawn.spawnCreep(body, sillyname(), {
         memory: {
           tasks: [{
@@ -37,7 +38,10 @@ export default function* dropMiner(spawn, {
         },
       });
       if (!err) {
-        context.needs.dropMiner--;
+        delete context.wait;
+      } else if (err === ERR_NOT_ENOUGH_ENERGY) {
+        context.wait = context.wait || 0;
+        context.wait++;
       }
       return;
     }
