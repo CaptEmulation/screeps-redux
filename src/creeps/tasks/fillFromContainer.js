@@ -15,7 +15,7 @@ export default function* fillFromContainer(creep, {
     return yield done();
   }
   let targets;
-  let target = Game.getObjectById(creep.memory.target) || Game.getObjectById(context.container);
+  let target = Game.getObjectById(context.container) || Game.getObjectById(creep.memory.target);
   if (!target || target.store[RESOURCE_ENERGY] === 0) {
     target = null;
     delete creep.memory.target;

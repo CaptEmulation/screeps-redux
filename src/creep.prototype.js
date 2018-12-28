@@ -69,13 +69,19 @@ function sameCoord(pos1, pos2) {
   return pos1.x === pos2.x && pos1.y === pos2.y;
 }
 
+RoomPosition.sameCoord = sameCoord;
+
 function samePos(pos1, pos2) {
   return sameCoord(pos1, pos2) && pos1.roomName === pos2.roomName;
 }
 
+RoomPosition.samePos = samePos;
+
 function isExit(pos) {
   return pos.x === 0 || pos.y === 0 || pos.x === 49 || pos.y === 49;
 }
+
+RoomPosition.isExit = isExit;
 
 function isStuck(creep, state = {}) {
   let stuck = false;

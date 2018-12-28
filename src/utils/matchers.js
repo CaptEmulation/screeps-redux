@@ -191,6 +191,7 @@ export const target = {
   ),
   isMySpawn: and(isStructureOfType(STRUCTURE_SPAWN), isMine),
   isExtension: isStructureOfType(STRUCTURE_EXTENSION),
+  isMyExtension: and(isStructureOfType(STRUCTURE_EXTENSION), isMine),
   isContainer: isStructureOfType(STRUCTURE_CONTAINER),
   isStorage: isStructureOfType(STRUCTURE_STORAGE),
   isMyStorage: and(isStructureOfType(STRUCTURE_STORAGE), isMine),

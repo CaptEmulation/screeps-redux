@@ -28,13 +28,13 @@ export default function* queen(spawn, {
     }).length / 2)
     if (max - queenCreeps.length > 0) {
       yield priority();
-      const level = Math.min(0, spawn.room.controller.level - 1);
-      if (level > 0 && context.waiting > 50) {
+      const level = spawn.room.controller.level - 1;
+      if (level > 0 && context.waiting > 100) {
         level--;
         context.waiting = 0;
       }
-      const body = builds[level];
-      const err = spawn.spawnCreep(body, sillyname(), {
+      const body = builds[Math.max(0, level)];
+      const err = spawn.spawnCreep(body, `Queen ${sillyname()}`, {
         memory: {
           tasks: [{
             action: 'queen',

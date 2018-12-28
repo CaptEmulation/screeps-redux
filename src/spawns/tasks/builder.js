@@ -28,7 +28,7 @@ export default function* builder(spawn, {
         body.push(MOVE, MOVE, CARRY, WORK);
       }
 
-      const err = spawn.spawnCreep(body, sillyname(), {
+      const err = spawn.spawnCreep(body, `${sillyname()} the Builder`, {
         memory: {
           tasks: [{
             action: 'builder',

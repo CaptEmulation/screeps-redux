@@ -12,7 +12,7 @@ export default function* bootstrap(room, {
   context,
 }) {
   yield priority();
-  if (!context.scanned || Game.time % 25 === 0) {
+  if (!context.scanned || Game.time % 2 === 0) {
     context.scanned = true;
     yield subTask(scan);
   }

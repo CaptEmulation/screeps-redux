@@ -1,4 +1,5 @@
 import {
+  freeSpotsAtSource,
   getSourceId,
 } from './common';
 
@@ -44,7 +45,6 @@ export default function* dropMiner(creep, {
     const amount = Math.min(container.storeCapacity - _.sum(container.store), creep.carry[RESOURCE_ENERGY]);
     creep.transfer(container, RESOURCE_ENERGY, amount);
   } else if (_.sum(creep.carry) === creep.carryCapacity && (!biggestDrop ||  biggestDrop.pos.getRangeTo(creep.pos) === 0)) {
-    delete creep.memory.target;
     creep.drop(RESOURCE_ENERGY);
   } else {
     if (creep.pos.getRangeTo(target) > 1) {

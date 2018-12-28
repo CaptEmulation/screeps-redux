@@ -32,9 +32,9 @@ export default function* supplyBunker(creep, {
     if (range > 1) {
       creep.routeTo(target, { range: 1 });
     } else {
-      const amount = Math.min(creep.carry[RESOURCE_ENERGY], target.energyCapacity - target.energy);
+      const amount = Math.min(creep.carry[RESOURCE_ENERGY], target.storeCapacity - _.sum(target.store));
       creep.transfer(target, RESOURCE_ENERGY, amount);
-      creep.memory.target = target.id;
+      delete creep.memory.target;
     }
   } else {
     yield done({

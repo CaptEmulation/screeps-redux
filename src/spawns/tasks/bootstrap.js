@@ -26,7 +26,7 @@ export default function* bootstrap(spawn, {
       for (let i = 0; i < additionals - 1; i++) {
         body.push(MOVE, MOVE, CARRY, WORK);
       }
-      const err = spawn.spawnCreep(body, sillyname(), {
+      const err = spawn.spawnCreep(body, `${sillyname()} Pioneer`, {
         memory: {
           tasks: [{
             action: 'pioneer',

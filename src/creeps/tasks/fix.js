@@ -21,7 +21,7 @@ export default function* fix(creep, {
     target = creep.pos.findClosestByRange(targets);
   }
 
-  if (target) {
+  if (target && target.hits < target.hitsMax) {
     const range = creep.pos.getRangeTo(target);
     if (range > 3) {
       creep.routeTo(target, { range: 3 });
@@ -34,6 +34,7 @@ export default function* fix(creep, {
       }
     }
   } else {
+    delete creep.memory.target;
     yield done({
       noTarget: true,
     });

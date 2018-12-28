@@ -29,7 +29,7 @@ export default function* supplySpawn(creep, {
     } else {
       const amount = Math.min(creep.carry[RESOURCE_ENERGY], target.energyCapacity - target.energy);
       creep.transfer(target, RESOURCE_ENERGY, amount);
-      creep.memory.target = target.id;
+      delete creep.memory.target;
     }
   } else {
     yield done({

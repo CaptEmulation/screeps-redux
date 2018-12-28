@@ -3,12 +3,12 @@ _.maxBy = _.maxBy || function maxBy(array, iteratee) {
   if (array == null) {
     return result
   }
+  let computed;
   for (const value of array) {
-    let computed
-    const current = iteratee(value)
 
-    if (current !== null && current !== undefined) {
-      if (computed === undefined || current > computed) {
+    const current = iteratee(value)
+    if (current !== null && typeof current !== 'undefined') {
+      if (typeof computed === 'undefined' || current > computed) {
         computed = current
         result = value
       }
@@ -22,8 +22,9 @@ _.minBy = _.minBy || function minBy(array, iteratee) {
   if (array == null) {
     return result
   }
+  let computed;
   for (const value of array) {
-    let computed
+
     const current = iteratee(value)
 
     if (current !== null && current !== undefined) {

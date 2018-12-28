@@ -110,6 +110,7 @@ export function scout(room) {
     bottom: roomName(room.name, FIND_EXIT_BOTTOM),
     left: roomName(room.name, FIND_EXIT_LEFT),
   }
+  const tombstones = room.find(FIND_TOMBSTONES).map(toJSON);
   const resources = room.find(FIND_DROPPED_RESOURCES).map(toJSON);
   const minerals = room.find(FIND_MINERALS).map(toJSON);
 
@@ -119,6 +120,7 @@ export function scout(room) {
     creeps,
     sources,
     exits,
+    tombstones,
     resources,
     minerals,
   };
