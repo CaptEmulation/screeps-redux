@@ -2,6 +2,25 @@
 
  Our bot for Screeps.  Originally strongly based on redux and redux-saga, now only loosely so.  
 
+## Getting Started
+
+Some global functions are present to help pick a starting location.  First place a spawn anywhere in the world.  This will allow you to execute console commands.  From there you can locate an optimal location for the first spawn in any room (even if you do not have vision).
+
+```
+getSpawnLocation({ name: 'W32N45', sources: [{ pos: {x: 11, y: 45, roomName: 'W32N45' }}, { pos: { x: 17, y: 29, roomName: 'W32N45' }}], mineral: [{ pos: { x: 24, y: 44, roomName: 'W32N45' }}]})
+```
+Enter the correct source and mineral locations for a room.  If necessary respawn and then put your spawn at the location specified on the console.
+
+Add the `bootstrap` task to the new room.
+
+```
+Game.rooms['W32N45'].addTask('bootstrap');
+```
+
+That's it!  As the room controller is leveled up, the "bunker" will have its buildings placed automatically.  However, roads outside the bunker and walls/ramparts are not yet placed automatically.  Placing construction sites will spawn builders that will construct and then recycle themselves when done.
+
+For RCL1 and RCL2, "pioneer" creeps will be spawned to harvest, supply spawn with energy and upgrade controller.  At RCL3 containers will be automatically be constructed at the controller and sources.  When those are done then pioneers will recycle themselves to be replaced by separate upgraders, static miners and haulers.
+
 ## Get out of the way
 
 `Creep.getAllCreepsOutOfTheWay` expects creeps to have a `target` and optionally a `range` saved to memory.  This is used to find optimal locations to move creeps out of the way
