@@ -19,7 +19,7 @@ export default function* fillFromContainer(creep, {
   if (!target || target.store[RESOURCE_ENERGY] === 0) {
     target = null;
     delete creep.memory.target;
-    targets = creep.room.find(FIND_STRUCTURES< {
+    targets = creep.room.find(FIND_STRUCTURES, {
       filter: and(targetMatchers.isContainer,  c => c.store && c.store[RESOURCE_ENERGY] > 0)
     });
     if (targets.length) {

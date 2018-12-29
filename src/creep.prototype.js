@@ -4,7 +4,10 @@ import {
 import {
   calcCreepCost,
 } from './utils/creeps';
-import { target as targetMatchers } from './utils/matchers';
+import {
+  hasTask,
+  target as targetMatchers,
+} from './utils/matchers';
 import {
   findRoute,
   findTravelPath,
@@ -330,13 +333,12 @@ function moveCreepOutOfTheWay(creep, from, target, range, creepsToMove, nextPosi
     if (target && newPos.getRangeTo(target) > range) {
       return false;
     }
-    for (let curr of newPos.look()) {
-      if (
-        (curr.type === 'terrain' && curr.terrain === 'wall')
-        || (curr.type === 'structure' && !curr.structure instanceof StructureContainer)
-      ) {
-        return false;
-      }
+    const stuffAtPos = newPos.look();
+    if (
+      stuffAtPos.find(curr => curr.type === 'terrain' && curr.terrain === 'wall')
+      || stuffAtPos.find(curr => curr.type === 'structure' && !curr.structure instanceof StructureContainer)
+    ) {
+      return false;
     }
     const creepsAtMySpot = newPos.lookFor(LOOK_CREEPS);
     if (creepsAtMySpot.length) {
@@ -431,4 +433,19 @@ Object.defineProperty(Creep.prototype, 'cost', {
     return calcCreepCost(this.body.map(b => b.type));
   }
 });
-Creep.prototype.addTask = function addCreepTask(...args) { return global.addCreepTask(this.name, ...args) };
+Creep.prototype.addTask = function addCreepTask(action, opts) { 
+  this.memory.tasks = this.memory.tasks || [];
+  let task;
+  if (!hasTask(action)(this)) {
+    task = {
+      action,
+      ...opts,
+    };
+    this.memory.tasks.push(task);
+  } else {
+    const task = this.memory.tasks.find(t => t.action === action);
+    task = Object.assign(task, opts);
+  }
+  return task;
+};
+Creep.prototype.removeTask = function removeCreepTask(taskName) { return   _.remove(this.memory.tasks, task => task.action === taskName) };

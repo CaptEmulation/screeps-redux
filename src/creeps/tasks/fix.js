@@ -10,19 +10,20 @@ export default function* fix(creep, {
     delete creep.memory.range;
     yield done();
   }
+  const percent = 0.85;
   let target = Game.getObjectById(creep.memory.target);
   let targets
-  if (!target) {
+  if (!target || (!target.hits && !target.hitsMax) || (target.hits === target.hitsMax)) {
     targets = creep.room.find(FIND_STRUCTURES, {
       filter(s) {
-         return s.hits < s.hitsMax * 0.85;
+         return s.hits < s.hitsMax * percent;
       }
     });
     target = creep.pos.findClosestByRange(targets);
   }
 
+  const range = creep.pos.getRangeTo(target);
   if (target && target.hits < target.hitsMax) {
-    const range = creep.pos.getRangeTo(target);
     if (range > 3) {
       creep.routeTo(target, { range: 3 });
     } else {

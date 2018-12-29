@@ -48,14 +48,30 @@ export default function* pickup(creep, {
       ),
     }).length > 0) {
       target = findBunkerEnergy(creep);
-      if (!target) {
-        const targets = creep.room.find(FIND_STRUCTURES, {
-          filter(structure) {
-            return (structure.structureType === STRUCTURE_STORAGE || structure.structureType === STRUCTURE_CONTAINER) && structure.store[RESOURCE_ENERGY] > 0;
+      if (!target && !hostiles) {
+        const energySources = creep.room.find(FIND_DROPPED_RESOURCES, {
+          filter(resource) {
+            return resource.resourceType === RESOURCE_ENERGY && resource.amount > 50;
           }
         });
-        if (targets.length) {
-          target = creep.pos.findClosestByRange(targets);
+        const tombstones = creep.room.find(FIND_TOMBSTONES, {
+          filter(tombstone) {
+            return tombstone.store[RESOURCE_ENERGY] > 0;
+          }
+        });
+        target = creep.pos.findClosestByRange([...energySources, ...tombstones]);
+        if (target && target.pos.getRangeTo(creep.pos) > 10) {
+          target = null;
+        }
+        if (!target) {
+          const targets = creep.room.find(FIND_STRUCTURES, {
+            filter(structure) {
+              return (structure.structureType === STRUCTURE_STORAGE || structure.structureType === STRUCTURE_CONTAINER) && structure.store[RESOURCE_ENERGY] > 0;
+            }
+          });
+          if (targets.length) {
+            target = creep.pos.findClosestByRange(targets);
+          }
         }
       }
     }

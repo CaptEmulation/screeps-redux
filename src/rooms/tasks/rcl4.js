@@ -1,4 +1,3 @@
-import towerDefense from './towerDefense';
 import {
   ensureBuilder,
   ensureQueen,
@@ -15,17 +14,16 @@ import {
   hasTask,
 } from '../../utils/matchers';
 
-export default function* rcl3(room, {
+export default function* rcl4(room, {
   priority,
   subTask,
   context,
   done,
 }) {
   yield priority();
-  yield subTask(towerDefense);
-  if (_.get(room, 'memory.bunker.anchor') && Game.time % 25 === 0) {
+  if (_.get(room, 'memory.bunker.anchor') && Game.time % 2 === 0) {
     enhanceSources(room);
-    placeConstructionSites(room, room.memory.bunker.anchor, 3);
+    placeConstructionSites(room, room.memory.bunker.anchor, 4);
     if (_.get(room, 'memory.bunker.containers.length') ===  1) {
       ensureQueen(room);
       ensureDropMiner(room);

@@ -1,5 +1,5 @@
 
-const LOOP_PROTECTION = 5;
+const MAX_ITERATIONS = 10;
 const PRIORITY = 'PRIORITY';
 const SLEEP = 'SLEEP';
 const DONE = 'DONE';
@@ -36,6 +36,14 @@ function pop(task) {
     myTask = nextTask;
   }
   delete myTask.subTask;
+}
+
+function updateTaskFromContext(myTask, context) {
+  Object.assign(myTask, context);
+  // Remove any deleted props
+  _.difference(Object.keys(myTask), Object.keys(context)).forEach(key => {
+    delete myTask[key];
+  })
 }
 
 function runTasks(gameObjectWithMemory, tasks, handlers) {
@@ -89,7 +97,16 @@ function runTasks(gameObjectWithMemory, tasks, handlers) {
     };
   });
   const priorityResults = taskGens.map(({ name, gen, context, task, myTask }, index) => {
-    const result = gen.next();
+    let result
+    try {
+      result = gen.next();
+    } catch (e) {
+      console.log(`Error running task ${name} while getting priority`, e);
+      result = {
+        done: true,
+      };
+    }
+    updateTaskFromContext(myTask, context);
     if (result.done) {
       return { task: tasks[index], priority: Infinity };
     }
@@ -118,7 +135,15 @@ function runTasks(gameObjectWithMemory, tasks, handlers) {
         if (!(gen && gen.next)) {
           throw new Error(`Not a generator? ${JSON.stringify(highestPriorityTask)}`);
         }
-        result = gen.next(subTaskResults);
+        try {
+          result = gen.next(subTaskResults);
+        } catch (e) {
+          console.log(`Error running task ${myTask.action}`, e);
+          result = {
+            value: DONE,
+            done: true,
+          };
+        }
         if (result.value === DONE) {
           pop(task);
           canRunMore = true;
@@ -130,11 +155,7 @@ function runTasks(gameObjectWithMemory, tasks, handlers) {
           subTaskResults = null;
         }
       } while(!result.done);
-      Object.assign(myTask, context);
-      // Remove any deleted props
-      _.difference(Object.keys(myTask), Object.keys(context)).forEach(key => {
-        delete myTask[key];
-      })
+      updateTaskFromContext(myTask, context);
       return [myTask, canRunMore && resolveTask(task).myTask !== myTask];
     }
   }
@@ -150,12 +171,12 @@ export default function runTask(gameObjectWithMemory, handlers, memoryGetter) {
   let prevTaskTask;
   let lastRunTask = 0;
   let count = 0;
-  while(canRunMore && count < LOOP_PROTECTION) {
+  while(canRunMore && count < MAX_ITERATIONS) {
     prevTaskTask = lastRunTask;
     [lastRunTask, canRunMore] = runTasks(gameObjectWithMemory, tasks, handlers);
     count++;
   }
-  if (count >= LOOP_PROTECTION) {
-    console.log(`Loop detected in tasks for ${gameObjectWithMemory}`);
+  if (count >= MAX_ITERATIONS) {
+    console.log(`Too many iterations of tasks for ${gameObjectWithMemory}.  Simplify!`);
   }
 }

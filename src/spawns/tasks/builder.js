@@ -33,6 +33,8 @@ export default function* builder(spawn, {
           tasks: [{
             action: 'builder',
             early: true,
+          }, {
+            action: 'recycleSelf',
           }],
         },
       });

@@ -27,6 +27,15 @@ export default function* supplyBunker(creep, {
     }
   }
 
+  if (!target) {
+    targets = creep.room.find(FIND_MY_STRUCTURES, {
+      filter: and(targetMatchers.isStorage, needsEnergy),
+    });
+    if (targets.length) {
+      target = creep.pos.findClosestByRange(targets);
+    }
+  }
+
   if (target) {
     const range = creep.pos.getRangeTo(target);
     if (range > 1) {

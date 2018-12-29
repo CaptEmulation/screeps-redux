@@ -2,6 +2,7 @@ import {
   target as targetMatchers,
 } from '../../utils/matchers';
 import {
+  getBunkerLocation,
   getStructureOfTypeMapForBunkerAt,
 } from '../planner';
 
@@ -34,7 +35,7 @@ export default function* scan(room, {
       id: source.id,
     }));
   }
-  if (room.controller && room.controller.my) {
+  if (room.controller) {
     const noContainerSources = room.memory.sources.filter(s => !s.containerId);
 
     if (noContainerSources.length) {
@@ -58,7 +59,7 @@ export default function* scan(room, {
     if (!room.memory.bunker) {
       room.memory.bunker = {};
     }
-    if (!room.memory.bunker.anchor) {
+    if (room.memory.bunker.anchor) {
       const spawns = room.find(FIND_MY_SPAWNS);
       if (spawns.length) {
         const spawn = spawns[0];
@@ -67,12 +68,14 @@ export default function* scan(room, {
         room.memory.bunker.anchor = getBunkerLocation(room, true);
       }
     }
-    const containerPositions = getStructureOfTypeMapForBunkerAt(room.memory.bunker.anchor, room, STRUCTURE_CONTAINER, room.controller.level);
-    room.memory.bunker.containers = [];
-    for (let containerPos of containerPositions) {
-      const containers = containerPos.lookFor(LOOK_STRUCTURES);
-      if (containers.length) {
-        room.memory.bunker.containers.push(containers[0].id);
+    if (room.memory.bunker.anchor) {
+      const containerPositions = getStructureOfTypeMapForBunkerAt(room.memory.bunker.anchor, room, STRUCTURE_CONTAINER, room.controller.level);
+      room.memory.bunker.containers = [];
+      for (let containerPos of containerPositions) {
+        const containers = containerPos.lookFor(LOOK_STRUCTURES);
+        if (containers.length) {
+          room.memory.bunker.containers.push(containers[0].id);
+        }
       }
     }
   }

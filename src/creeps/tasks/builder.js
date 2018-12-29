@@ -1,27 +1,33 @@
 import construct from './construct';
 import harvest from './harvest';
 import fillFromBunker from './fillFromBunker';
+import fillFromContainer from './fillFromContainer';
 
 export default function* builder(creep, {
   priority,
+  sleep,
   done,
   subTask,
   context,
 }) {
-  yield priority();
+
   const myConstructionSites = creep.room.find(FIND_MY_CONSTRUCTION_SITES);
+  if (myConstructionSites.length) {
+    yield priority();
+  } else {
+    yield sleep();
+  }
   if (_.sum(creep.carry) === creep.carryCapacity && myConstructionSites.length) {
     yield subTask(construct);
   } else {
     if (_.get(creep, 'room.memory.bunker.containers')) {
-      const results = yield subTask(fillFromBunker);
-      if (results.noTarget) {
-        yield subTask(harvest);
+      if ((yield subTask(fillFromBunker)).noTarget) {
+        if ((yield subTask(fillFromContainer)).noTarget) {
+          yield subTask(harvest);
+        }
       }
-    } else if (context.early){
-      return yield subTask(harvest);
-    } else {
-      throw new Exception('Please tell me how to get stuff for midgame');
+    } else if ((yield subTask(fillFromContainer)).noTarget) {
+      yield subTask(harvest);
     }
   }
 }

@@ -24,7 +24,7 @@ export default function* dropMiner(spawn, {
   if (!spawn.spawning) {
     const allCreeps = Object.values(Game.creeps);
     const dropMinerCreeps = allCreeps.filter(hasTask('dropMiner'));
-    const sources = spawn.room.memory.sources;
+    const sources = _.get(spawn, 'room.memory.sources', []);
 
     if (!context.nextSourceId  && sources && sources.length) {
       const canMoves = [];
@@ -49,23 +49,25 @@ export default function* dropMiner(spawn, {
       }
 
       for (let { creep, from: fromSource } of canMoves) {
-        console.log(JSON.stringify({ creep: creep.name, fromSource }));
         const remainingSources = spawn.room.memory.sources.filter(s => s.pendingSpots > 0 && s.id !== fromSource);
-        console.log(JSON.stringify(remainingSources));
         const closest = creep.pos.findClosestByRange(remainingSources.map(s => Game.getObjectById(s.id)));
         if (closest) {
-          console.log('move to', closest);
           const closestRemaningSource = remainingSources.find(s => s.id === closest.id);
           const dropMinerTask = creep.memory.tasks.find(t => t.action === 'dropMiner');
           dropMinerTask.sourceId = closest.id;
           closestRemaningSource.pendingSpots--;
-          closestRemaningSource.workParts += creep.body.find(b => b.type === WORK).length;
+          closestRemaningSource.workParts += creep.body.filter(b => b.type === WORK).length;
         }
       }
     }
 
-    if (_.get(spawn, 'room.memory.sources', []).find(s => s.workParts < 5)) {
-      yield priority();
+    const sourceDef = sources.find(s => s.workParts < 5);
+    const totalWorkAvailable = dropMinerCreeps.reduce((sum, creep) => {
+      return sum + creep.body.filter(b => b.type === WORK).length
+    }, 0);
+    const totalWorkNeeded = sources.length * 5;
+    if (sourceDef && totalWorkAvailable < totalWorkNeeded) {
+      yield priority(dropMinerCreeps.length == 0 ? -1 : 0);
       let body;
       if (calcCreepCost(large) <= spawn.room.energyAvailableCapacity && (!context.wait || context.wait < 25)) {
         body = large;
@@ -79,10 +81,18 @@ export default function* dropMiner(spawn, {
             sourceId: context.nextSourceId,
           }, {
             action: 'renewSelf',
+          }, {
+            action: 'recycleSelf'
           }],
         },
       });
       if (!err) {
+        sourceDef.pendingSpots--;
+        if (body === large) {
+          sourceDef.workParts += 5;
+        } else {
+          sourceDef.workParts += 2;
+        }
         delete context.wait;
         delete context.nextSourceId;
       } else if (err === ERR_NOT_ENOUGH_ENERGY) {

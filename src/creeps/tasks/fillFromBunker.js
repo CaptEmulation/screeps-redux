@@ -14,7 +14,7 @@ export default function* fillFromBunker(creep, {
   }
   let targets;
   let target = Game.getObjectById(creep.memory.target);
-  if (!target || target.store[RESOURCE_ENERGY] === 0) {
+  if (!target || !target.store || target.store[RESOURCE_ENERGY] === 0) {
     target = null;
     delete creep.memory.target;
     if (_.get(creep, 'room.memory.bunker.containers')) {

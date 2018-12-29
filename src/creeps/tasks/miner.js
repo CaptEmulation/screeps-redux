@@ -10,9 +10,12 @@ export default function* upgrader(creep, {
   subTask,
   context,
 }) {
-  yield priority();
-  if (_.sum(creep.carry) === creep.carryCapacity && creep.room.controller && creep.room.controller.my) {
-    if ((yield subTask(fix)).noTarget) {
+  yield priority(1);
+  const myConstructionSites = creep.room.find(FIND_MY_CONSTRUCTION_SITES);
+  if (_.sum(creep.carry) === creep.carryCapacity) {
+    if ((yield subTask(fix, {
+      percent: 0.95
+    })).noTarget) {
       yield subTask(upgradeController);
     }
   } else {

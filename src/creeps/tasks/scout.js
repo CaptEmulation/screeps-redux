@@ -1,10 +1,15 @@
 import {
-  exits as roomExits
-} from '../../utils/room';
-function pathToRoom(roomName) {
+  hasTask,
+} from '../../utils/matchers';
+
+function pathToRoom(scout, roomName) {
   const roomExit = scout.room.findExitTo(roomName);
   const path = scout.pos.findClosestByRange(roomExit);
   return path;
+}
+
+function roomExits(roomName) {
+  return Object.values(Game.map.describeExits(roomName));
 }
 
 export default function* scout(scout, {
@@ -15,27 +20,31 @@ export default function* scout(scout, {
   yield priority(context.priority);
   const roomName = scout.room.name;
   if (context.lastRoomIn !== scout.room.name) {
-    context.visisted = context.visisted || [];
-    if (!context.visisted.includes(roomName)) {
-      context.visisted.push(roomName);
+    context.visited = context.visited || [];
+    if (!context.visited.includes(roomName)) {
+      context.visited.push(roomName);
     }
     const exitsSeen = context.exitsSeen = context.exitsSeen || {};
     exitsSeen[roomName] = _.union(exitsSeen[roomName] || [], roomExits(roomName));
+    if (!hasTask('scan')(Game.rooms[roomName])) {
+      Game.rooms[roomName].addTask('remote');
+    }
     const availableRoomNames = roomExits(roomName)
-      .filter(n => !scout.memory.visited.includes(n));
-    console.log('Scout available rooms', JSON.stringify(availableRoomNames));
+      .filter(n => !context.visited.includes(n));
     const availablePaths = availableRoomNames
-      .map(pathToRoom);
-    console.log('Scout paths', JSON.stringify(availablePaths))
-    const shortestPath = _.minBy(availablePaths, p => p.length);
-    console.log('Scout shortest path', JSON.stringify(shortestPath))
+      .map(pathToRoom.bind(null, scout));
+    const shortestPath = _.minBy(availablePaths, p => scout.pos.getRangeTo(p));
+
     if (shortestPath) {
       context.path = shortestPath;
     } else {
       // Search for an available path
-      const knownExits = Object.keys(context.exitsSeen);
-      const visistedRooms = context.visisted;
-      const unseenRooms = _.difference(knownExits, visistedRooms);
+      const knownExits = Object.keys(context.exitsSeen).reduce((exits, roomName) => {
+        exits.push(...Object.values(context.exitsSeen[roomName]));
+        return exits;
+      }, []);
+      const visitedRooms = context.visited;
+      const unseenRooms = _.difference(knownExits, visitedRooms);
       if (unseenRooms.length) {
         const goToRoom = _.last(unseenRooms);
         const pathResults = PathFinder.search(scout.pos, new RoomPosition(24, 24, goToRoom), {
@@ -51,29 +60,20 @@ export default function* scout(scout, {
     }
     context.lastRoomIn = scout.room.name;
   }
-  if(context.path.length && !RoomPosition.sameCoord(context.lastPos, scout.pos)) {
-    if (context.lastPos) {
-      context.path.shift();
-    }
-    context.lastPos = { x: scout.pos.x, y: scout.pos.y };
-  }
-
-  if (context.path.length) {
-    let nextPos = context.path[0];
-    nextPos = new RoomPosition(nextPos.x, nextPos.y, roomName: scout.room.name);
+  if (context.path) {
+    let nextPos = new RoomPosition(context.path.x, context.path.y, context.path.roomName);
     if (nextPos.getRangeTo(scout.pos) > 1) {
       // We teleported from our path, correct...
       scout.routeTo(nextPos);
     } else {
-      const direction = scout.pos.getDirectionTo(newPos);
-      circle(newPos, "green");
-      const err = creep.move(direction);
+      const direction = scout.pos.getDirectionTo(nextPos);
+      //circle(newPos, "green");
+      const err = scout.move(direction);
       if (err) {
         console.log('Scout move error', err);
       }
     }
   } else {
-    delete context.lastPos;
     yield done();
   }
 }

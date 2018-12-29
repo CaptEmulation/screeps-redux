@@ -21,8 +21,8 @@ export default function* upgrader(spawn, {
     context.needs.upgrader = max - upgraderCreeps.length;
     if (context.needs.upgrader > 0) {
       yield priority();
-      const body = [MOVE, MOVE, CARRY, CARRY, WORK, WORK, WORK, WORK];
-      const err = spawn.spawnCreep(body, `${sillyname()} C.P.U. Esquire`, {
+      const body = [MOVE, MOVE, MOVE, CARRY, CARRY, WORK, WORK, WORK, WORK];
+      const err = spawn.spawnCreep(body, `${sillyname()} CPU Esquire`, {
         memory: {
           tasks: [{
             action: 'upgrader',
