@@ -6,8 +6,6 @@ import {
 export default function* supplySpawn(creep, {
   priority,
   done,
-  moveTo,
-  subTask,
   context,
 }) {
   yield priority();
