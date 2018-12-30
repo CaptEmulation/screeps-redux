@@ -23,19 +23,34 @@ export default function* scan(room, {
       id: sk.id,
     }));
   }
-  if (_.isUndefined(room.memory.sources)) {
+  if (_.isUndefined(room.memory.sources) || room.memory.sources.find(s => !s.pos)) {
     // Look for safe sources
     const sks = room.memory.sk.map(a => Game.getObjectById(a.id));
-    const sources = room.find(FIND_SOURCES, {
-      filter(source) {
-        return !sks.find(sk => sk.pos.getRangeTo(source) < 9);
-      },
-    });
+    const sources = room.find(FIND_SOURCES);
     room.memory.sources = sources.map(source => ({
       id: source.id,
+      sk:  sks.find(sk => sk.pos.getRangeTo(source) < 9),
+      pos: [source.pos.x, source.pos.y]
     }));
   }
+  if (_.isUndefined(room.memory.mineral)) {
+    // Look for safe sources
+    const sks = room.memory.sk.map(a => Game.getObjectById(a.id));
+    const minerals = room.find(FIND_MINERALS);
+    room.memory.mineral = minerals.map(mineral => ({
+      id: mineral.id,
+      sk:  sks.find(sk => sk.pos.getRangeTo(mineral) < 9),
+      pos: [mineral.pos.x, mineral.pos.y]
+    }));
+  }
+
   if (room.controller) {
+    if (_.isUndefined(room.memory.controller)) {
+      room.memory.controller = {
+        pos: [room.controller.pos.x, room.controller.pos.y],
+        id: room.controller.id,
+      };
+    }
     const noContainerSources = room.memory.sources.filter(s => !s.containerId);
 
     if (noContainerSources.length) {

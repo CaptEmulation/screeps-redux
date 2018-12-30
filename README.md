@@ -14,12 +14,24 @@ Enter the correct source and mineral locations for a room.  If necessary respawn
 Add the `bootstrap` task to the new room.
 
 ```
-Game.rooms['W32N45'].addTask('bootstrap');
+Game.rooms['roomName'].addTask('bootstrap');
 ```
 
 That's it!  As the room controller is leveled up, the "bunker" will have its buildings placed automatically.  However, roads outside the bunker and walls/ramparts are not yet placed automatically.  Placing construction sites will spawn builders that will construct and then recycle themselves when done.
 
 For RCL1 and RCL2, "pioneer" creeps will be spawned to harvest, supply spawn with energy and upgrade controller.  At RCL3 containers will be automatically be constructed at the controller and sources.  When those are done then pioneers will recycle themselves to be replaced by separate upgraders, static miners and haulers.
+
+## Claiming additional rooms
+
+A room can be instructed to create a claimer and pioneers for a new room with the following command
+
+```
+Game.rooms['rcl3 or greater room'].addTask('claim', {
+  targets: ['roomName to claim', 'another room if you are feeling greedy']
+});
+```
+
+That's it!  The room claim task will instruct the spawner to build claimers and pioneers targeting each room to claim the room and create a new bunker layout in the remote room.  The source room will continue to support the remote room with pioneers until it gets to rcl3.
 
 ## Get out of the way
 

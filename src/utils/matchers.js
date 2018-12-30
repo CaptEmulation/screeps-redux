@@ -119,10 +119,21 @@ export const needsEnergy = createMatcher({
   }
 });
 
-export function hasTask(name) {
+function recursivelyLookForSubTask(task, action, matcher) {
+  let result;
+  if (task.subTask) {
+    result = recursivelyLookForSubTask(task.subTask, action, matcher);
+  }
+  if (!result) {
+    result = task.action === action && (!matcher || matcher(task));
+  }
+  return result;
+}
+
+export function hasTask(name, matcher) {
   return createMatcher({
     matcher(target) {
-      return _.get(target, 'memory.tasks', []).find(t => t.action === name);
+      return _.get(target, 'memory.tasks', []).find(t => recursivelyLookForSubTask(t, name, matcher));
     },
     describe(target, m) {
       return `hasTask(${target}) === ${m(target)}`;
@@ -193,6 +204,7 @@ export const target = {
   isExtension: isStructureOfType(STRUCTURE_EXTENSION),
   isMyExtension: and(isStructureOfType(STRUCTURE_EXTENSION), isMine),
   isContainer: isStructureOfType(STRUCTURE_CONTAINER),
+  isController: isStructureOfType(STRUCTURE_CONTROLLER),
   isStorage: isStructureOfType(STRUCTURE_STORAGE),
   isMyStorage: and(isStructureOfType(STRUCTURE_STORAGE), isMine),
   isMyContainer: and(isStructureOfType(STRUCTURE_CONTAINER), isMine),

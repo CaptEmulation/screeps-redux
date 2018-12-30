@@ -2,8 +2,12 @@ import upgradeController from './upgradeController';
 import fix from './fix';
 import harvest from './harvest';
 import renewSelf from './renewSelf';
+import construct from './construct';
+import pickup from './pickup';
 import supplySpawn from './supplySpawn';
 import {
+  and,
+  not,
   hasTask,
 } from '../../utils/matchers';
 import {
@@ -16,18 +20,26 @@ export default function* pioneer(creep, {
   context,
 }) {
   yield priority();
-  if (Game.time % 50) {
-    // Check if we still need to live....
-    if (calcCreepCost([MOVE, MOVE, CARRY, WORK]) + creep.cost <= creep.room.energyAvailable) {
-      _.remove(creep.memory.tasks, task => task.action === 'renewSelf');
+  if (context.room && context.room !== creep.room.name) {
+    if (creep.carry[RESOURCE_ENERGY] < creep.carryCapacity) {
+      yield subTask(pickup);
+    } else {
+      creep.routeTo(new RoomPosition(24, 24, context.room));
     }
-  }
-  if (_.sum(creep.carry) === creep.carryCapacity) {
-    let results = yield subTask(supplySpawn);
-    if (results.noTarget) {
-      results = yield subTask(fix);
-      if (results.noTarget) {
-        yield subTask(upgradeController);
+  } else if (_.sum(creep.carry) === creep.carryCapacity) {
+    if ((yield subTask(supplySpawn)).noTarget) {
+      if ((yield subTask(fix)).noTarget) {
+        // If there are no construct creeps in room, then also look for construct targets
+        const nonPioneerConstructCreeps = creep.room.find(FIND_MY_CREEPS).filter(
+          and(
+            not(hasTask('pioneer')),
+            hasTask('construct'),
+          ),
+        );
+        const controllerDowngrade = _.get(creep, 'room.controller.my') && _.get(creep, 'room.controller.ticksToDowngrade') < 1000;
+        if (controllerDowngrade || nonPioneerConstructCreeps.length || (yield subTask(construct)).noTarget) {
+          yield subTask(upgradeController);
+        }
       }
     }
   } else {

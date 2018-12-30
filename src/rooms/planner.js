@@ -200,7 +200,11 @@ export function placeConstructionSites(room, anchor, level) {
       for (let pos of map[structureType]) {
         const buildable = canBuild(structureType, pos);
         if (buildable) {
-          let result = pos.createConstructionSite(structureType);
+          let name;
+          if (structureType === STRUCTURE_SPAWN) {
+            name = `Spawn${Object.values(Game.spawns).length + 1}`;
+          }
+          let result = pos.createConstructionSite(structureType, name);
           if (result != OK) {
 						console.log(`${room.name}: couldn't create construction site of type ` +
 									`"${structureType}" at ${pos}. Result: ${result}`);

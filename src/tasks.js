@@ -101,7 +101,7 @@ function runTasks(gameObjectWithMemory, tasks, handlers) {
     try {
       result = gen.next();
     } catch (e) {
-      console.log(`Error running task ${name} while getting priority`, e);
+      console.log(`Error running task ${name} while getting priority`, e, e.stack);
       result = {
         done: true,
       };
@@ -138,7 +138,7 @@ function runTasks(gameObjectWithMemory, tasks, handlers) {
         try {
           result = gen.next(subTaskResults);
         } catch (e) {
-          console.log(`Error running task ${myTask.action}`, e);
+          console.log(`Error running task ${myTask.action}`, e, e.stack);
           result = {
             value: DONE,
             done: true,

@@ -12,7 +12,7 @@ Spawn.prototype.addTask = function addSpawnTask(action, opts) {
     };
     this.memory.tasks.push(task);
   } else {
-    const task = this.memory.tasks.find(t => t.action === action);
+    task = this.memory.tasks.find(t => t.action === action);
     task = Object.assign(task, opts);
   }
   return task;

@@ -17,7 +17,7 @@ export default function* rcl2(room, {
   done,
 }) {
   yield priority();
-  if (_.get(room, 'memory.bunker.anchor') && Game.time % 25 === 0) {
+  if (_.get(room, 'memory.bunker.anchor') && Game.time % 2 === 0) {
     placeConstructionSites(room, room.memory.bunker.anchor, 2)
     if (_.get(room, 'memory.bunker.containers.length') ===  1) {
       ensureQueen(room);

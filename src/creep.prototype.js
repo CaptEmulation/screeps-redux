@@ -433,7 +433,7 @@ Object.defineProperty(Creep.prototype, 'cost', {
     return calcCreepCost(this.body.map(b => b.type));
   }
 });
-Creep.prototype.addTask = function addCreepTask(action, opts) { 
+Creep.prototype.addTask = function addCreepTask(action, opts) {
   this.memory.tasks = this.memory.tasks || [];
   let task;
   if (!hasTask(action)(this)) {
@@ -443,7 +443,7 @@ Creep.prototype.addTask = function addCreepTask(action, opts) {
     };
     this.memory.tasks.push(task);
   } else {
-    const task = this.memory.tasks.find(t => t.action === action);
+    task = this.memory.tasks.find(t => t.action === action);
     task = Object.assign(task, opts);
   }
   return task;

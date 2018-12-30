@@ -3,9 +3,6 @@ import rcl2 from './rcl2';
 import rcl3 from './rcl3';
 import rcl4 from './rcl4';
 import scan from './scan';
-import {
-  getBunkerLocation,
-} from '../planner';
 
 export default function* bootstrap(room, {
   priority,

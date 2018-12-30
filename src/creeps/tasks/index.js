@@ -1,4 +1,5 @@
 export { default as builder } from './builder';
+export { default as claimer } from './claimer';
 export { default as construct } from './construct';
 export { default as dropMiner } from './dropMiner';
 export { default as dropResources } from './dropResources';
@@ -13,6 +14,7 @@ export { default as queen } from './queen';
 export { default as recycleSelf } from './recycleSelf';
 export { default as renewSelf } from './renewSelf';
 export { default as scout } from './scout';
+export { default as sign } from './sign';
 export { default as supplySpawn } from './supplySpawn';
 export { default as supplyTower } from './supplyTower';
 export { default as supplyBunker } from './supplyBunker';
