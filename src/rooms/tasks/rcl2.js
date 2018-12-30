@@ -28,6 +28,9 @@ export default function* rcl2(room, {
       }
     }
   }
+  if (Game.time % 19) {
+    room.find(FIND_MY_SPAWNS).forEach(spawn => spawn.addTask('bootstrap'));
+  }
   ensureBuilder(room);
   yield done();
 }

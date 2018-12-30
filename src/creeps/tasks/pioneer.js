@@ -43,6 +43,8 @@ export default function* pioneer(creep, {
       }
     }
   } else {
-    return yield subTask(harvest);
+    if (!context.room || (yield subTask(pickup)).noTarget) {
+      return yield subTask(harvest);
+    }
   }
 }
