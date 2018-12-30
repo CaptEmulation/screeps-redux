@@ -27,10 +27,7 @@ export function ensureSpawnTask(room, task, context = {}) {
   const spawns = room.find(FIND_MY_SPAWNS);
   const spawnsWithoutBuilder = spawns.filter(not(hasTask(task)));
   if (spawnsWithoutBuilder.length) {
-    spawnsWithoutBuilder.forEach(spawn => spawn.addTask({
-      action: task,
-      ...context,
-    }));
+    spawnsWithoutBuilder.forEach(spawn => spawn.addTask(task, context));
   }
   for (let spawn of spawns) {
     spawn.memory.tasks
