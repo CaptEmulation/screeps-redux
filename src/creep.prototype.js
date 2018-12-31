@@ -117,7 +117,7 @@ function positionAtDirection(origin, direction) {
   try {
     return new RoomPosition(x, y, origin.roomName);
   } catch (e) {
-    console.log('Failed to set position', 'x =>', x, 'y =>', y, 'origin.x =>', origin.x, 'origin.y =>', origin.y, 'direction =>', direction, 'origin =>', origin && origin.roomName, e);
+    console.log('Failed to set position', 'x =>', x, _.isNumber(x), 'y =>', y, 'origin.x =>', origin.x, 'origin.y =>', origin.y, 'direction =>', direction, 'origin =>', origin && origin.roomName, e);
   }
 }
 

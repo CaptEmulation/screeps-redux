@@ -23,7 +23,7 @@ export default function* fillFromContainer(creep, {
       filter: and(targetMatchers.isContainer,  c => c.store && c.store[RESOURCE_ENERGY] > 0)
     });
     if (targets.length) {
-      target = creep.pos.findClosestByRange(targets);
+      target = _.maxBy(targets, target => target.store[RESOURCE_ENERGY] / target.pos.getRangeTo(creep.pos));
     }
   }
   if (target) {

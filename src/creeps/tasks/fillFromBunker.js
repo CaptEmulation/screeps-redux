@@ -14,6 +14,10 @@ export default function* fillFromBunker(creep, {
   }
   let targets;
   let target = Game.getObjectById(creep.memory.target);
+  if (!(target instanceof StructureContainer || target instanceof StructureStorage)) {
+    delete creep.memory.target;
+    target = null;
+  }
   if (!target || !target.store || target.store[RESOURCE_ENERGY] === 0) {
     target = null;
     delete creep.memory.target;
@@ -22,7 +26,7 @@ export default function* fillFromBunker(creep, {
         .map(c => Game.getObjectById(c))
         .filter(c => !!c && c.store[RESOURCE_ENERGY] > 0);
       if (targets.length) {
-        target = creep.pos.findClosestByRange(targets);
+        target = _.maxBy(targets, target => target.store[RESOURCE_ENERGY] / target.pos.getRangeTo(creep.pos));
       }
     }
   }

@@ -27,14 +27,15 @@ export default function* supplyBunker(creep, {
     }
   }
 
-  if (!target) {
-    targets = creep.room.find(FIND_MY_STRUCTURES, {
-      filter: and(targetMatchers.isStorage, needsEnergy),
-    });
-    if (targets.length) {
-      target = creep.pos.findClosestByRange(targets);
-    }
-  }
+  // Needs a new task... causes weird behavior here
+  // if (!target) {
+  //   targets = creep.room.find(FIND_MY_STRUCTURES, {
+  //     filter: and(targetMatchers.isStorage, needsEnergy),
+  //   });
+  //   if (targets.length) {
+  //     target = creep.pos.findClosestByRange(targets);
+  //   }
+  // }
 
   if (target) {
     const range = creep.pos.getRangeTo(target);
@@ -43,6 +44,7 @@ export default function* supplyBunker(creep, {
     } else {
       const amount = Math.min(creep.carry[RESOURCE_ENERGY], target.storeCapacity - _.sum(target.store));
       creep.transfer(target, RESOURCE_ENERGY, amount);
+      yield done();
       delete creep.memory.target;
     }
   } else {
