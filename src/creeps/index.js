@@ -43,7 +43,11 @@ createSaga(
   function* () {
     yield takeEvery(LOOP, function* creepRunTasks() {
       for (let creep of Object.values(Game.creeps)) {
-        yield call(runTasks, creep, handlers);
+        try {
+          yield call(runTasks, creep, handlers);
+        } catch (e) {
+          console.log('Creep exception', e, e.stack);
+        }
       }
     })
   }

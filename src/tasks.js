@@ -52,10 +52,11 @@ function runTasks(gameObjectWithMemory, tasks, handlers) {
   const taskDone = [];
   const taskGens = tasks.map((task, index) => {
     const { myTask, context } = resolveTask(task);
-    const handler = handlers[myTask.action];
+    let handler = handlers[myTask.action];
 
     if (!handler) {
-      throw new Error(`Task ${myTask.action} is not defined for ${gameObjectWithMemory}`);
+      console.log(`Task ${myTask.action} is not defined for ${gameObjectWithMemory}`);
+      handler = function* (t, { sleep }) { yield sleep(); };
     }
 
     function priority(num) {
@@ -86,7 +87,7 @@ function runTasks(gameObjectWithMemory, tasks, handlers) {
       task,
       myTask,
       context,
-      gen: handler(gameObjectWithMemory, {
+      gen: handler && handler(gameObjectWithMemory, {
         priority,
         sleep,
         done,
@@ -97,26 +98,29 @@ function runTasks(gameObjectWithMemory, tasks, handlers) {
     };
   });
   const priorityResults = taskGens.map(({ name, gen, context, task, myTask }, index) => {
-    let result
-    try {
-      result = gen.next();
-    } catch (e) {
-      console.log(`Error running task ${name} while getting priority`, e, e.stack);
-      result = {
-        done: true,
-      };
+    let result;
+    if (gen) {
+      try {
+        result = gen.next();
+      } catch (e) {
+        console.log(`Error running task ${name} while getting priority`, e, e.stack);
+        result = {
+          done: true,
+        };
+      }
+      updateTaskFromContext(myTask, context);
+      if (result.done) {
+        return { task: tasks[index], priority: Infinity };
+      }
+      if (!(result.value === SLEEP || result.value === PRIORITY || _.isNumber(taskPriorities[index]))) {
+        throw new Error(`Task handler ${name} did not yield a numeric priority.  Instead yielded ${result.value} with priority ${taskPriorities[index]}`);
+      }
     }
-    updateTaskFromContext(myTask, context);
-    if (result.done) {
-      return { task: tasks[index], priority: Infinity };
-    }
-    if (!(result.value === SLEEP || result.value === PRIORITY || _.isNumber(taskPriorities[index]))) {
-      throw new Error(`Task handler ${name} did not yield a numeric priority.  Instead yielded ${result.value} with priority ${taskPriorities[index]}`);
-    }
+
     return {
       name,
       gen,
-      priority: taskPriorities[index],
+      priority: gen ? taskPriorities[index] : -Infinity,
       index,
       context,
       task,

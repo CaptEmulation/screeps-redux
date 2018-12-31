@@ -21,7 +21,7 @@ export default function* towerDefense(room, {
   if (hostiles.length === 0) {
     yield sleep();
   }
-  yield priority(-hostiles.length);
+  yield priority(-(hostiles.length * 10));
   const towers = room.find(FIND_STRUCTURES, {
     filter: (target) => target.structureType === STRUCTURE_TOWER,
   });

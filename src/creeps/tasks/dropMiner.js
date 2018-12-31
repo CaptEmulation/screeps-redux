@@ -10,12 +10,13 @@ export default function* dropMiner(creep, {
   context,
 }) {
   if (context.waiting > 10) {
-    context.sleepUntil = Game.time + 50;
+    context.sleepUntil = Game.time + 20;
   }
   if (context.sleepUntil) {
     if (context.sleepUntil > Game.time) {
       return yield sleep();
     } else {
+      delete context.waiting;
       delete context.sleepUntil;
     }
   }

@@ -3,6 +3,7 @@ import {
   calcCreepCost,
 } from '../../utils/creeps';
 import {
+  and,
   hasTask,
   target as targetMatchers,
 } from '../../utils/matchers';
@@ -23,27 +24,36 @@ export default function* queen(spawn, {
 }) {
   if (!spawn.spawning) {
     const allCreeps = Object.values(Game.creeps);
-    const queenCreeps = allCreeps.filter(hasTask('queen'));
+    const queenCreeps = allCreeps.filter(and(hasTask('queen'), c => c.room === spawn.room));
     const max = Math.floor((spawn.room.find(FIND_STRUCTURES, {
       filter: targetMatchers.isContainer,
     }).length) / 2)
     if (max - queenCreeps.length > 0) {
       yield priority();
-      const level = spawn.room.controller.level - 1;
+
+      let level = spawn.room.controller.level - 1;
       if (level > 0 && context.waiting > 100) {
         level -= Math.floor(context.waiting / 100);
       }
       const body = builds[Math.max(0, level)];
+      let tasks = [{
+        action: 'queen',
+      }]
+      if (level === spawn.room.controller.level - 1) {
+        tasks.push({
+          action: 'renewSelf',
+        });
+      } else {
+        tasks.push({
+          action: 'recycleSelf',
+        });
+      }
       const err = spawn.spawnCreep(body, `Queen ${sillyname()}`, {
         memory: {
-          tasks: [{
-            action: 'queen',
-          }, {
-            action: 'renewSelf',
-          }],
+          tasks,
         },
       });
-      
+
       if (!err) {
         delete context.waiting;
       } else if (err === ERR_NOT_ENOUGH_ENERGY) {

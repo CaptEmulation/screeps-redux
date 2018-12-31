@@ -16,12 +16,18 @@ export default function* pioneer(spawn, {
   if (!spawn.spawning) {
     const { targets } = context;
     // Remove targets as they become self sufficient
-    context.targets = context.targets.filter(roomName => !Game.rooms[roomName] || _.get(Game.rooms[roomName], 'controller.level', 0) < 3);
+    context.targets = context.targets.filter(roomName => {
+      if (!Game.rooms[roomName]) {
+        return true;
+      }
+      if (_.get(Game.rooms[roomName], 'controller.level', 0) < 3) {
+        return true;
+      }
+    });
     context.lastRoom = context.lastRoom || -1;
     const allCreeps = Object.values(Game.creeps);
     const myPioneerCreeps = allCreeps.filter(hasTask('pioneer', t => !!t.room));
-
-    if (myPioneerCreeps.length < 6 * targets.length) {
+    if (myPioneerCreeps.length < (6 * context.targets.length)) {
       yield priority();
       let body = [MOVE, MOVE, MOVE, CARRY, WORK, WORK];
       const additionals = Math.floor(spawn.room.energyAvailable / calcCreepCost(body));

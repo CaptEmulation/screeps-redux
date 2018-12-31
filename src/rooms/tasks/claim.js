@@ -5,13 +5,13 @@ import {
 export default function* claim(room, {
   priority,
   subTask,
+  sleep,
   context,
 }) {
   if (!context.targets) {
     console.log('Need to specify a target rooms to claim')
     yield sleep();
   }
-  yield priority((Game.time % 10) - 10);
 
   const spawns = room.find(FIND_MY_SPAWNS);
   _.last(spawns).addTask('claimer', {
@@ -26,4 +26,5 @@ export default function* claim(room, {
       Game.rooms[roomName].addTask('bootstrap');
     }
   }
+  yield sleep();
 }

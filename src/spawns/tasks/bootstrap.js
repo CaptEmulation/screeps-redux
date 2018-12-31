@@ -3,6 +3,7 @@ import {
   calcCreepCost,
 } from '../../utils/creeps';
 import {
+  and,
   hasTask,
 } from '../../utils/matchers';
 
@@ -15,7 +16,7 @@ export default function* bootstrap(spawn, {
 }) {
   if (!spawn.spawning && spawn.room.memory.sources.length) {
     const allCreeps = Object.values(Game.creeps);
-    const pioneerCreeps = allCreeps.filter(hasTask('pioneer'));
+    const pioneerCreeps = allCreeps.filter(and(hasTask('pioneer'), c => c.room === spawn.room));
     const max = spawn.room.memory.sources.length * 3;
     context.needs = context.needs || {};
     context.needs.pioneers = max - pioneerCreeps.length;

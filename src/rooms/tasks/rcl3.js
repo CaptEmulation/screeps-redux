@@ -12,6 +12,7 @@ import {
   placeSourceContainers,
 } from '../planner';
 import {
+  and,
   hasTask,
 } from '../../utils/matchers';
 
@@ -46,10 +47,18 @@ export default function* rcl3(room, {
             filter: hasTask('bootstrap')
           })
           spawns.forEach(spawn => _.remove(spawn.memory.tasks, task => task.action === 'bootstrap'));
-          Object.values(Game.creeps).filter(hasTask('pioneer')).forEach(creep => creep.addTask({
-            action: 'recycleSelf',
-            priority: -1,
-          }));
+          Object.values(Game.creeps).filter(
+            and(
+              hasTask('pioneer', task => !task.room || task.room === room.name),
+              c => c.room === room,
+              c => Game.creeps[c],
+            )
+          ).forEach(creep => {
+            creep.addTask('recycleSelf', {
+              priority: -1,
+            });
+            creep.removeTask('renewSelf');
+          });
         }
       }
     }

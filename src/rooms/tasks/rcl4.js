@@ -11,6 +11,7 @@ import {
   placeSourceContainers,
 } from '../planner';
 import {
+  and,
   hasTask,
 } from '../../utils/matchers';
 
@@ -21,7 +22,7 @@ export default function* rcl4(room, {
   done,
 }) {
   yield priority();
-  if (_.get(room, 'memory.bunker.anchor') && Game.time % 2 === 0) {
+  if (_.get(room, 'memory.bunker.anchor') && Game.time % 25 === 0) {
     enhanceSources(room);
     placeConstructionSites(room, room.memory.bunker.anchor, 4);
     if (_.get(room, 'memory.bunker.containers.length') ===  1) {
@@ -44,10 +45,18 @@ export default function* rcl4(room, {
             filter: hasTask('bootstrap')
           })
           spawns.forEach(spawn => _.remove(spawn.memory.tasks, task => task.action === 'bootstrap'));
-          Object.values(Game.creeps).filter(hasTask('pioneer')).forEach(creep => creep.addTask({
-            action: 'recycleSelf',
-            priority: -1,
-          }));
+          Object.values(Game.creeps).filter(
+            and(
+              hasTask('pioneer', task => !task.room || task.room === room.name),
+              c => c.room === room,
+              c => Game.creeps[c],
+            )
+          ).forEach(creep => {
+            creep.addTask('recycleSelf', {
+              priority: -1,
+            });
+            creep.removeTask('renewSelf');
+          });
         }
       }
     }

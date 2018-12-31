@@ -111,13 +111,13 @@ function positionAtDirection(origin, direction) {
   const offsetY = [0, -1, -1, 0, 1, 1, 1, 0, -1];
   const x = origin.x + offsetX[direction];
   const y = origin.y + offsetY[direction];
-  if (x > 49 || x < 0 || y > 49 || y < 0) {
+  if (!_.isNumber(x) || !_.isNumber(y) || x > 49 || x < 0 || y > 49 || y < 0) {
     return;
   }
   try {
     return new RoomPosition(x, y, origin.roomName);
   } catch (e) {
-    console.log('Failed to set position', 'x =>', x, 'y =>', y, 'origin.x =>', origin.x, 'origin.y =>', origin.y, 'direction =>', direction, e);
+    console.log('Failed to set position', 'x =>', x, 'y =>', y, 'origin.x =>', origin.x, 'origin.y =>', origin.y, 'direction =>', direction, 'origin =>', origin && origin.roomName, e);
   }
 }
 

@@ -261,16 +261,18 @@ export function placeSourceContainers(room, anchor) {
   if (room.memory.sources.length && room.memory.sources.find(a => a.containerPos)) {
     for (let i = 0; i < room.memory.sources.length; i++) {
       const { containerPos } = room.memory.sources[i];
-      const target = new RoomPosition(...containerPos, room.name);
-      const structures = target.lookFor(LOOK_STRUCTURES);
-      const container = structures.find(targetMatchers.isContainer);
-      if (container) {
-        delete memory.sources[i].containerPos;
-        room.memory.sources[i].container = container.id;
-      } else {
-        const constructionSites = new RoomPosition(...containerPos, room.name).lookFor(LOOK_CONSTRUCTION_SITES);
-        if (constructionSites.length === 0) {
-          target.createConstructionSite(STRUCTURE_CONTAINER);
+      if (containerPos) {
+        const target = new RoomPosition(...containerPos, room.name);
+        const structures = target.lookFor(LOOK_STRUCTURES);
+        const container = structures.find(targetMatchers.isContainer);
+        if (container) {
+          delete room.memory.sources[i].containerPos;
+          room.memory.sources[i].container = container.id;
+        } else {
+          const constructionSites = new RoomPosition(...containerPos, room.name).lookFor(LOOK_CONSTRUCTION_SITES);
+          if (constructionSites.length === 0) {
+            target.createConstructionSite(STRUCTURE_CONTAINER);
+          }
         }
       }
     }

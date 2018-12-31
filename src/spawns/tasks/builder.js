@@ -3,6 +3,7 @@ import {
   calcCreepCost,
 } from '../../utils/creeps';
 import {
+  and,
   hasTask,
 } from '../../utils/matchers';
 
@@ -15,7 +16,7 @@ export default function* builder(spawn, {
 }) {
   if (!spawn.spawning) {
     const allCreeps = Object.values(Game.creeps);
-    const builderCreeps = allCreeps.filter(hasTask('builder'));
+    const builderCreeps = allCreeps.filter(and(hasTask('builder'), c => c.room === spawn.room));
     const myConstructionSites = spawn.room.find(FIND_MY_CONSTRUCTION_SITES);
     const max = myConstructionSites.length ? Math.min(myConstructionSites.length, 3) : 0;
     context.needs = context.needs || {};

@@ -3,6 +3,7 @@ import {
   calcCreepCost,
 } from '../../utils/creeps';
 import {
+  and,
   hasTask,
 } from '../../utils/matchers';
 import {
@@ -10,7 +11,7 @@ import {
 } from '../../creeps/tasks/common';
 
 const small = [MOVE, CARRY, WORK, WORK];
-const large = [ WORK, WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE, MOVE];
+const large = [WORK, WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE, MOVE];
 
 const roomCache = {};
 
@@ -23,7 +24,7 @@ export default function* dropMiner(spawn, {
 }) {
   if (!spawn.spawning) {
     const allCreeps = Object.values(Game.creeps);
-    const dropMinerCreeps = allCreeps.filter(hasTask('dropMiner'));
+    const dropMinerCreeps = allCreeps.filter(and(hasTask('dropMiner'), c => c.room === spawn.room));
     const sources = _.get(spawn, 'room.memory.sources', []);
 
     if (!context.nextSourceId  && sources && sources.length) {
@@ -69,21 +70,29 @@ export default function* dropMiner(spawn, {
     if (sourceDef && totalWorkAvailable < totalWorkNeeded) {
       yield priority(dropMinerCreeps.length == 0 ? -1 : 0);
       let body;
-      if (calcCreepCost(large) <= spawn.room.energyAvailableCapacity && (!context.wait || context.wait < 25)) {
+      let tasks = [];
+      console.log('dropMiner', calcCreepCost(large), spawn.room.energyCapacityAvailable)
+      if (calcCreepCost(large) <= spawn.room.energyCapacityAvailable && (!context.wait || context.wait < 50)) {
         body = large;
+        tasks.push({
+          action: 'dropMiner',
+          sourceId: context.nextSourceId,
+        }, {
+          action: 'renewSelf',
+        }, {
+          action: 'recycleSelf'
+        })
       } else {
         body = small;
+        tasks.push({
+          action: 'dropMiner',
+          sourceId: context.nextSourceId,
+        })
       }
-      const err = spawn.spawnCreep(large, `${sillyname()} the Miner`, {
+
+      const err = spawn.spawnCreep(body, `${sillyname()} the Miner`, {
         memory: {
-          tasks: [{
-            action: 'dropMiner',
-            sourceId: context.nextSourceId,
-          }, {
-            action: 'renewSelf',
-          }, {
-            action: 'recycleSelf'
-          }],
+          tasks,
         },
       });
       if (!err) {
