@@ -27,11 +27,23 @@ export default function* dropMiner(creep, {
   if (context.sourceId) {
     target = Game.getObjectById(context.sourceId);
   }
-  if (target) {
+  if (target || creep.room) {
     yield priority();
   } else {
     yield sleep();
   }
+
+  if (context.room && context.room !== creep.room.name) {
+    return creep.routeTo(new RoomPosition(24, 24, context.room));
+  }
+
+  if (context.room && target.room.name !== context.room) {
+    context.sourceId = getSourceId(creep);
+    if (context.sourceId) {
+      target = Game.getObjectById(context.sourceId);
+    }
+  }
+
   let biggestDrop;
   let container;
   if (_.sum(creep.carry) > 0.8 * creep.carryCapacity) {

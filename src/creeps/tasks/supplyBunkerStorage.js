@@ -4,7 +4,7 @@ import {
   target as targetMatchers,
 } from '../../utils/matchers';
 
-export default function* supplyBunker(creep, {
+export default function* supplyBunkerStorage(creep, {
   priority,
   done,
   moveTo,
@@ -18,13 +18,12 @@ export default function* supplyBunker(creep, {
   }
   let target;
   let targets;
-  if (_.get(creep, 'room.memory.bunker.containers')) {
-    targets = creep.room.memory.bunker.containers
-      .map(c => Game.getObjectById(c))
-      .filter(c => !!c && needsEnergy(c));
-    if (targets.length) {
-      target = creep.pos.findClosestByRange(targets);
-    }
+
+  targets = creep.room.find(FIND_MY_STRUCTURES, {
+    filter: and(targetMatchers.isStorage, needsEnergy),
+  });
+  if (targets.length) {
+    target = creep.pos.findClosestByRange(targets);
   }
 
   if (target) {
@@ -36,7 +35,6 @@ export default function* supplyBunker(creep, {
       creep.transfer(target, RESOURCE_ENERGY, amount);
       delete creep.memory.target;
       yield done();
-
     }
   } else {
     yield done({

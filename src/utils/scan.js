@@ -1,4 +1,7 @@
 export function* walkBox(pos, size = 1) {
+  if (!pos) {
+    return;
+  }
   const leftSize = (pos.x > (1 + size) ? size : 0);
   const rightSize = (pos.x < (49 - size) ? size : 0);
   const topSize = (pos.y > (1 + size) ? size : 0);
@@ -34,21 +37,6 @@ export function* walkBox(pos, size = 1) {
     }
   }
 }
-
-export function* walkBox2(pos, size = 1) {
-  for (let x = -(pos.x > (1 + size) ? size : 0); x <= (pos.x > (48 - size) ? size : 0); x++) {
-    yield [pos.x + x, pos.y - size];
-  }
-  for (let y = -(size - 1); y <= (size - 1); y++) {
-    yield [pos.x - size, pos.y + y];
-    yield [pos.x + size, pos.y + y];
-  }
-  for (let x = -(pos.x > (3 - size) ? size : 0); x <= size; x++) {
-    yield [pos.x + x, pos.y + size];
-  }
-}
-
-
 
 export function creepsByRoom() {
   if (!Game.creepsByRoom) {

@@ -2,6 +2,7 @@ import rcl1 from './rcl1';
 import rcl2 from './rcl2';
 import rcl3 from './rcl3';
 import rcl4 from './rcl4';
+import rcl5 from './rcl5';
 import scan from './scan';
 
 export default function* bootstrap(room, {
@@ -27,6 +28,10 @@ export default function* bootstrap(room, {
         break;
       case 4:
         yield subTask(rcl4);
+        break;
+      case 5:
+      default:
+        yield subTask(rcl5);
         break;
     }
   }

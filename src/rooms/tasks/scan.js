@@ -5,6 +5,9 @@ import {
   getBunkerLocation,
   getStructureOfTypeMapForBunkerAt,
 } from '../planner';
+import {
+  enhanceSources,
+} from './common';
 
 export default function* scan(room, {
   priority,
@@ -33,6 +36,7 @@ export default function* scan(room, {
       pos: [source.pos.x, source.pos.y]
     }));
   }
+  enhanceSources(room);
   if (_.isUndefined(room.memory.mineral)) {
     // Look for safe sources
     const sks = room.memory.sk.map(a => Game.getObjectById(a.id));

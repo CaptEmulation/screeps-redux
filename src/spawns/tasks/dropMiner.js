@@ -26,42 +26,6 @@ export default function* dropMiner(spawn, {
     const allCreeps = Object.values(Game.creeps);
     const dropMinerCreeps = allCreeps.filter(and(hasTask('dropMiner'), c => c.room === spawn.room));
     const sources = _.get(spawn, 'room.memory.sources', []);
-
-    if (!context.nextSourceId  && sources && sources.length) {
-      const canMoves = [];
-      for (let { id, workParts } of spawn.room.memory.sources) {
-        if (workParts > 5) {
-          // Find 5 work parts
-          let sourceWorkParts = 0;
-          for (let creep of dropMinerCreeps) {
-            if (sourceWorkParts > 5) {
-              canMoves.push({
-                creep,
-                from: id,
-              });
-            } else {
-              const wp = creep.body.filter(b => b.type === WORK).length;
-              sourceWorkParts += wp;
-            }
-          }
-        } else {
-          context.nextSourceId = id;
-        }
-      }
-
-      for (let { creep, from: fromSource } of canMoves) {
-        const remainingSources = spawn.room.memory.sources.filter(s => s.pendingSpots > 0 && s.id !== fromSource);
-        const closest = creep.pos.findClosestByRange(remainingSources.map(s => Game.getObjectById(s.id)));
-        if (closest) {
-          const closestRemaningSource = remainingSources.find(s => s.id === closest.id);
-          const dropMinerTask = creep.memory.tasks.find(t => t.action === 'dropMiner');
-          dropMinerTask.sourceId = closest.id;
-          closestRemaningSource.pendingSpots--;
-          closestRemaningSource.workParts += creep.body.filter(b => b.type === WORK).length;
-        }
-      }
-    }
-
     const sourceDef = sources.find(s => s.workParts < 5);
     const totalWorkAvailable = dropMinerCreeps.reduce((sum, creep) => {
       return sum + creep.body.filter(b => b.type === WORK).length
@@ -71,8 +35,7 @@ export default function* dropMiner(spawn, {
       yield priority(dropMinerCreeps.length == 0 ? -1 : 0);
       let body;
       let tasks = [];
-      console.log('dropMiner', calcCreepCost(large), spawn.room.energyCapacityAvailable)
-      if (calcCreepCost(large) <= spawn.room.energyCapacityAvailable && (!context.wait || context.wait < 50)) {
+      if (calcCreepCost(large) <= spawn.room.energyAvailable) {
         body = large;
         tasks.push({
           action: 'dropMiner',
@@ -89,7 +52,6 @@ export default function* dropMiner(spawn, {
           sourceId: context.nextSourceId,
         })
       }
-
       const err = spawn.spawnCreep(body, `${sillyname()} the Miner`, {
         memory: {
           tasks,

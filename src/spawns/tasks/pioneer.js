@@ -20,7 +20,7 @@ export default function* pioneer(spawn, {
       if (!Game.rooms[roomName]) {
         return true;
       }
-      if (_.get(Game.rooms[roomName], 'controller.level', 0) < 3) {
+      if (_.get(Game.rooms[roomName], 'controller.level', 0) < 3 || Game.rooms[roomName].find(FIND_MY_CREEPS).length === 0) {
         return true;
       }
     });

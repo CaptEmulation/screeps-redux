@@ -24,8 +24,7 @@ export default function* rcl3(room, {
 }) {
   yield priority();
   yield subTask(towerDefense);
-  if (_.get(room, 'memory.bunker.anchor') && Game.time % 25 === 0) {
-    enhanceSources(room);
+  if (_.get(room, 'memory.bunker.anchor') && Game.time % 24 === 0) {
     placeConstructionSites(room, room.memory.bunker.anchor, 3);
     if (_.get(room, 'memory.bunker.containers.length') ===  1) {
       ensureQueen(room);

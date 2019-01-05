@@ -16,7 +16,7 @@ import {
   hasTask,
 } from '../../utils/matchers';
 
-export default function* rcl4(room, {
+export default function* rcl5(room, {
   priority,
   subTask,
   context,
@@ -24,8 +24,8 @@ export default function* rcl4(room, {
 }) {
   yield priority();
   yield subTask(towerDefense);
-  if (_.get(room, 'memory.bunker.anchor') && Game.time % 25 === 0) {
-    placeConstructionSites(room, room.memory.bunker.anchor, 4);
+  if (_.get(room, 'memory.bunker.anchor') && Game.time % 2 === 0) {
+    placeConstructionSites(room, room.memory.bunker.anchor, 5);
     if (_.get(room, 'memory.bunker.containers.length') ===  1) {
       ensureQueen(room);
       ensureDropMiner(room);

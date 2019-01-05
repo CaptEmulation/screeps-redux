@@ -258,29 +258,28 @@ const notFinishedId = and(
 );
 
 export function placeSourceContainers(room, anchor) {
-  if (room.memory.sources.length && room.memory.sources.find(a => a.containerPos)) {
-    for (let i = 0; i < room.memory.sources.length; i++) {
-      const { containerPos } = room.memory.sources[i];
-      if (containerPos) {
-        const target = new RoomPosition(...containerPos, room.name);
-        const structures = target.lookFor(LOOK_STRUCTURES);
-        const container = structures.find(targetMatchers.isContainer);
-        if (container) {
-          delete room.memory.sources[i].containerPos;
-          room.memory.sources[i].container = container.id;
-        } else {
-          const constructionSites = new RoomPosition(...containerPos, room.name).lookFor(LOOK_CONSTRUCTION_SITES);
-          if (constructionSites.length === 0) {
-            target.createConstructionSite(STRUCTURE_CONTAINER);
+  if (room.memory.sources) {
+    if (room.memory.sources.length && room.memory.sources.find(a => a.containerPos)) {
+      for (let i = 0; i < room.memory.sources.length; i++) {
+        const { containerPos } = room.memory.sources[i];
+        if (containerPos) {
+          const target = new RoomPosition(...containerPos, room.name);
+          const structures = target.lookFor(LOOK_STRUCTURES);
+          const container = structures.find(targetMatchers.isContainer);
+          if (container) {
+            delete room.memory.sources[i].containerPos;
+            room.memory.sources[i].container = container.id;
+          } else {
+            const constructionSites = new RoomPosition(...containerPos, room.name).lookFor(LOOK_CONSTRUCTION_SITES);
+            if (constructionSites.length === 0) {
+              target.createConstructionSite(STRUCTURE_CONTAINER);
+            }
           }
         }
       }
     }
-  }
-
-  if (room.memory.sources && !room.memory.sources.find(s => s.containerPos || s.container)) {
-    for (let i = 0; i < room.memory.sources.length; i++) {
-      const { id: sourceId } = room.memory.sources[i];
+    for (let source of room.memory.sources.filter(s => !s.containerPos && !s.containerId)) {
+      const { id: sourceId } = source;
       let target;
       const path = PathFinder.search(new RoomPosition(anchor.x, anchor.y, room.name), {
         pos: Game.getObjectById(sourceId).pos,
@@ -294,7 +293,7 @@ export function placeSourceContainers(room, anchor) {
       if (target) {
         const err = target.createConstructionSite(STRUCTURE_CONTAINER);
         if (!err) {
-          room.memory.sources[i].containerPos = [target.x, target.y];
+          source.containerPos = [target.x, target.y];
         }
       }
     }

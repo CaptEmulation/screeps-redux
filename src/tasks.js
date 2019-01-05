@@ -75,11 +75,14 @@ function runTasks(gameObjectWithMemory, tasks, handlers) {
     }
 
     function subTask(newHandler, opts) {
-      myTask.subTask = {
-        action: newHandler.name,
-        ...opts,
-      };
-      return SUBTASK;
+      const action = _.isString(newHandler) ? newHandler : newHandler.name;
+      if (action) {
+        myTask.subTask = {
+          action,
+          ...opts,
+        };
+        return SUBTASK;
+      }
     }
 
     return {

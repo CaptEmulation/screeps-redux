@@ -33,10 +33,10 @@ export default function* scout(scout, {
       .filter(n => !context.visited.includes(n));
     const availablePaths = availableRoomNames
       .map(pathToRoom.bind(null, scout));
-    const shortestPath = _.minBy(availablePaths, p => scout.pos.getRangeTo(p));
+    const randomPath = _.sample(availablePaths);
 
-    if (shortestPath) {
-      context.path = shortestPath;
+    if (randomPath) {
+      context.path = randomPath;
     } else {
       // Search for an available path
       const knownExits = Object.keys(context.exitsSeen).reduce((exits, roomName) => {

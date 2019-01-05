@@ -24,6 +24,11 @@ export default function* harvest(creep, {
   if (target) {
     const range = creep.pos.getRangeTo(target);
     if (range > 1) {
+      if (target.pos.availableNeighbors().length === 0) {
+        delete context.sourceId;
+        delete creep.memory.target;
+        return yield done();
+      }
       creep.routeTo(target, { range: 1 });
     } else {
       creep.memory.target = target.id;

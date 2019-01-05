@@ -17,7 +17,7 @@ export default function* renewSelf(creep, {
     }
   }
   const target = Game.getObjectById(context.spawnId);
-  if (!target || creep.room.energyAvailable < 50) {
+  if (!target || target.room.energyAvailable < 50) {
     // Can't find a spawn to renew at
     delete context.isRenewing;
     delete creep.memory.target;

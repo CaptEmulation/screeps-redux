@@ -35,6 +35,9 @@ export default function* upgrader(spawn, {
         memory: {
           tasks: [{
             action: 'upgrader',
+          },{
+            action: 'sign',
+            msg: Memory.sign || 'screeps-redux',
           }, {
             action: 'renewSelf',
           }],

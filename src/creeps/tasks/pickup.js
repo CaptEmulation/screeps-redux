@@ -16,7 +16,7 @@ function targetHasEnergy(target) {
 function findBunkerEnergy(creep) {
   const sourceContainers = _.get(creep, 'room.memory.bunker.containers', [])
     .map(s => Game.getObjectById(s))
-    .filter(s => !!s && s.store[RESOURCE_ENERGY] > 100);
+    .filter(s => !!s && s.store && s.store[RESOURCE_ENERGY] > 100);
   return _.maxBy(sourceContainers, t => t.store[RESOURCE_ENERGY]);
 }
 

@@ -19,13 +19,13 @@ export default function* towerDefense(room, {
 }) {
   const hostiles = room.find(FIND_HOSTILE_CREEPS);
   if (hostiles.length === 0) {
-    yield sleep();
+    yield priority();
+    yield done();
   }
   yield priority(-(hostiles.length * 10));
   const towers = room.find(FIND_STRUCTURES, {
     filter: (target) => target.structureType === STRUCTURE_TOWER,
   });
-  let healed = false;
   const friendliesNeedingHealing = room.find(FIND_MY_CREEPS, {
     filter: notDrainersOrDrainersNeedingHealing,
   }).sort((a, b) => (a.hitsMax - a.hits) - (b.hitsMax - b.hits));
@@ -34,11 +34,13 @@ export default function* towerDefense(room, {
       hits,
       hitsMax,
     } = friendliesNeedingHealing[0];
-    towers.forEach(tower => {
-      tower.heal(friendliesNeedingHealing[0]);
-    });
-    healed = true;
+    // towers.forEach(tower => {
+    //   tower.heal(friendliesNeedingHealing[0]);
+    // });
   }
+  towers.forEach(tower => {
+    tower.attack(tower.pos.findClosestByRange(hostiles));
+  });
   const lowRamparts = room.find(FIND_STRUCTURES, {
     filter(rampart) {
       return rampart.structureType === STRUCTURE_RAMPART && rampart.hits < 1000;
@@ -49,10 +51,6 @@ export default function* towerDefense(room, {
       tower.repair(lowRamparts[0]);
     });
   }
-  if (!healed) {
-    towers.forEach(tower => {
-      tower.attack(hostiles[0]);
-    });
-  }
+
   yield done();
 }

@@ -333,13 +333,17 @@ function moveCreepOutOfTheWay(creep, from, target, range, creepsToMove, nextPosi
     if (target && newPos.getRangeTo(target) > range) {
       return false;
     }
-    const stuffAtPos = newPos.look();
-    if (
-      stuffAtPos.find(curr => curr.type === 'terrain' && curr.terrain === 'wall')
-      || stuffAtPos.find(curr => curr.type === 'structure' && !curr.structure instanceof StructureContainer)
-    ) {
+    if (!newPos.isPassible(true)) {
       return false;
     }
+    // const stuffAtPos = newPos.look();
+    // console.log(JSON.stringify(stuffAtPos));
+    // if (
+    //   stuffAtPos.find(curr => curr.type === 'terrain' && curr.terrain === 'wall')
+    //   || stuffAtPos.find(curr => curr.type === 'structure' && !(curr.structure.structureType === STRUCTURE_CONTAINER || curr.structure.structureType === STRUCTURE_ROAD || curr.structure.structureType === STRUCTURE_RAMPART))
+    // ) {
+    //   return false;
+    // }
     const creepsAtMySpot = newPos.lookFor(LOOK_CREEPS);
     if (creepsAtMySpot.length) {
       const creepAtMySpot = creepsAtMySpot[0];
@@ -449,3 +453,14 @@ Creep.prototype.addTask = function addCreepTask(action, opts) {
   return task;
 };
 Creep.prototype.removeTask = function removeCreepTask(taskName) { return   _.remove(this.memory.tasks, task => task.action === taskName) };
+Creep.prototype.getTask = function getCreepTask(taskName) {
+  function taskFind(n, task) {
+    if (task.action === n) {
+      return task;
+    }
+    if (task.subTask) {
+      return taskFind(n, task.subTask);
+    }
+  }
+  return this.memory.tasks.find(taskFind.bind(null, taskName));
+}

@@ -24,7 +24,7 @@ export default function* fillFromBunker(creep, {
     if (_.get(creep, 'room.memory.bunker.containers')) {
       targets = creep.room.memory.bunker.containers
         .map(c => Game.getObjectById(c))
-        .filter(c => !!c && c.store[RESOURCE_ENERGY] > 0);
+        .filter(c => !!c && c.store && c.store[RESOURCE_ENERGY] > 0);
       if (targets.length) {
         target = _.maxBy(targets, target => target.store[RESOURCE_ENERGY] / target.pos.getRangeTo(creep.pos));
       }
