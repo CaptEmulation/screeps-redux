@@ -254,7 +254,7 @@ export function moveTo({
     state.cpu = _.round(cpuUsed + state.cpu);
     if (state.cpu > REPORT_CPU_THRESHOLD) {
       // see note at end of file for more info on this
-      console.log(`moveTo: heavy cpu use: ${creep.name}, cpu: ${state.cpu} origin: ${creep.pos}, dest: ${destination}`);
+      //console.log(`moveTo: heavy cpu use: ${creep.name}, cpu: ${state.cpu} origin: ${creep.pos}, dest: ${destination}`);
     }
     let color = "orange";
     if (ret.incomplete) {

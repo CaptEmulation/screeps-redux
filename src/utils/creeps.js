@@ -10,6 +10,7 @@ function getVitalStats(creep) {
   vitalStats['ticksToLive'] = creep.ticksToLive;
   vitalStats['energy'] = creep.carry['energy'];
   vitalStats['room'] = creep.room.name;
+  vitalStats['size'] = creep.body.length;
   return vitalStats;
 }
 
@@ -25,9 +26,14 @@ global.getCreeps = function() {
 
 global.showCreep = function(name) {
   const creep = Game.creeps[name];
-  new RoomVisual(creep.room.name).circle(creep.pos, {stroke: "blue", fill: 'transparent', opacity: 1, radius: 1});
-  const vitalStats = getVitalStats(creep);
-  return name + "  \t" + JSON.stringify(vitalStats);
+  if (creep) {
+    new RoomVisual(creep.room.name).circle(creep.pos, {stroke: "blue", fill: 'transparent', opacity: 1, radius: 1});
+    const vitalStats = getVitalStats(creep);
+    return name + "  \t" + JSON.stringify(vitalStats);
+  }
+  else {
+    return `No such creep: ${name}`;
+  }
 }
 
 export const deadCreeps = (function () {
