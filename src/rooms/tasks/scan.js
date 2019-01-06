@@ -98,7 +98,8 @@ export default function* scan(room, {
       };
     }
 
-    if (_.get(room, 'memory.bunker.anchor')) {
+    if (!_.get(room, 'memory.bunker.anchor')) {
+      room.memory.bunker = room.memory.bunker || {};
       const spawns = room.find(FIND_MY_SPAWNS);
       if (spawns.length) {
         const spawn = spawns[0];
