@@ -15,6 +15,7 @@ export default function* rcl1(room, {
   }
   if (Game.time % 19) {
     room.find(FIND_MY_SPAWNS).forEach(spawn => spawn.addTask('bootstrap'));
+    room.find(FIND_MY_SPAWNS).forEach(spawn => spawn.addTask('letCreepsRenew'));
   }
   yield done();
 }

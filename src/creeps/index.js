@@ -45,6 +45,10 @@ createSaga(
       for (let creep of Object.values(Game.creeps)) {
         try {
           yield call(runTasks, creep, handlers);
+          if (Memory.debug && creep.memory.lastTask && creep.memory.lastTask !== creep.memory.lastSaidTask) {
+            creep.say(creep.memory.lastTask);
+            creep.memory.lastSaidTask = creep.memory.lastTask;
+          }
         } catch (e) {
           console.log('Creep exception', e, e.stack);
         }

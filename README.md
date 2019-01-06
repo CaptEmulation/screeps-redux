@@ -4,10 +4,23 @@
 
 ## Getting Started
 
-Some global functions are present to help pick a starting location.  First place a spawn anywhere in the world.  This will allow you to execute console commands.  From there you can locate an optimal location for the first spawn in any room (even if you do not have vision).
+Some global functions are present to help pick a starting location.  First place a spawn anywhere in the world.  This will allow you to execute console commands.  From there you can locate an optimal location for the first spawn in any room (even if you do not have vision).  A visual onscreen display of potential spawn location will be shown.  Lower numbers are better.
 
 ```
-getSpawnLocation({ name: 'W32N45', sources: [{ pos: {x: 11, y: 45, roomName: 'W32N45' }}, { pos: { x: 17, y: 29, roomName: 'W32N45' }}], mineral: [{ pos: { x: 24, y: 44, roomName: 'W32N45' }}]})
+getSpawnLocation({
+  name: 'W32N45',
+  controller: {
+    pos: new RoomPosition(10,10,'W32N45')
+  },
+  sources: [{
+    pos: new RoomPosition(11,45,'W32N45')
+  }, {
+    pos: new RoomPosition(17,29,'W32N45')
+  }],
+  mineral: {
+    pos: new RoomPosition(24,44,'W32N45')
+  }
+})
 ```
 Enter the correct source and mineral locations for a room.  If necessary respawn and then put your spawn at the location specified on the console.
 

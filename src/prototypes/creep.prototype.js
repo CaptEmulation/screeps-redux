@@ -336,14 +336,13 @@ function moveCreepOutOfTheWay(creep, from, target, range, creepsToMove, nextPosi
     if (!newPos.isPassible(true)) {
       return false;
     }
-    // const stuffAtPos = newPos.look();
-    // console.log(JSON.stringify(stuffAtPos));
-    // if (
-    //   stuffAtPos.find(curr => curr.type === 'terrain' && curr.terrain === 'wall')
-    //   || stuffAtPos.find(curr => curr.type === 'structure' && !(curr.structure.structureType === STRUCTURE_CONTAINER || curr.structure.structureType === STRUCTURE_ROAD || curr.structure.structureType === STRUCTURE_RAMPART))
-    // ) {
-    //   return false;
-    // }
+
+    if (
+      !nextPositions.find(pos => pos.x === newPos.x && pos.y === newPos.y)
+      && !creepMoves.find(([creep, pos]) => pos.x === newPos.x && pos.y === newPos.y)
+    ) {
+      return true;
+    }
     const creepsAtMySpot = newPos.lookFor(LOOK_CREEPS);
     if (creepsAtMySpot.length) {
       const creepAtMySpot = creepsAtMySpot[0];
@@ -356,12 +355,6 @@ function moveCreepOutOfTheWay(creep, from, target, range, creepsToMove, nextPosi
         creepsToMove[creepAtMySpot.name] = { from, target, range }
         moveCreepOutOfTheWay(creepAtMySpot, from, target, range, creepsToMove, nextPositions, creepMoves);
       }
-    }
-    if (
-      !nextPositions.find(pos => pos.x === newPos.x && pos.y === newPos.y)
-      && !creepMoves.find(([creep, pos]) => pos.x === newPos.x && pos.y === newPos.y)
-    ) {
-      return true;
     }
   });
   if (target) {

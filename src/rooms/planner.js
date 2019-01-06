@@ -22,20 +22,6 @@ function coordName(coord) {
 	return coord.x + ':' + coord.y;
 }
 
-function minBy(objects, iteratee) {
-	let minObj = undefined;
-	let minVal = Infinity;
-	let val;
-	for (let i in objects) {
-		val = iteratee(objects[i]);
-		if (val !== false && val < minVal) {
-			minVal = val;
-			minObj = objects[i];
-		}
-	}
-	return minObj;
-}
-
 const MAX_SAMPLE = 20;
 const MAX_TOTAL_PATH_LENGTH = 25 * 4;
 
@@ -76,7 +62,7 @@ export function getBunkerLocation(room, visualize) {
     }
     return totalDistance;
   };
-  let bestAnchor = minBy(allowableLocations, pos => totalPathLength(pos));
+  let bestAnchor = _.minBy(allowableLocations, pos => totalPathLength(pos));
   return bestAnchor;
 }
 
@@ -84,7 +70,7 @@ global.getBunkerLocation = getBunkerLocation;
 
 /*
  * Example usage from console
- * getSpawnLocation({ name: 'W32N45', sources: [{ pos: {x: 11, y: 45, roomName: 'W32N45' }}, { pos: { x: 17, y: 29, roomName: 'W32N45' }}], mineral: [{ pos: { x: 24, y: 44, roomName: 'W32N45' }}]})
+ * getSpawnLocation({ name: 'W32N45', controller: { pos: new RoomPosition(10,10,'W32N45') }, sources: [{ pos: new RoomPosition(11,45,'W32N45') }, { pos: new RoomPosition(17,29,'W32N45') }], mineral: { pos: new RoomPosition(24,44,'W32N45')}})
  */
 function getSpawnLocation(room, visualize = true) {
   const anchor = getBunkerLocation(room, visualize);
@@ -103,8 +89,8 @@ function getAllowableBunkerLocations(room, visualize) {
   if (allowableLocations.length > MAX_SAMPLE) {
     allowableLocations = _.sample(allowableLocations, MAX_SAMPLE);
   }
-  // Filter intersection with controller
   if (!room.controller) return [];
+  // Filter intersection with controller
   allowableLocations = _.filter(allowableLocations,
                   anchor => !bunkerIntersectsWith(anchor, _.get(room, 'controller.pos'), 3));
   // Filter intersection with miningSites
