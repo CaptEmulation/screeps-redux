@@ -1,18 +1,18 @@
 import {
   walkBox,
-} from './utils/scan';
+} from '../utils/scan';
 import {
   calcCreepCost,
-} from './utils/creeps';
+} from '../utils/creeps';
 import {
   hasTask,
   target as targetMatchers,
-} from './utils/matchers';
+} from '../utils/matchers';
 import {
   findRoute,
   findTravelPath,
   normalizePos,
-} from './utils/path';
+} from '../utils/path';
 
 // Stolen and refactored from https://github.com/bonzaiferroni/Traveler/blob/master/Traveler.js
 

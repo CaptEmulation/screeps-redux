@@ -1,6 +1,6 @@
 import {
 	walkBox,
-} from './utils/scan';
+} from '../utils/scan';
 
 Object.defineProperty(RoomPosition.prototype, 'neighbors', {
     get: function () {

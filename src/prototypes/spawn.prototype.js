@@ -1,6 +1,6 @@
 import {
   hasTask,
-} from './utils/matchers';
+} from '../utils/matchers';
 
 Spawn.prototype.addTask = function addSpawnTask(action, opts) {
   this.memory.tasks = this.memory.tasks || [];

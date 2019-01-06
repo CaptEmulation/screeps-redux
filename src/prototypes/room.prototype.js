@@ -1,6 +1,6 @@
 import {
   hasTask,
-} from './utils/matchers';
+} from '../utils/matchers';
 
 if (!Object.keys(Room.prototype).includes('sources')) {
   Object.defineProperties(Room.prototype, {

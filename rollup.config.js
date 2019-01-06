@@ -3,6 +3,7 @@ import commonjs from 'rollup-plugin-commonjs';
 import babel from 'rollup-plugin-babel';
 import minify from 'rollup-plugin-babel-minify';
 import replace from 'rollup-plugin-replace';
+import typescript from "rollup-plugin-typescript2";
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
@@ -55,6 +56,7 @@ export default ({
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
     }),
     commonjs(),
+    typescript({tsconfig: "./tsconfig.json"}),
     // minify(),
     deploy(host),
   ]
