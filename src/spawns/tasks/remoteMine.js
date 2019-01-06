@@ -84,7 +84,7 @@ export default function* remoteMine(spawn, {
   const { rooms } = context;
 
   let creepsNeeded = [];
-  if (!context.needs || Game.time % 10 === 0) {
+  if (!context.needs || Game.time % 30 === 0) {
     const myCreeps = allCreeps.filter(
       or(
         hasTask('reserver', task => task.home === spawn.room.name && rooms.includes(task.mine)),
@@ -96,7 +96,6 @@ export default function* remoteMine(spawn, {
       if (!Memory.rooms[room] || !Memory.rooms[room].sources) {
         // Room neeeds a scan
         const activeScoutCreeps = allCreeps.filter(hasTask('scout', task => task.target === room));
-        console.log(activeScoutCreeps);
         if (!activeScoutCreeps.length) {
           creepsNeeded.push({
             room,

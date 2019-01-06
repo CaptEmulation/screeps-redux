@@ -12,6 +12,10 @@ function roomExits(roomName) {
   return Object.values(Game.map.describeExits(roomName));
 }
 
+function findNewRoom() {
+
+}
+
 export default function* scout(scout, {
   priority,
   done,
@@ -73,10 +77,10 @@ export default function* scout(scout, {
       scout.routeTo(nextPos);
     } else {
       const direction = scout.pos.getDirectionTo(nextPos);
-      //circle(newPos, "green");
       const err = scout.move(direction);
       if (err) {
-        console.log('Scout move error', err);
+        _.remove(context.exitsSeen[scout.room.name], room => room === context.path.roomName);
+        delete context.lastRoomIn;
       }
     }
   } else {

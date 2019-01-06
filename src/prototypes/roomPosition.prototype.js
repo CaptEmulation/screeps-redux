@@ -4,8 +4,8 @@ import {
 
 Object.defineProperty(RoomPosition.prototype, 'neighbors', {
     get: function () {
-			const roomName = _.get(this, 'room.name');
-			return [...walkBox(this.pos)]
+			const roomName = this.roomName;
+			return [...walkBox(this)]
 				.map(([x, y]) => new RoomPosition(x, y, roomName));
     }
 });

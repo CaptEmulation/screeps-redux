@@ -397,10 +397,17 @@ Creep.getOutOfTheWay = function getAllCreepsOutOfTheWay() {
     lastTick = Game.time;
     movingCreeps = {};
   }
+  for (let spawn of Object.values(Game.spawns)) {
+    if (spawn.spawning && spawn.spawning.remainingTime === 0) {
+      movingCreeps[spawn.name] = {
+        nextPosition: _.sample(spawn.pos.availableNeighbors(true)),
+      };
+    }
+  }
   const creepsToMove = {};
   const creepMoves = [];
   const nextPositions = [];
-  for (let [creepName, { target, nextPosition }] of Object.entries(movingCreeps)) {
+  for (let [creepName, { nextPosition }] of Object.entries(movingCreeps)) {
     if (nextPosition) {
       nextPositions.push(nextPosition);
       const creep = Game.creeps[creepName];
