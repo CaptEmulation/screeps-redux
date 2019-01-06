@@ -21,6 +21,14 @@ That's it!  As the room controller is leveled up, the "bunker" will have its bui
 
 For RCL1 and RCL2, "pioneer" creeps will be spawned to harvest, supply spawn with energy and upgrade controller.  At RCL3 containers will be automatically be constructed at the controller and sources.  When those are done then pioneers will recycle themselves to be replaced by separate upgraders, static miners and haulers.
 
+## Mining remote rooms
+
+Rooms can support remote mining at RCL3.  To configure a spawner to support remote mining:
+
+```
+Game.spawns['Spawn1'].addTask('remoteMine', { rooms: ['room1', 'room2'] });
+```
+
 ## Claiming additional rooms
 
 A room can be instructed to create a claimer and pioneers for a new room with the following command
