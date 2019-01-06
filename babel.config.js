@@ -3,9 +3,9 @@ const presets = [
     "@babel/env",
     {
       targets: {
-        node: true,
+        // node: "current",
+        chrome: 52,
       },
-      useBuiltIns: "usage",
     },
   ],
 ];

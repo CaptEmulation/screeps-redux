@@ -3,6 +3,7 @@ import commonjs from 'rollup-plugin-commonjs';
 import babel from 'rollup-plugin-babel';
 import minify from 'rollup-plugin-babel-minify';
 import replace from 'rollup-plugin-replace';
+import typescript from "rollup-plugin-typescript2";
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
@@ -27,7 +28,7 @@ function deploy(host) {
         console.log('Writing', mainjs);
         fs.writeFileSync(mainjs, bundles['main.js'].code, 'utf8');
         const map = `module.exports.d=${bundles['main.js'].map}`;
-        fs.writeFileSync(path.resolve(os.homedir(), ROOT, host, 'default/main.js.map'), map, 'utf8');
+        fs.writeFileSync(path.resolve(os.homedir(), ROOT, host, 'default/main.map.js'), map, 'utf8');
       }
     }
   }
@@ -44,6 +45,7 @@ export default ({
   },
   watch: {
     include: ['src/**/*.js'],
+    chokidar: false,
   },
   plugins: [
     resolve(),
@@ -54,6 +56,7 @@ export default ({
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
     }),
     commonjs(),
+    typescript({tsconfig: "./tsconfig.json"}),
     // minify(),
     deploy(host),
   ]

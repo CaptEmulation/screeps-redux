@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "module": "es2015",
+    "target": "es6",
+    "lib": [
+      "dom",
+      "es2016"
+    ],
+    "newLine": "CRLF",
+    "outDir": "tsc-out",
+    "baseUrl": "src/",
+    "sourceMap": false,
+    "strict": true,
+    "strictPropertyInitialization": false,
+    "noImplicitThis": false,
+    "skipLibCheck": true,
+    "experimentalDecorators": true,
+    "allowUnusedLabels": true,
+    "allowSyntheticDefaultImports": true,
+    "allowUnreachableCode": false,
+    "removeComments": false
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
