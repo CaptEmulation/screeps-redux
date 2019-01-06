@@ -337,12 +337,6 @@ function moveCreepOutOfTheWay(creep, from, target, range, creepsToMove, nextPosi
       return false;
     }
 
-    if (
-      !nextPositions.find(pos => pos.x === newPos.x && pos.y === newPos.y)
-      && !creepMoves.find(([creep, pos]) => pos.x === newPos.x && pos.y === newPos.y)
-    ) {
-      return true;
-    }
     const creepsAtMySpot = newPos.lookFor(LOOK_CREEPS);
     if (creepsAtMySpot.length) {
       const creepAtMySpot = creepsAtMySpot[0];
@@ -355,6 +349,12 @@ function moveCreepOutOfTheWay(creep, from, target, range, creepsToMove, nextPosi
         creepsToMove[creepAtMySpot.name] = { from, target, range }
         moveCreepOutOfTheWay(creepAtMySpot, from, target, range, creepsToMove, nextPositions, creepMoves);
       }
+    }
+    if (
+      !nextPositions.find(pos => pos.x === newPos.x && pos.y === newPos.y)
+      && !creepMoves.find(([creep, pos]) => pos.x === newPos.x && pos.y === newPos.y)
+    ) {
+      return true;
     }
   });
   if (target) {
