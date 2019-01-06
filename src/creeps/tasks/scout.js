@@ -20,6 +20,9 @@ export default function* scout(scout, {
   yield priority(context.priority);
   const roomName = scout.room.name;
   if (context.lastRoomIn !== scout.room.name) {
+    if (context.target && scout.room.name === context.target) {
+      delete context.target;
+    }
     context.visited = context.visited || [];
     if (!context.visited.includes(roomName)) {
       context.visited.push(roomName);
@@ -29,8 +32,11 @@ export default function* scout(scout, {
     if (!hasTask('scan')(Game.rooms[roomName])) {
       Game.rooms[roomName].addTask('remote');
     }
-    const availableRoomNames = roomExits(roomName)
+    let availableRoomNames = roomExits(roomName)
       .filter(n => !context.visited.includes(n));
+    if (context.target && availableRoomNames.includes(context.target)) {
+      availableRoomNames = [context.target];
+    }
     const availablePaths = availableRoomNames
       .map(pathToRoom.bind(null, scout));
     const randomPath = _.sample(availablePaths);

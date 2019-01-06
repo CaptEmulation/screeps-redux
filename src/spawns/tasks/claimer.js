@@ -9,7 +9,7 @@ import {
 } from '../../utils/matchers';
 
 
-export default function* queen(spawn, {
+export default function* claimer(spawn, {
   priority,
   sleep,
   subTask,

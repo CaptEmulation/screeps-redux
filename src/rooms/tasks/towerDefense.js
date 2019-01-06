@@ -18,25 +18,26 @@ export default function* towerDefense(room, {
   context,
 }) {
   const hostiles = room.find(FIND_HOSTILE_CREEPS);
-  if (hostiles.length === 0) {
+  const friendliesNeedingHealing = room.find(FIND_MY_CREEPS, {
+    filter: notDrainersOrDrainersNeedingHealing,
+  });
+  if (hostiles.length === 0 && friendliesNeedingHealing.length === 0) {
     yield priority();
     yield done();
   }
-  yield priority(-(hostiles.length * 10));
+  yield priority(-((hostiles.length || friendliesNeedingHealing.length) * 10));
   const towers = room.find(FIND_STRUCTURES, {
     filter: (target) => target.structureType === STRUCTURE_TOWER,
   });
-  const friendliesNeedingHealing = room.find(FIND_MY_CREEPS, {
-    filter: notDrainersOrDrainersNeedingHealing,
-  }).sort((a, b) => (a.hitsMax - a.hits) - (b.hitsMax - b.hits));
-  if (friendliesNeedingHealing.length) {
+
+  if (Game.time % 5 === 0 || hostiles.length === 0 && friendliesNeedingHealing.length) {
     const {
       hits,
       hitsMax,
-    } = friendliesNeedingHealing[0];
-    // towers.forEach(tower => {
-    //   tower.heal(friendliesNeedingHealing[0]);
-    // });
+    } = friendliesNeedingHealing.sort((a, b) => (a.hitsMax - a.hits) - (b.hitsMax - b.hits))[0];
+    towers.forEach(tower => {
+      tower.heal(friendliesNeedingHealing[0]);
+    });
   }
   towers.forEach(tower => {
     tower.attack(tower.pos.findClosestByRange(hostiles));

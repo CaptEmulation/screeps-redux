@@ -1,4 +1,8 @@
 import {
+  and,
+  or,
+  not,
+  creep as creepMatchers,
   target as targetMatchers,
 } from '../../utils/matchers';
 import {
@@ -36,27 +40,9 @@ export default function* scan(room, {
       pos: [source.pos.x, source.pos.y]
     }));
   }
-  enhanceSources(room);
-  if (_.isUndefined(room.memory.mineral)) {
-    // Look for safe sources
-    const sks = room.memory.sk.map(a => Game.getObjectById(a.id));
-    const minerals = room.find(FIND_MINERALS);
-    room.memory.mineral = minerals.map(mineral => ({
-      id: mineral.id,
-      sk:  sks.find(sk => sk.pos.getRangeTo(mineral) < 9),
-      pos: [mineral.pos.x, mineral.pos.y]
-    }));
-  }
-
-  if (room.controller) {
-    if (_.isUndefined(room.memory.controller)) {
-      room.memory.controller = {
-        pos: [room.controller.pos.x, room.controller.pos.y],
-        id: room.controller.id,
-      };
-    }
+  if (_.get(room, 'controller.my') || context.sources) {
+    enhanceSources(room);
     const noContainerSources = room.memory.sources.filter(s => !s.containerId);
-
     if (noContainerSources.length) {
       const containers = room.find(FIND_STRUCTURES, {
         filter: targetMatchers.isContainer,
@@ -74,11 +60,45 @@ export default function* scan(room, {
         }
       }
     }
+  }
+  if (_.isUndefined(room.memory.mineral)) {
+    // Look for safe sources
+    const sks = room.memory.sk.map(a => Game.getObjectById(a.id));
+    const minerals = room.find(FIND_MINERALS);
+    room.memory.mineral = minerals.map(mineral => ({
+      id: mineral.id,
+      sk:  sks.find(sk => sk.pos.getRangeTo(mineral) < 9),
+      pos: [mineral.pos.x, mineral.pos.y]
+    }));
+  }
 
-    if (!room.memory.bunker) {
-      room.memory.bunker = {};
+  // Threat assessment
+  const hostileCreeps = room.find(FIND_HOSTILE_CREEPS);
+  room.hostile = {
+    workers: hostileCreeps.filter(
+      and(
+        creepMatchers.work,
+        not(creepMatchers.offensive),
+      ),
+    ),
+    hostile: hostileCreeps.filter(creepMatchers.offensive),
+    towers: room.find(FIND_HOSTILE_STRUCTURES, {
+      filter: and(
+        targetMatchers.isTower,
+        tower => tower.energy,
+      ),
+    }),
+  };
+
+  if (room.controller) {
+    if (_.isUndefined(room.memory.controller)) {
+      room.memory.controller = {
+        pos: [room.controller.pos.x, room.controller.pos.y],
+        id: room.controller.id,
+      };
     }
-    if (room.memory.bunker.anchor) {
+
+    if (_.get(room, 'memory.bunker.anchor')) {
       const spawns = room.find(FIND_MY_SPAWNS);
       if (spawns.length) {
         const spawn = spawns[0];
@@ -86,8 +106,6 @@ export default function* scan(room, {
       } else {
         room.memory.bunker.anchor = getBunkerLocation(room, true);
       }
-    }
-    if (room.memory.bunker.anchor) {
       const containerPositions = getStructureOfTypeMapForBunkerAt(room.memory.bunker.anchor, room, STRUCTURE_CONTAINER, room.controller.level);
       room.memory.bunker.containers = [];
       for (let containerPos of containerPositions) {

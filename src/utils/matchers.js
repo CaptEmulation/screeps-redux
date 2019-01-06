@@ -165,6 +165,26 @@ export function withGameId(matcher) {
   });
 }
 
+export function hasBodyType(type) {
+  return createMatcher({
+    matcher(creep) {
+      return creep.body.find(b => b.type === type);
+    },
+    describe(creep, m) {
+      return `hasBody(${type}) === ${m(creep)}`;
+    },
+  });
+}
+const OFFENSIVE_CREEP_PARTS = [ATTACK, RANGED_ATTACK];
+export const offensiveCreep = createMatcher({
+  matcher(creep) {
+    return creep.body.find(b => OFFENSIVE_CREEP_PARTS.includes(b.type));
+  },
+  describe(creep, m) {
+    return `offensive(${creep}) === ${m(creep)}`;
+  },
+});
+
 export const logic = {
   and,
   not,
@@ -175,6 +195,8 @@ export const logic = {
 export const creep = {
   full: hasCarryCapacityRemaining(eq(0)),
   notFull: not(hasCarryCapacityRemaining(eq(0))),
+  work: hasBodyType(WORK),
+  offensive: offensiveCreep,
 };
 
 export const target = {
