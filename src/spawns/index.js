@@ -44,6 +44,10 @@ createSaga(
     yield takeEvery(LOOP, function* spawnRunTasks() {
       for (let spawn of Object.values(Game.spawns)) {
         yield call(runTasks, spawn, handlers);
+        if (Memory.debug && spawn.memory.lastTask && spawn.memory.lastTask !== spawn.memory.lastSaidTask) {
+          new RoomVisual().text(spawn.memory.lastTask, spawn.pos);
+          spawn.memory.lastSaidTask = spawn.memory.lastTask;
+        }
       }
     })
   }

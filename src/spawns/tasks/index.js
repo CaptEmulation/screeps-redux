@@ -4,5 +4,6 @@ export { default as builder } from './builder';
 export { default as pioneer } from './pioneer';
 export { default as queen } from './queen';
 export { default as dropMiner } from './dropMiner';
+export { default as letCreepsRenew } from './letCreepsRenew';
 export { default as remoteMine } from './remoteMine';
 export { default as upgrader } from './upgrader';

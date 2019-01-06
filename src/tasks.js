@@ -131,10 +131,12 @@ function runTasks(gameObjectWithMemory, tasks, handlers) {
     };
   });
   const validPriTasks = priorityResults.filter(a => a.priority !== Infinity && _.isNumber(a.priority));
+  let lastRunTask = null;
   if (validPriTasks.length) {
     const highestPriorityTask = _.min(validPriTasks, a => a.priority);
     if (highestPriorityTask) {
       const { gen, context, myTask, task, index } = highestPriorityTask;
+      lastRunTask = myTask;
       let result;
       let subTaskResults;
       let canRunMore = false;
@@ -158,6 +160,7 @@ function runTasks(gameObjectWithMemory, tasks, handlers) {
         } else if (result.value === SUBTASK) {
           const [newTask, newTaskCanRunMore] = runTasks(gameObjectWithMemory, tasks, handlers);
           subTaskResults = newTask;
+          lastRunTask = newTask;
         } else {
           subTaskResults = null;
         }
@@ -166,14 +169,15 @@ function runTasks(gameObjectWithMemory, tasks, handlers) {
       return [myTask, canRunMore && resolveTask(task).myTask !== myTask];
     }
   }
-  return [null, false];
+  return [lastRunTask, false];
 }
 
 export default function runTask(gameObjectWithMemory, handlers, memoryGetter) {
   if (!memoryGetter && !_.get(gameObjectWithMemory, 'memory.tasks.length')) {
     return null;
   }
-  const tasks = _.isFunction(memoryGetter) ? memoryGetter(gameObjectWithMemory) : gameObjectWithMemory.memory.tasks;
+  const memory = _.isFunction(memoryGetter) ? memoryGetter(gameObjectWithMemory) : gameObjectWithMemory.memory;
+  const tasks = memory.tasks;
   let canRunMore = true;
   let prevTaskTask;
   let lastRunTask = 0;
@@ -186,4 +190,5 @@ export default function runTask(gameObjectWithMemory, handlers, memoryGetter) {
   if (count >= MAX_ITERATIONS) {
     console.log(`Too many iterations of tasks for ${gameObjectWithMemory}.  Simplify!`);
   }
+  memory.lastTask = lastRunTask && lastRunTask.action;
 }
