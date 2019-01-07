@@ -8,24 +8,25 @@ export default function* dropMiner(creep, {
   sleep,
   subTask,
   context,
-}) {
-  if (context.waiting > 10) {
-    context.sleepUntil = Game.time + 20;
-  }
-  if (context.sleepUntil) {
-    if (context.sleepUntil > Game.time) {
-      return yield sleep();
-    } else {
-      delete context.waiting;
-      delete context.sleepUntil;
-    }
-  }
+}) { 
   let target;
   if (!context.sourceId) {
     context.sourceId = getSourceId(creep);
   }
   if (context.sourceId) {
     target = Game.getObjectById(context.sourceId);
+  }
+  if (context.waiting > 10) {
+    context.sleepUntil = Game.time + 20;
+    delete creep.memory.target;
+  }
+  if (context.sleepUntil) {
+    if (context.sleepUntil > Game.time && (!target || target && target.pos.getRangeTo(creep.pos) > 1)) {
+      return yield sleep();
+    } else {
+      delete context.waiting;
+      delete context.sleepUntil;
+    }
   }
   if (target || creep.room) {
     yield priority();
@@ -79,7 +80,7 @@ export default function* dropMiner(creep, {
     const range = creep.pos.getRangeTo(target);
     if (range > 1) {
       creep.routeTo(target, { range: 1 });
-      if (range < 3) {
+      if (range < 3 && range > 1) {
         context.waiting = context.waiting || 0;
         context.waiting++;
       }
