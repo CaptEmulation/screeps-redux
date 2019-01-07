@@ -31,7 +31,7 @@ export default function* queen(spawn, {
     const queenCreeps = allCreeps.filter(and(hasTask('queen'), c => c.room === spawn.room));
     const max = Math.floor((spawn.room.find(FIND_STRUCTURES, {
       filter: targetMatchers.isContainer,
-    }).length) / 2)
+    }).length + 1) / 2)
     if (max - queenCreeps.length > 0) {
       yield priority();
 
@@ -52,6 +52,7 @@ export default function* queen(spawn, {
           action: 'recycleSelf',
         });
       }
+      console.log('queen')
       const err = spawn.spawnCreep(body, `Queen ${sillyname()}`, {
         memory: {
           tasks,

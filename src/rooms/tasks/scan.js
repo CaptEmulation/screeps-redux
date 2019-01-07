@@ -107,13 +107,13 @@ export default function* scan(room, {
       } else {
         room.memory.bunker.anchor = getBunkerLocation(room, true);
       }
-      const containerPositions = getStructureOfTypeMapForBunkerAt(room.memory.bunker.anchor, room, STRUCTURE_CONTAINER, room.controller.level);
-      room.memory.bunker.containers = [];
-      for (let containerPos of containerPositions) {
-        const containers = containerPos.lookFor(LOOK_STRUCTURES);
-        if (containers.length) {
-          room.memory.bunker.containers.push(containers[0].id);
-        }
+    }
+    const containerPositions = getStructureOfTypeMapForBunkerAt(room.memory.bunker.anchor, room, STRUCTURE_CONTAINER, room.controller.level);
+    room.memory.bunker.containers = [];
+    for (let containerPos of containerPositions) {
+      const containers = containerPos.lookFor(LOOK_STRUCTURES);
+      if (containers.length) {
+        room.memory.bunker.containers.push(containers[0].id);
       }
     }
   }
