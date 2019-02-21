@@ -74,20 +74,20 @@ export default function* scan(room, {
 
   // Threat assessment
   const hostileCreeps = room.find(FIND_HOSTILE_CREEPS);
-  room.hostile = {
+  room.memory.hostile = {
     workers: hostileCreeps.filter(
       and(
         creepMatchers.work,
         not(creepMatchers.offensive),
       ),
     ),
-    hostile: hostileCreeps.filter(creepMatchers.offensive),
+    hostile: hostileCreeps.filter(creepMatchers.offensive).map(c => ({ id: c.id })),
     towers: room.find(FIND_HOSTILE_STRUCTURES, {
       filter: and(
         targetMatchers.isTower,
         tower => tower.energy,
       ),
-    }),
+    }).map(s => ({ id: s.id, type: s.structureType })),
   };
 
   if (room.controller) {
@@ -108,12 +108,14 @@ export default function* scan(room, {
         room.memory.bunker.anchor = getBunkerLocation(room, true);
       }
     }
-    const containerPositions = getStructureOfTypeMapForBunkerAt(room.memory.bunker.anchor, room, STRUCTURE_CONTAINER, room.controller.level);
-    room.memory.bunker.containers = [];
-    for (let containerPos of containerPositions) {
-      const containers = containerPos.lookFor(LOOK_STRUCTURES);
-      if (containers.length) {
-        room.memory.bunker.containers.push(containers[0].id);
+    if (room.memory.bunker.anchor) {
+      const containerPositions = getStructureOfTypeMapForBunkerAt(room.memory.bunker.anchor, room, STRUCTURE_CONTAINER, room.controller.level);
+      room.memory.bunker.containers = [];
+      for (let containerPos of containerPositions) {
+        const containers = containerPos.lookFor(LOOK_STRUCTURES);
+        if (containers.length) {
+          room.memory.bunker.containers.push(containers[0].id);
+        }
       }
     }
   }

@@ -336,6 +336,9 @@ function moveCreepOutOfTheWay(creep, from, target, range, creepsToMove, nextPosi
     if (!newPos.isPassible(true)) {
       return false;
     }
+    if (nextPositions.find(pos => pos.x === newPos.x && pos.y === newPos.y)) {
+      return false;
+    }
 
     const creepsAtMySpot = newPos.lookFor(LOOK_CREEPS);
     if (creepsAtMySpot.length) {
@@ -386,20 +389,32 @@ function moveCreepOutOfTheWay(creep, from, target, range, creepsToMove, nextPosi
 }
 
 Creep.getOutOfTheWay = function getAllCreepsOutOfTheWay() {
+  const nextPositions = [];
   if (lastTick !== Game.time) {
     lastTick = Game.time;
     movingCreeps = {};
   }
   for (let spawn of Object.values(Game.spawns)) {
     if (spawn.spawning && spawn.spawning.remainingTime === 0) {
-      movingCreeps[spawn.name] = {
-        nextPosition: _.sample(spawn.pos.availableNeighbors(true)),
-      };
+      nextPositions.push(...spawn.pos.availableNeighbors(true));
     }
   }
+
   const creepsToMove = {};
   const creepMoves = [];
-  const nextPositions = [];
+  for (let nextPosition of nextPositions) {
+    const nextPosCreeps = nextPosition.lookFor(LOOK_CREEPS);
+    if (nextPosCreeps) {
+      const creepsAtNextPos = nextPosCreeps.filter(creep => creep.my);
+      if (creepsAtNextPos.length) {
+        const creepAtNextPos = creepsAtNextPos[0];
+        if (!movingCreeps[creepAtNextPos.name] && !creepsToMove[creepAtNextPos.name]) {
+          const [target, range] = getTargetAndRange(creepAtNextPos);
+          creepsToMove[creepAtNextPos.name] = { from: [], target, range };
+        }
+      }
+    }
+  }
   for (let [creepName, { nextPosition }] of Object.entries(movingCreeps)) {
     if (nextPosition) {
       nextPositions.push(nextPosition);
@@ -412,7 +427,6 @@ Creep.getOutOfTheWay = function getAllCreepsOutOfTheWay() {
           if (creepAtNextPos !== creep && !movingCreeps[creepAtNextPos.name] && !creepsToMove[creepAtNextPos.name]) {
             const [target, range] = getTargetAndRange(creepAtNextPos);
             creepsToMove[creepAtNextPos.name] = { from: [], target, range };
-            creepsToMove[creepAtNextPos.name].from.push(creep);
           }
         }
       }

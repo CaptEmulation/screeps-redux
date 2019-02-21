@@ -52,7 +52,6 @@ export default function* queen(spawn, {
           action: 'recycleSelf',
         });
       }
-      console.log('queen')
       const err = spawn.spawnCreep(body, `Queen ${sillyname()}`, {
         memory: {
           tasks,

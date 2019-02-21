@@ -17,7 +17,7 @@ export default function* upgrader(spawn, {
   if (!spawn.spawning) {
     const allCreeps = Object.values(Game.creeps);
     const upgraderCreeps = allCreeps.filter(and(hasTask('upgrader'), c => c.room === spawn.room));
-    const max = 4;
+    const max = spawn.room.memory.upgraders || 4;
     if (max - upgraderCreeps.length > 0) {
       yield priority();
       const body = [MOVE, MOVE, MOVE, CARRY, CARRY, WORK, WORK, WORK, WORK];
