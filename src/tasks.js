@@ -166,7 +166,7 @@ function runTasks(gameObjectWithMemory, tasks, handlers) {
         }
       } while(!result.done);
       updateTaskFromContext(myTask, context);
-      return [myTask, canRunMore && resolveTask(task).myTask !== myTask];
+      return [lastRunTask, canRunMore && resolveTask(task).myTask !== myTask];
     }
   }
   return [lastRunTask, false];

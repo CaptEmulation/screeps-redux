@@ -20,7 +20,6 @@ export default function* renewSelf(creep, {
   if (!target || target.room.energyAvailable < 50) {
     // Can't find a spawn to renew at
     delete context.isRenewing;
-    delete creep.memory.target;
     yield sleep();
   } else if (context.isRenewing) {
     // Hold priority while renewing
@@ -32,16 +31,14 @@ export default function* renewSelf(creep, {
   context.isRenewing = context.isRenewing || -200 + creep.ticksToLive;
   if (creep.ticksToLive > 1300) {
     delete context.isRenewing;
-    delete creep.memory.target;
     yield done();
   }
 
-
+delete creep.memory.target;
   const range = creep.pos.getRangeTo(target);
   if (range > 1) {
     creep.routeTo(target, { range: 1 });
   } else {
-    creep.memory.target = target.id;
     target.renewCreep(creep);
   }
 }
