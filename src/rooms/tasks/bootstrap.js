@@ -33,8 +33,13 @@ export default function* bootstrap(room, {
         yield subTask(rcl5);
         break;
       case 6:
-      default:
         yield subTask('rcl6');
+        break;
+      case 7:
+        yield subTask('rcl7');
+        break;
+      case 8:
+        yield subTask('rcl8');
         break;
     }
   }

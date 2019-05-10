@@ -31,7 +31,7 @@ export default function* dropMiner(spawn, {
       return sum + creep.body.filter(b => b.type === WORK).length
     }, 0);
     const totalWorkNeeded = sources.length * 5;
-    if (sourceDef && totalWorkAvailable < totalWorkNeeded) {
+    if (dropMinerCreeps.length === 0 || sourceDef && totalWorkAvailable < totalWorkNeeded) {
       yield priority(dropMinerCreeps.length == 0 ? -1 : 0);
       let body;
       let tasks = [];

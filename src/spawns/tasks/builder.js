@@ -23,10 +23,14 @@ export default function* builder(spawn, {
     context.needs.builders = max - builderCreeps.length;
     if (context.needs.builders > 0) {
       yield priority();
-      const body = [MOVE, MOVE, CARRY, WORK];
+      const body = [MOVE, WORK, CARRY, WORK];
       const additionals = Math.floor(spawn.room.energyAvailable / calcCreepCost(body));
       for (let i = 0; i < additionals - 1; i++) {
-        body.push(MOVE, MOVE, CARRY, WORK);
+        if (body.length <= 46) {
+          body.push(MOVE, WORK, CARRY, WORK);
+        } else {
+          break;
+        }
       }
 
       const err = spawn.spawnCreep(body, `${sillyname()} the Builder`, {
