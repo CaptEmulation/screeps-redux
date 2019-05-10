@@ -30,7 +30,9 @@ export default function* pioneer(creep, {
   } else if (_.sum(creep.carry) === creep.carryCapacity) {
     if ((yield subTask(supplyTower)).noTarget) {
       if ((yield subTask(supplySpawn)).noTarget) {
-        if ((yield subTask(fix)).noTarget) {
+        if ((yield subTask(fix, {
+          noFix: [ STRUCTURE_WALL, STRUCTURE_RAMPART ],
+        })).noTarget) {
           // If there are no construct creeps in room, then also look for construct targets
           const nonPioneerConstructCreeps = creep.room.find(FIND_MY_CREEPS).filter(
             and(

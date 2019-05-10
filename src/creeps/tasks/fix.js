@@ -16,7 +16,7 @@ export default function* fix(creep, {
   if (!target || (!target.hits && !target.hitsMax) || (target.hits === target.hitsMax)) {
     targets = creep.room.find(FIND_STRUCTURES, {
       filter(s) {
-         return s.hits < s.hitsMax * percent;
+         return !(context.noFix || []).includes(s.structureType) && s.hits < s.hitsMax * percent;
       }
     });
     target = creep.pos.findClosestByRange(targets);

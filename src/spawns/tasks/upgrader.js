@@ -27,7 +27,7 @@ export default function* upgrader(spawn, {
       }
       if (!body.find(b => b.type === MOVE)) {
         body.push(MOVE);
-        if (calcCreepCost(body) > spawn.room.energyCapacityAvailable) {
+        if (calcCreepCost(body) > spawn.room.energyCapacityAvailable || body.length > 50) {
           body.pop();
         }
       }

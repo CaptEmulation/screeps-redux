@@ -12,7 +12,9 @@ export default function* upgrader(creep, {
 }) {
   yield priority();
   if (_.sum(creep.carry) === creep.carryCapacity && creep.room.controller && creep.room.controller.my) {
-    if ((yield subTask(fix)).noTarget) {
+    if ((yield subTask(fix, {
+      noFix: [ STRUCTURE_WALL, STRUCTURE_RAMPART ],
+    })).noTarget) {
       yield subTask(upgradeController);
     }
   } else {
