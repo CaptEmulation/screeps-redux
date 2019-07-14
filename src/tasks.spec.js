@@ -134,4 +134,63 @@ describe('tasks', () => {
       },
     });
   });
+
+  it('can sleep', () => {
+    const tasks = {
+      sleeps: jest.fn(function* (target, {
+        sleep,
+      }) {
+        yield sleep();
+        throw new Error('should not end up here');
+      }),
+      run: jest.fn(function* (target, {
+        priority,
+        done,
+      }) {
+        yield priority(-1);
+        yield done();
+      }),
+    };
+    const memory = {
+      tasks: [{
+        action: 'sleeps',
+      }, {
+        action: 'run',
+      }],
+    };
+    runTasks({ memory }, tasks);
+    runTasks({ memory }, tasks);
+    expect(tasks.sleeps).toHaveBeenCalledTimes(2);
+    expect(tasks.run).toHaveBeenCalledTimes(2);
+  });
+
+  it('can sleep for awhile', () => {
+    const tasks = {
+      sleeps: jest.fn(function* (target, {
+        sleep,
+      }) {
+        yield sleep(1);
+        throw new Error('should not end up here');
+      }),
+      run: jest.fn(function* (target, {
+        priority,
+        done,
+      }) {
+        yield priority(-1);
+        yield done();
+      }),
+    };
+    const memory = {
+      tasks: [{
+        action: 'sleeps',
+      }, {
+        action: 'run',
+      }],
+    };
+    runTasks({ memory }, tasks);
+    runTasks({ memory }, tasks);
+    runTasks({ memory }, tasks);
+    expect(tasks.sleeps).toHaveBeenCalledTimes(2);
+    expect(tasks.run).toHaveBeenCalledTimes(3);
+  });
 });
