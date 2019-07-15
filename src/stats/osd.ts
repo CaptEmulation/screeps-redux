@@ -13,7 +13,7 @@ interface Osd {
 export default function (room: Room) {
   const lines: Array<LineItem> = [];
   const defaultStyles: TextStyle = {
-    font: '20px',
+    font: 1.5,
     color: '#DDDD33',
     align: 'left',
   };
@@ -27,6 +27,7 @@ export default function (room: Room) {
       visual.text(`Room: ${room.name}`, pos, defaultStyles);
       lines.forEach((line) => {
         pos.y += 2;
+
         visual.text(line.text(), pos, line.style ? {
           ...defaultStyles,
           ...line.style(),

@@ -20,6 +20,7 @@ export default function* stats(room, {
   const stat = statCache[room.name];
   
   stat.osd.draw();
+  
   yield priority(context.priority);
 
   
