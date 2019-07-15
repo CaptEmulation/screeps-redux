@@ -12,7 +12,9 @@
   "author": "CaptEmulation <john.holmes.dean@gmail.com>",
   "license": "ISC",
   "jest": {
-    "setupFilesAfterEnv": ["<rootDir>/jest.setup.js"]
+    "setupFilesAfterEnv": [
+      "<rootDir>/jest.setup.js"
+    ]
   },
   "devDependencies": {
     "@babel/cli": "^7.1.5",
@@ -24,7 +26,7 @@
     "grunt": "^1.0.4",
     "grunt-screeps": "^1.4.0",
     "jest": "^24.8.0",
-    "lodash": "^4.17.11",
+    "lodash": "^4.17.14",
     "rollup": "^0.67.4",
     "rollup-plugin-babel": "^4.0.3",
     "rollup-plugin-babel-minify": "^6.1.1",
