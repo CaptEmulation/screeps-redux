@@ -1,14 +1,18 @@
 function createMatcher({
   matcher,
   describe,
+  stringify,
+  parse,
 }) {
-  const m = creep => matcher(creep);
-  m.describe = creep => {
+  const m = item => matcher(item);
+  m.describe = item => {
     if (!_.isFunction(describe)) {
       return m.toString();
     }
-    return describe(creep, matcher);
+    return describe(item, m);
   }
+  m.stringify = () => stringify(m);
+  m.parse = (str) => parse(str, m);
   return m;
 }
 
@@ -19,6 +23,9 @@ export function and(...matchers) {
     },
     describe(value) {
       return `(${matchers.map(m => m.describe(value)).join(' AND ')})`
+    },
+    stringify() {
+      return `and(${matchers.join(',')})`;
     },
   });
 }
