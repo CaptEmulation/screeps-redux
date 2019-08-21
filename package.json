@@ -12,19 +12,22 @@
   "author": "CaptEmulation <john.holmes.dean@gmail.com>",
   "license": "ISC",
   "jest": {
-    "setupTestFrameworkScriptFile": "<rootDir>/jest.setup.js"
+    "setupFilesAfterEnv": [
+      "<rootDir>/jest.setup.js"
+    ]
   },
   "devDependencies": {
     "@babel/cli": "^7.1.5",
     "@babel/core": "^7.1.6",
     "@babel/preset-env": "^7.1.6",
+    "@types/screeps": "^2.5.4",
     "babel-core": "^7.0.0-bridge.0",
     "babel-jest": "^24.1.0",
-    "grunt": "^1.0.3",
+    "grunt": "^1.0.4",
     "grunt-screeps": "^1.4.0",
-    "jest": "^24.1.0",
-    "lodash": "^4.17.11",
-    "rollup": "^0.67.3",
+    "jest": "^24.8.0",
+    "lodash": "^4.17.14",
+    "rollup": "^0.67.4",
     "rollup-plugin-babel": "^4.0.3",
     "rollup-plugin-babel-minify": "^6.1.1",
     "rollup-plugin-commonjs": "^9.2.0",
@@ -38,7 +41,7 @@
     "redux": "^4.0.1",
     "redux-saga": "^0.16.2",
     "reselect": "^4.0.0",
-    "rollup-plugin-typescript2": "^0.19.2",
+    "rollup-plugin-typescript2": "^0.22.0",
     "sillyname": "^0.1.0",
     "tree-model": "^1.0.7",
     "typescript": "^3.2.2",

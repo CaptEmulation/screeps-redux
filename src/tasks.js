@@ -46,6 +46,8 @@ function updateTaskFromContext(myTask, context) {
   })
 }
 
+function* defaultHandler(t, { sleep }) { yield sleep(); }
+
 function runTasks(gameObjectWithMemory, tasks, handlers) {
   // Obtain priority for every task
   const taskPriorities = [];
@@ -56,7 +58,7 @@ function runTasks(gameObjectWithMemory, tasks, handlers) {
 
     if (!handler) {
       console.log(`Task ${myTask.action} is not defined for ${gameObjectWithMemory}`);
-      handler = function* (t, { sleep }) { yield sleep(); };
+      handler = defaultHandler;
     }
 
     function priority(num) {
@@ -64,8 +66,16 @@ function runTasks(gameObjectWithMemory, tasks, handlers) {
       return PRIORITY;
     }
 
-    function sleep() {
+    function sleep(sleepForTime) {
       taskPriorities[index] = Infinity;
+      if (sleepForTime) {
+        context.sleepFor = sleepForTime;
+      } else if (context.sleepFor) {
+        context.sleepFor--;
+        if (context.sleepFor === 0) {
+          delete context.sleepFor;
+        }
+      }
       return SLEEP;
     }
 
@@ -85,19 +95,24 @@ function runTasks(gameObjectWithMemory, tasks, handlers) {
       }
     }
 
-    return {
-      name: myTask.action,
-      task,
-      myTask,
-      context,
-      gen: handler && handler(gameObjectWithMemory, {
+    const args = [
+      gameObjectWithMemory, 
+      {
         priority,
         sleep,
         done,
         subTask,
         context,
         done,
-      })
+      },
+    ];
+
+    return {
+      name: myTask.action,
+      task,
+      myTask,
+      context,
+      gen: context.sleepFor ? defaultHandler(...args) : handler(...args),
     };
   });
   const priorityResults = taskGens.map(({ name, gen, context, task, myTask }, index) => {

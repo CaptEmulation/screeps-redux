@@ -10,4 +10,5 @@ export { default as rcl7 } from './rcl7';
 export { default as rcl8 } from './rcl8';
 export { default as remote } from './remote';
 export { default as scan } from './scan';
+export { default as stats } from './stats';
 export { default as towerDefense } from './towerDefense';

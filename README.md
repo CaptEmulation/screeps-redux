@@ -1,10 +1,10 @@
 # screeps-redux
 
- Our bot for Screeps.  Originally strongly based on redux and redux-saga, now only loosely so.  
+ Our bot for Screeps. Originally strongly based on redux and redux-saga, now only loosely so. 
 
 ## Getting Started
 
-Some global functions are present to help pick a starting location.  First place a spawn anywhere in the world.  This will allow you to execute console commands.  From there you can locate an optimal location for the first spawn in any room (even if you do not have vision).  A visual onscreen display of potential spawn location will be shown.  Lower numbers are better.
+Some global functions are present to help pick a starting location. First place a spawn anywhere in the world. This will allow you to execute console commands. From there you can locate an optimal location for the first spawn in any room (even if you do not have vision). A visual onscreen display of potential spawn location will be shown. Lower numbers are better.
 
 ```
 getSpawnLocation({
@@ -22,7 +22,7 @@ getSpawnLocation({
   }
 })
 ```
-Enter the correct source and mineral locations for a room.  If necessary respawn and then put your spawn at the location specified on the console.
+Enter the correct source and mineral locations for a room. If necessary respawn and then put your spawn at the location specified on the console.
 
 Add the `bootstrap` task to the new room.
 
@@ -30,13 +30,13 @@ Add the `bootstrap` task to the new room.
 Game.rooms['roomName'].addTask('bootstrap');
 ```
 
-That's it!  As the room controller is leveled up, the "bunker" will have its buildings placed automatically.  However, roads outside the bunker and walls/ramparts are not yet placed automatically.  Placing construction sites will spawn builders that will construct and then recycle themselves when done.
+That's it!  As the room controller is leveled up, the "bunker" will have its buildings placed automatically. However, roads outside the bunker and walls/ramparts are not yet placed automatically. Placing construction sites will spawn builders that will construct and then recycle themselves when done.
 
-For RCL1 and RCL2, "pioneer" creeps will be spawned to harvest, supply spawn with energy and upgrade controller.  At RCL3 containers will be automatically be constructed at the controller and sources.  When those are done then pioneers will recycle themselves to be replaced by separate upgraders, static miners and haulers.
+For RCL1 and RCL2, "pioneer" creeps will be spawned to harvest, supply spawn with energy and upgrade controller. At RCL3 containers will be automatically be constructed at the controller and sources. When those are done then pioneers will recycle themselves to be replaced by separate upgraders, static miners and haulers.
 
 ## Mining remote rooms
 
-Rooms can support remote mining at RCL3.  To configure a spawner to support remote mining:
+Rooms can support remote mining at RCL3. To configure a spawner to support remote mining:
 
 ```
 Game.spawns['Spawn1'].addTask('remoteMine', { rooms: ['room1', 'room2'] });
@@ -52,15 +52,15 @@ Game.rooms['rcl3 or greater room'].addTask('claim', {
 });
 ```
 
-That's it!  The room claim task will instruct the spawner to build claimers and pioneers targeting each room to claim the room and create a new bunker layout in the remote room.  The source room will continue to support the remote room with pioneers until it gets to rcl3.
+That's it!  The room claim task will instruct the spawner to build claimers and pioneers targeting each room to claim the room and create a new bunker layout in the remote room. The source room will continue to support the remote room with pioneers until it gets to rcl3.
 
 ## Get out of the way
 
-`Creep.getAllCreepsOutOfTheWay` expects creeps to have a `target` and optionally a `range` saved to memory.  This is used to find optimal locations to move creeps out of the way
+`Creep.getAllCreepsOutOfTheWay` expects creeps to have a `target` and optionally a `range` saved to memory. This is used to find optimal locations to move creeps out of the way
 
 ## Tasks
 
-Generator based task system for game objects with memory.  Tasks can be added to rooms, spawns and creeps.
+Generator based task system for game objects with memory. Tasks can be added to rooms, spawns and creeps.
 
 Example:
 ```
@@ -202,7 +202,7 @@ export function* upgradeController(creep, {
 
 ### Sub task
 
-Tasks can be composed into higher level tasks using `subTask`.  Subtasks can return results when the call `done` which can be used to perform additional logic.
+Tasks can be composed into higher level tasks using `subTask`. Subtasks can return results when the call `done` which can be used to perform additional logic.
 
 Example:
 ```
@@ -225,19 +225,19 @@ export function* pioneer(creep, {
   }
 }
 ```
-`subTask` creates a child task to a parent task.  The child task will run until that task calls `done` at which point the parent task will regain control.
+`subTask` creates a child task to a parent task. The child task will run until that task calls `done` at which point the parent task will regain control.
 
-### Priority & sleep
+### Priority or sleep
 
-All tasks must first yield a priority or a sleep before any other yield.  This is used to determine the priority of the task in relation to every other task the creep is assigned.  Priorities are in ascending order, so `-Infinity` is the highest priority and `Infinity` is the lowest priority.  An `undefined` priority is assumed to be 0.
+All tasks must first yield a priority or a sleep before any other yield. This is used to determine the priority of the task in relation to every other task the creep is assigned. Priorities are in ascending order, so `-Infinity` is the highest priority and `Infinity` is the lowest priority. An `undefined` priority is assumed to be 0.
 
-Yielding sleep will inform the task manager that there is nothing to do for the task.  The task will not be considered for priority but also will stay active, for example in the case of a subtask.
+Yielding sleep will inform the task manager that there is nothing to do for the task. The task will not be considered for priority but also will stay active, for example in the case of a subtask. If you want to sleep for a specific amount of ticks, then `yield sleep(ticks);`
 
 ### Context
 
-Tasks can save state to their `context` which is saved to the game object's memory and is associated with the task.  Context is destroyed when the task is destroyed so save directly to memory if data needs to be saved past the task lifetime.
+Tasks can save state to their `context` which is saved to the game object's memory and is associated with the task. Context is destroyed when the task is destroyed so save directly to memory if data needs to be saved past the task lifetime.
 
-Context is shared with sub tasks.  For example:
+Context is shared with sub tasks. For example:
 
 ```
 export function* master(creep, {
