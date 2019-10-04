@@ -82,7 +82,15 @@ function getSpawnLocation(room, visualize = true) {
   }
 }
 
-global.getSpawnLocation = getSpawnLocation;
+global.getSpawnLocation = function ({ room, controller, sources, mineral }) {
+  return getSpawnLocation({
+    name: room,
+    controller: { pos: new RoomPosition(...controller, room) },
+    sources: sources.map(pos => ({ pos: new RoomPosition(...pos, room)})),
+    mineral: { pos: new RoomPosition(...mineral, room) }
+  })
+}
+
 
 function getAllowableBunkerLocations(room, visualize) {
   let allowableLocations = getNonIntersectingBunkerLocations(room.name, visualize);
@@ -208,7 +216,6 @@ export function placeUpgradeContainer(room, anchor) {
       const structures = target.lookFor(LOOK_STRUCTURES);
       const container = structures.find(targetMatchers.isContainer);
       if (container) {
-        delete room.memory.bunker.upgradeContainerPos;
         room.memory.bunker.upgradeContainer = container.id;
       } else {
         const constructionSites = new RoomPosition(...room.memory.bunker.upgradeContainerPos, room.name).lookFor(LOOK_CONSTRUCTION_SITES);

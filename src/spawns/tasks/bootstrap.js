@@ -17,7 +17,7 @@ export default function* bootstrap(spawn, {
   if (!spawn.spawning && spawn.room.memory.sources.length) {
     const allCreeps = Object.values(Game.creeps);
     const pioneerCreeps = allCreeps.filter(and(hasTask('pioneer'), c => c.room === spawn.room));
-    const max = spawn.room.memory.sources.length * 3;
+    const max = spawn.room.memory.sources.length * 4;
     context.needs = context.needs || {};
     context.needs.pioneers = max - pioneerCreeps.length;
     if (context.needs.pioneers > 0) {
@@ -31,8 +31,6 @@ export default function* bootstrap(spawn, {
         memory: {
           tasks: [{
             action: 'pioneer',
-          }, {
-            action: 'renewSelf',
           }],
         },
       });

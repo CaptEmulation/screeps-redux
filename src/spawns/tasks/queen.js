@@ -33,23 +33,23 @@ export default function* queen(spawn, {
       filter: targetMatchers.isContainer,
     }).length + 1) / 2)
     if (max - queenCreeps.length > 0) {
-      yield priority();
-
+      yield priority(queenCreeps.length === 0 ? -5 : 0);
+      let isReduced = false;
       let level = spawn.room.controller.level - 1;
-      if (level > 0 && context.waiting > 100) {
-        level -= Math.floor(context.waiting / 100);
+      if (level > 0 && context.waiting > 5) {
+        level -= Math.floor(context.waiting / 5);
       }
       const body = builds[Math.max(0, level)];
       let tasks = [{
         action: 'queen',
       }]
-      if (level === spawn.room.controller.level - 1) {
+      if (isReduced) {
         tasks.push({
-          action: 'renewSelf',
+          action: 'recycleSelf',
         });
       } else {
         tasks.push({
-          action: 'recycleSelf',
+          action: 'renewSelf',
         });
       }
       const err = spawn.spawnCreep(body, `Queen ${sillyname()}`, {
@@ -61,6 +61,7 @@ export default function* queen(spawn, {
       if (!err) {
         delete context.waiting;
       } else if (err === ERR_NOT_ENOUGH_ENERGY) {
+        console.log('waiting?',Math.floor(context.waiting / 20))
         context.waiting = context.waiting || 0;
         context.waiting++;
       }

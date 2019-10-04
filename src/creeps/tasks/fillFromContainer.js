@@ -1,5 +1,6 @@
 import {
   and,
+  or,
   needsEnergy,
   target as targetMatchers,
 } from '../../utils/matchers';
@@ -20,7 +21,10 @@ export default function* fillFromContainer(creep, {
     target = null;
     delete creep.memory.target;
     targets = creep.room.find(FIND_STRUCTURES, {
-      filter: and(targetMatchers.isContainer,  c => c.store && c.store[RESOURCE_ENERGY] > 0)
+      filter: or(
+        and(targetMatchers.isStorage, c => c.store && c.store[RESOURCE_ENERGY] > 100000),
+        and(targetMatchers.isContainer,  c => c.store && c.store[RESOURCE_ENERGY] > 0)
+      )
     });
     if (targets.length) {
       target = _.maxBy(targets, target => target.store[RESOURCE_ENERGY] / target.pos.getRangeTo(creep.pos));
