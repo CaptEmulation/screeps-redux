@@ -1,4 +1,4 @@
-export default function* fix(creep, {
+export default function* ramparts(creep, {
   priority,
   done,
   subTask,
@@ -10,20 +10,20 @@ export default function* fix(creep, {
     delete creep.memory.range;
     yield done();
   }
-  const percent = context.percent || 0.85;
   let target = Game.getObjectById(creep.memory.target);
   let targets
-  if (!target || (!target.hits && !target.hitsMax) || (target.hits === target.hitsMax)) {
+  if (!target || target.structureType !== STRUCTURE_RAMPART) {
     targets = creep.room.find(FIND_STRUCTURES, {
       filter(s) {
-         return !(context.noFix || []).includes(s.structureType) && s.hits < s.hitsMax * percent;
+         return STRUCTURE_RAMPART === s.structureType && s.hits < 500;
       }
-    });
-    target = creep.pos.findClosestByRange(targets);
+    }).sort((a, b) => a.hits - b.hits);
+
+    target = targets[0];
   }
 
   const range = creep.pos.getRangeTo(target);
-  if (target && target.hits < target.hitsMax) {
+  if (target && creep.carry.energy > 0) {
     if (range > 3) {
       creep.routeTo(target, { range: 3 });
     } else {

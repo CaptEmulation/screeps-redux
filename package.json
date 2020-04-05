@@ -6,8 +6,9 @@
   "scripts": {
     "test": "jest",
     "build": "rollup -c",
+    "build:nearley": "nearleyc src/parser/grammar.ne -o src/parser/grammar.js",
     "deploy:local": "npm run build -- --watch",
-    "deploy:screeps": "npm run build -- --watch --host=screeps.com"
+    "deploy:screeps": "npm run build -- --watch --host=screeps.com/default"
   },
   "author": "CaptEmulation <john.holmes.dean@gmail.com>",
   "license": "ISC",
@@ -23,6 +24,7 @@
     "@babel/core": "^7.1.6",
     "@babel/preset-env": "^7.1.6",
     "@types/jest": "^24.0.18",
+    "@types/nearley": "^2.11.1",
     "@types/screeps": "^2.5.4",
     "babel-core": "^7.0.0-bridge.0",
     "babel-jest": "^24.1.0",
@@ -42,7 +44,8 @@
     "lodash.differencewith": "^4.5.0",
     "lodash.mapvalues": "^4.6.0",
     "lodash.uniqby": "^4.7.0",
-    "nearly": "^1.8.1",
+    "moo": "^0.5.1",
+    "nearley": "^2.19.1",
     "redux": "^4.0.1",
     "redux-saga": "^0.16.2",
     "reselect": "^4.0.0",

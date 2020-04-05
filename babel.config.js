@@ -1,13 +1,13 @@
 const presets = [
   [
-    "@babel/env",
+    '@babel/env',
     {
       targets: {
-        // node: "current",
-        chrome: 52,
+        node: 'current',
+        // chrome: 52,
       },
     },
   ],
-];
+]
 
-module.exports = { presets };
+module.exports = { presets }

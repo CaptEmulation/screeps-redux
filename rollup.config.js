@@ -1,42 +1,44 @@
-import resolve from 'rollup-plugin-node-resolve';
-import commonjs from 'rollup-plugin-commonjs';
-import babel from 'rollup-plugin-babel';
-import minify from 'rollup-plugin-babel-minify';
-import replace from 'rollup-plugin-replace';
-import typescript from "rollup-plugin-typescript2";
-import fs from 'fs';
-import path from 'path';
-import os from 'os';
+import resolve from 'rollup-plugin-node-resolve'
+import commonjs from 'rollup-plugin-commonjs'
+import babel from 'rollup-plugin-babel'
+import minify from 'rollup-plugin-babel-minify'
+import replace from 'rollup-plugin-replace'
+import typescript from 'rollup-plugin-typescript2'
+import fs from 'fs'
+import path from 'path'
+import os from 'os'
 
-const ROOT = (function () {
-  const platform = os.platform();
-  switch(platform) {
+const ROOT = (function() {
+  const platform = os.platform()
+  switch (platform) {
     case 'darwin':
-      return 'Library/Application Support/Screeps/scripts';
+      return 'Library/Application Support/Screeps/scripts'
     case 'win32':
-      return 'AppData/Local/Screeps/scripts';
+      return 'AppData/Local/Screeps/scripts'
     default:
-      return '.config/Screeps/scripts';
+      return '.config/Screeps/scripts'
   }
-})();
+})()
 
 function deploy(host) {
   return {
     generateBundle(a, bundles, isWrite) {
       if (isWrite) {
-        const mainjs = path.resolve(os.homedir(), ROOT, host, 'default/main.js');
-        console.log('Writing', mainjs);
-        fs.writeFileSync(mainjs, bundles['main.js'].code, 'utf8');
-        const map = `module.exports.d=${bundles['main.js'].map}`;
-        fs.writeFileSync(path.resolve(os.homedir(), ROOT, host, 'default/main.map.js'), map, 'utf8');
+        const mainjs = path.resolve(os.homedir(), ROOT, host, 'main.js')
+        console.log('Writing', mainjs)
+        fs.writeFileSync(mainjs, bundles['main.js'].code, 'utf8')
+        const map = `module.exports.d=${bundles['main.js'].map}`
+        fs.writeFileSync(
+          path.resolve(os.homedir(), ROOT, host, 'main.map.js'),
+          map,
+          'utf8'
+        )
       }
-    }
+    },
   }
 }
 
-export default ({
-  host = '127_0_0_1___21025',
-}) => ({
+export default ({ host = '127_0_0_1___21025/default' }) => ({
   input: 'src/app.js',
   output: {
     file: 'main.js',
@@ -50,14 +52,16 @@ export default ({
   plugins: [
     resolve(),
     babel({
-      exclude: 'node_modules/**'
+      exclude: 'node_modules/**',
     }),
     replace({
-      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
+      'process.env.NODE_ENV': JSON.stringify(
+        process.env.NODE_ENV || 'development'
+      ),
     }),
     commonjs(),
-    typescript({tsconfig: "./tsconfig.json"}),
+    typescript({ tsconfig: './tsconfig.json' }),
     // minify(),
     deploy(host),
-  ]
+  ],
 })

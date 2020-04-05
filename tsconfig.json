@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
     "allowJs": true,
-    "module": "esnext",
-    "target": "esnext",
-    "lib": ["dom", "es2016"],
+    "module": "CommonJS",
+    "target": "es6",
+    "lib": ["es6"],
     "newLine": "CRLF",
     "baseUrl": "src/",
     "sourceMap": false,

@@ -96,7 +96,7 @@ function runTasks(gameObjectWithMemory, tasks, handlers) {
     }
 
     const args = [
-      gameObjectWithMemory, 
+      gameObjectWithMemory,
       {
         priority,
         sleep,

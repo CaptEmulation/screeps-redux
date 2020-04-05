@@ -1,3 +1,5 @@
+// import { ATTACK, RANGED_ATTACK } from 'screeps'
+
 function createMatcher({ matcher, describe, stringify, parse }) {
   const m = item => matcher(item)
   m.describe = item => {
