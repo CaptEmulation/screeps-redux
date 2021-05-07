@@ -29,7 +29,7 @@
     "grunt": "^1.0.4",
     "grunt-screeps": "^1.4.0",
     "jest": "^24.8.0",
-    "lodash": "^4.17.19",
+    "lodash": "^4.17.21",
     "rollup": "^0.67.4",
     "rollup-plugin-babel": "^4.0.3",
     "rollup-plugin-babel-minify": "^6.1.1",
