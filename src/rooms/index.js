@@ -43,7 +43,7 @@ createSaga(
   },
   function* () {
     yield takeEvery(LOOP, function* roomRunTasks() {
-      if (Game.cpu.bucket > 2000) {
+      if (typeof Game.cpu.bucket === 'undefined' || Game.cpu.bucket > 2000) {
         for (let room of Object.values(Game.rooms)) {
           yield call(runTasks, room, handlers);
         }

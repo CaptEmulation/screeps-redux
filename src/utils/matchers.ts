@@ -1,17 +1,25 @@
-function createMatcher({ matcher, describe, stringify, parse }) {
-  const m = item => matcher(item)
-  m.describe = item => {
+interface MatcherDefinition<T> {
+  matcher: (item: T) => boolean;
+  describe: (item: T, matcher: Matcher<T>) => string;
+}
+
+interface Matcher<T> {
+  (item: T): boolean;
+  describe: (item: T) => string;
+}
+
+function createMatcher<T>({ matcher, describe }: MatcherDefinition<T>): Matcher<T> {
+  const m = (item: T) => matcher(item)
+  m.describe = (item: T): string => {
     if (!_.isFunction(describe)) {
       return m.toString()
     }
     return describe(item, m)
   }
-  m.stringify = () => stringify(m)
-  m.parse = str => parse(str, m)
   return m
 }
 
-export function and(...matchers) {
+export function and<T>(...matchers: Matcher<T>[]): Matcher<T> {
   return createMatcher({
     matcher(value) {
       return matchers.every(m => m(value))
@@ -19,13 +27,10 @@ export function and(...matchers) {
     describe(value) {
       return `(${matchers.map(m => m.describe(value)).join(' AND ')})`
     },
-    stringify() {
-      return `and(${matchers.join(',')})`
-    },
   })
 }
 
-export function or(...matchers) {
+export function or<T>(...matchers: Matcher<T>[]): Matcher<T> {
   return createMatcher({
     matcher(value) {
       return matchers.some(m => m(value))
@@ -36,7 +41,7 @@ export function or(...matchers) {
   })
 }
 
-export function not(matcher) {
+export function not<T>(matcher: Matcher<T>): Matcher<T> {
   return createMatcher({
     matcher(value) {
       return !matcher(value)
@@ -47,7 +52,7 @@ export function not(matcher) {
   })
 }
 
-export function eq(source) {
+export function eq<T>(source: T): Matcher<T> {
   return createMatcher({
     matcher(value) {
       return source === value
@@ -58,37 +63,65 @@ export function eq(source) {
   })
 }
 
-export function hasCarryCapacityRemaining(matcher) {
+export function lt<T>(source: T): Matcher<T> {
   return createMatcher({
-    matcher(creep) {
-      return matcher(evalCreep(creep.carryCapacity - _.sum(creep.carry)))
+    matcher(value) {
+      return value < source
+    },
+    describe(value) {
+      return `${value} < ${source}`
+    },
+  })
+}
+
+export function lte<T>(source: T): Matcher<T> {
+  return createMatcher({
+    matcher(value) {
+      return value <= source
+    },
+    describe(value) {
+      return `${value} <= ${source}`
+    },
+  })
+}
+
+export function gt<T>(source: T): Matcher<T> {
+  return createMatcher({
+    matcher(value) {
+      return value > source
+    },
+    describe(value) {
+      return `${value} > ${source}`
+    },
+  })
+}
+
+export function gte<T>(source: T): Matcher<T> {
+  return createMatcher({
+    matcher(value) {
+      return value >= source
+    },
+    describe(value) {
+      return `${value} >= ${source}`
+    },
+  })
+}
+
+
+export function hasCarryCapacityRemaining(matcher: Matcher<number>) {
+  return createMatcher({
+    matcher(creep: Creep) {
+      return matcher(creep.carryCapacity - _.sum(creep.carry))
     },
     describe(creep) {
-      return `hasCarryCapacityRemaining(${matcher.describe(creep)})`
+      return `${creep.name}:hasCarryCapacityRemaining(${matcher.describe(creep.carryCapacity - _.sum(creep.carry))})`
     },
   })
 }
 
-export function is(thing) {
+export function isStructureOfType(type: StructureConstant) {
   return createMatcher({
-    matcher(target) {
-      return target === thing
-    },
-    describe(target) {
-      return `(${thing}) === ${target}`
-    },
-    tokens() {
-      return `IS(${thing})`
-    },
-    parse(str) {
-      //const result = str.match(/^IS\(.*))
-    },
-  })
-}
-
-export function isStructureOfType(type) {
-  return createMatcher({
-    matcher(target) {
+    matcher(target: Structure) {
       return target.structureType === type
     },
     describe(target) {
@@ -97,7 +130,7 @@ export function isStructureOfType(type) {
   })
 }
 
-export function isInstanceOf(instance) {
+export function isInstanceOf(instance: any) {
   return createMatcher({
     matcher(target) {
       return target instanceof instance
@@ -109,8 +142,8 @@ export function isInstanceOf(instance) {
 }
 
 export const isGameObject = createMatcher({
-  matcher(id) {
-    return Game.getObjectById(id)
+  matcher(id: string) {
+    return !!Game.getObjectById(id)
   },
   describe(id, m) {
     return `isGameObject(${id}) === ${m(id)}`
@@ -118,7 +151,7 @@ export const isGameObject = createMatcher({
 })
 
 export const isMine = createMatcher({
-  matcher(target) {
+  matcher(target: OwnedStructure) {
     return target.my === true
   },
   describe(target) {
@@ -126,33 +159,41 @@ export const isMine = createMatcher({
   },
 })
 
+
 export const needsEnergy = createMatcher({
-  matcher(target) {
-    if (_.isNumber(target.energy)) {
-      return target.energy < target.energyCapacity
+  matcher(t: StructureSpawn | StructureExtension | StructureTower | StructureLab | StructureContainer | StructureStorage | StructureTerminal) { 
+    if (isStructureWithEnergy(t)) {
+      return t.energy < t.energyCapacity
     }
-    return _.sum(target.store) < target.storeCapacity
+    return _.sum(t.store) < t.storeCapacity
   },
   describe(target, m) {
     return `needsEnergy(${target}) === ${m(target)}`
   },
 })
 
-function recursivelyLookForSubTask(task, action, matcher) {
-  let result
+interface Task {
+  subTask?: Task
+  action: string
+}
+
+function recursivelyLookForSubTask(task: Task, action: string, matcher: Matcher<Task>): Task | undefined {
+  let result: Task | undefined
   if (task.subTask) {
     result = recursivelyLookForSubTask(task.subTask, action, matcher)
   }
   if (!result) {
-    result = task.action === action && (!matcher || matcher(task))
+    if (task.action === action && (!matcher || matcher(task))) {
+      result = task
+    }
   }
   return result
 }
 
-export function hasTask(name, matcher) {
+export function hasTask(name: string, matcher: Matcher<Task>): Matcher<{ memory: any }> {
   return createMatcher({
     matcher(target) {
-      return _.get(target, 'memory.tasks', []).find(t =>
+      return _.get(target, 'memory.tasks', []).find((t: Task) =>
         recursivelyLookForSubTask(t, name, matcher)
       )
     },
@@ -162,34 +203,33 @@ export function hasTask(name, matcher) {
   })
 }
 
-export function matchProp(prop, matcher) {
+export function matchProp<T>(prop: string, matcher: Matcher<T>): Matcher<T> {
   return createMatcher({
     matcher(value) {
       return matcher(_.get(value, prop))
     },
-    describe(value, m) {
-      const p = m(value)
-      return `matchProp(${prop}) with ${matcher.describe(p, matcher(p))}`
+    describe(value) {
+      return `matchProp(${prop}) with ${matcher.describe(value)}`
     },
   })
 }
 
-export function withGameId(matcher) {
+export function withGameId(matcher: Matcher<any>): Matcher<any> {
   return createMatcher({
     matcher(id) {
       return matcher(Game.getObjectById(id))
     },
-    describe(id, m) {
+    describe(id) {
       const p = Game.getObjectById(id)
-      return `withGameId(${id}) with ${matcher.describe(p, matcher(p))}`
+      return `withGameId(${id}) with ${matcher.describe(p)}`
     },
   })
 }
 
-export function hasBodyType(type) {
+export function hasBodyType(type: BodyPartConstant): Matcher<Creep> {
   return createMatcher({
     matcher(creep) {
-      return creep.body.find(b => b.type === type)
+      return !!creep.body.find(b => b.type === type)
     },
     describe(creep, m) {
       return `hasBody(${type}) === ${m(creep)}`
@@ -198,8 +238,14 @@ export function hasBodyType(type) {
 }
 const OFFENSIVE_CREEP_PARTS = [ATTACK, RANGED_ATTACK]
 export const offensiveCreep = createMatcher({
-  matcher(creep) {
-    return creep.body.find(b => OFFENSIVE_CREEP_PARTS.includes(b.type))
+  matcher(creep: Creep) {
+    return creep.body.some(b => {
+      for (const part of OFFENSIVE_CREEP_PARTS) {
+        if (b.type === part) {
+          return true
+        }
+      }
+    })
   },
   describe(creep, m) {
     return `offensive(${creep}) === ${m(creep)}`
@@ -218,6 +264,28 @@ export const creep = {
   notFull: not(hasCarryCapacityRemaining(eq(0))),
   work: hasBodyType(WORK),
   offensive: offensiveCreep,
+}
+
+const _isStructureWithEnergy = or(
+  isStructureOfType(STRUCTURE_SPAWN),
+  isStructureOfType(STRUCTURE_EXTENSION),
+  isStructureOfType(STRUCTURE_TOWER),
+  isStructureOfType(STRUCTURE_STORAGE),
+  isStructureOfType(STRUCTURE_NUKER),
+  isStructureOfType(STRUCTURE_LAB),
+  isStructureOfType(STRUCTURE_LINK),
+)
+
+const  _isStructureWithStorage = or(
+  isStructureOfType(STRUCTURE_STORAGE),
+  isStructureOfType(STRUCTURE_TERMINAL),
+)
+
+function isStructureWithEnergy(structure: Structure): structure is StructureSpawn | StructureExtension | StructureLab | StructureLink | StructureNuker | StructureTower {
+  return _isStructureWithEnergy(structure)
+}
+function isStructureWithStorage(structure: Structure): structure is StructureStorage | StructureTerminal | StructureContainer {
+  return _isStructureWithStorage(structure)
 }
 
 export const target = {
@@ -244,6 +312,8 @@ export const target = {
     isStructureOfType(STRUCTURE_EXTENSION),
     isStructureOfType(STRUCTURE_SPAWN)
   ),
+  isStructureWithEnergy,
+  isStructureWithStorage,
   isMySpawn: and(isStructureOfType(STRUCTURE_SPAWN), isMine),
   isExtension: isStructureOfType(STRUCTURE_EXTENSION),
   isMyExtension: and(isStructureOfType(STRUCTURE_EXTENSION), isMine),
@@ -254,12 +324,3 @@ export const target = {
   isMyContainer: and(isStructureOfType(STRUCTURE_CONTAINER), isMine),
 }
 
-const commands = {
-  logic,
-  creep,
-  target,
-}
-
-export default function evaluate(command) {
-  return _.get(commands, command)
-}

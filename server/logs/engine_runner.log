@@ -1,0 +1,122 @@
+Loading mods from "/home/user/Development/screeps-redux/server/db.json"
+Connecting to storage
+Terrain shared buffer size: 7500
+Got SIGTERM, disabling queue fetching
+Storage connection lost
+Loading mods from "/home/user/Development/screeps-redux/server/db.json"
+Connecting to storage
+Terrain shared buffer size: 7500
+Got SIGTERM, disabling queue fetching
+Storage connection lost
+Loading mods from "/home/user/Development/screeps-redux/server/db.json"
+Connecting to storage
+Terrain shared buffer size: 7500
+Got SIGTERM, disabling queue fetching
+Storage connection lost
+Connecting to storage
+Storage connection lost Error: connect ECONNREFUSED 127.0.0.1:21025
+    at TCPConnectWrap.afterConnect [as oncomplete] (net.js:1144:16) {
+  errno: 'ECONNREFUSED',
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '127.0.0.1',
+  port: 21025
+}
+Loading mods from "/home/user/Development/screeps-redux/server/db.json"
+Connecting to storage
+Terrain shared buffer size: 7500
+Got SIGTERM, disabling queue fetching
+Storage connection lost
+Loading mods from "/home/user/Development/screeps-redux/server/db.json"
+Connecting to storage
+Terrain shared buffer size: 7500
+Got SIGTERM, disabling queue fetching
+Storage connection lost
+Loading mods from "/home/user/Development/screeps-redux/server/db.json"
+Connecting to storage
+Terrain shared buffer size: 7500
+Got SIGTERM, disabling queue fetching
+Storage connection lost
+Loading mods from "/home/user/Development/screeps-redux/server/db.json"
+Connecting to storage
+Terrain shared buffer size: 7500
+Got SIGTERM, disabling queue fetching
+Storage connection lost
+Loading mods from "/home/user/Development/screeps-redux/server/db.json"
+Connecting to storage
+Terrain shared buffer size: 7500
+Got SIGTERM, disabling queue fetching
+Storage connection lost
+Loading mods from "/home/user/Development/screeps-redux/server/db.json"
+Connecting to storage
+Terrain shared buffer size: 7500
+Got SIGTERM, disabling queue fetching
+Storage connection lost
+Loading mods from "/home/user/Development/screeps-redux/server/db.json"
+Connecting to storage
+Terrain shared buffer size: 7500
+Got SIGTERM, disabling queue fetching
+Storage connection lost
+Loading mods from "/home/user/Development/screeps-redux/server/db.json"
+Connecting to storage
+Terrain shared buffer size: 7500
+Got SIGTERM, disabling queue fetching
+Storage connection lost
+Loading mods from "/home/user/Development/screeps-redux/server/db.json"
+Connecting to storage
+Terrain shared buffer size: 7500
+Got SIGTERM, disabling queue fetching
+Storage connection lost
+Loading mods from "/home/user/Development/screeps-redux/server/db.json"
+Connecting to storage
+Terrain shared buffer size: 7500
+Got SIGTERM, disabling queue fetching
+Storage connection lost
+Loading mods from "/home/user/Development/screeps-redux/server/db.json"
+Connecting to storage
+Terrain shared buffer size: 7500
+Got SIGTERM, disabling queue fetching
+Storage connection lost
+Loading mods from "/home/user/Development/screeps-redux/server/db.json"
+Connecting to storage
+Terrain shared buffer size: 7500
+Got SIGTERM, disabling queue fetching
+Storage connection lost
+Loading mods from "/home/user/Development/screeps-redux/server/db.json"
+Connecting to storage
+Terrain shared buffer size: 7500
+Got SIGTERM, disabling queue fetching
+Storage connection lost
+Loading mods from "/home/user/Development/screeps-redux/server/db.json"
+Connecting to storage
+Terrain shared buffer size: 7500
+Got SIGTERM, disabling queue fetching
+Storage connection lost
+Loading mods from "/home/user/Development/screeps-redux/server/db.json"
+Connecting to storage
+Terrain shared buffer size: 7500
+Got SIGTERM, disabling queue fetching
+Storage connection lost
+Loading mods from "/home/user/Development/screeps-redux/server/db.json"
+Connecting to storage
+Terrain shared buffer size: 7500
+Got SIGTERM, disabling queue fetching
+Storage connection lost
+Loading mods from "/home/user/Development/screeps-redux/server/db.json"
+Connecting to storage
+Terrain shared buffer size: 7500
+Got SIGTERM, disabling queue fetching
+Storage connection lost
+Loading mods from "/home/user/Development/screeps-redux/server/db.json"
+Connecting to storage
+Terrain shared buffer size: 7500
+Got SIGTERM, disabling queue fetching
+Storage connection lost
+Loading mods from "/home/user/Development/screeps-redux/server/db.json"
+Connecting to storage
+Terrain shared buffer size: 7500
+Loading mods from "/home/user/Development/screeps-redux/server/db.json"
+Connecting to storage
+Terrain shared buffer size: 7500
+Got SIGTERM, disabling queue fetching
+Storage connection lost

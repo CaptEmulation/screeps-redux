@@ -31,10 +31,7 @@ export default function* towerDefense(room, {
   });
 
   if (Game.time % 5 === 0 || hostiles.length === 0 && friendliesNeedingHealing.length) {
-    const {
-      hits,
-      hitsMax,
-    } = friendliesNeedingHealing.sort((a, b) => (a.hitsMax - a.hits) - (b.hitsMax - b.hits))[0];
+    friendliesNeedingHealing.sort((a, b) => (a.hitsMax - a.hits) - (b.hitsMax - b.hits))[0];
     towers.forEach(tower => {
       tower.heal(friendliesNeedingHealing[0]);
     });

@@ -9,6 +9,10 @@ export type Tokenizer = (str: string) => TokenizerResult
 export const match = {
   dot: /^\.\S*(\s|$)/i,
   eq: /^EQ(\s|$)/i,
+  lt: /^LT(\s|$)/i,
+  lte: /^LTE(\s|$)/i,
+  gt: /^GT(\s|$)/i,
+  gte: /^GTE(\s|$)/i,
   swap: /^SWAP(\s|$)/i,
   dupe: /^DUPE(\s|$)/i,
 }

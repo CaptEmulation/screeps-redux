@@ -1,0 +1,76 @@
+Loading mods from "/home/user/Development/screeps-redux/integration/server/db.json"
+Connecting to storage
+Error processing room W0N0: TypeError: Cannot read property 'terrain' of undefined
+    at /src/processor.js:35:13
+    at _fulfilled (/home/user/Development/screeps-redux/integration/node_modules/q/q.js:854:54)
+    at /home/user/Development/screeps-redux/integration/node_modules/q/q.js:883:30
+    at Promise.promise.promiseDispatch (/home/user/Development/screeps-redux/integration/node_modules/q/q.js:816:13)
+    at /home/user/Development/screeps-redux/integration/node_modules/q/q.js:570:49
+    at runSingle (/home/user/Development/screeps-redux/integration/node_modules/q/q.js:137:13)
+    at flush (/home/user/Development/screeps-redux/integration/node_modules/q/q.js:125:13)
+    at processTicksAndRejections (internal/process/task_queues.js:79:11)
+Got SIGTERM, disabling queue fetching
+Storage connection lost
+Loading mods from "/home/user/Development/screeps-redux/integration/server/db.json"
+Connecting to storage
+Error processing room W0N0: TypeError: Cannot read property 'terrain' of undefined
+    at /src/processor.js:35:13
+    at _fulfilled (/home/user/Development/screeps-redux/integration/node_modules/q/q.js:854:54)
+    at /home/user/Development/screeps-redux/integration/node_modules/q/q.js:883:30
+    at Promise.promise.promiseDispatch (/home/user/Development/screeps-redux/integration/node_modules/q/q.js:816:13)
+    at /home/user/Development/screeps-redux/integration/node_modules/q/q.js:570:49
+    at runSingle (/home/user/Development/screeps-redux/integration/node_modules/q/q.js:137:13)
+    at flush (/home/user/Development/screeps-redux/integration/node_modules/q/q.js:125:13)
+    at processTicksAndRejections (internal/process/task_queues.js:79:11)
+Got SIGTERM, disabling queue fetching
+Storage connection lost
+Loading mods from "/home/user/Development/screeps-redux/integration/server/db.json"
+Connecting to storage
+Error processing room W0N0: TypeError: Cannot read property 'terrain' of undefined
+    at /src/processor.js:35:13
+    at _fulfilled (/home/user/Development/screeps-redux/integration/node_modules/q/q.js:854:54)
+    at /home/user/Development/screeps-redux/integration/node_modules/q/q.js:883:30
+    at Promise.promise.promiseDispatch (/home/user/Development/screeps-redux/integration/node_modules/q/q.js:816:13)
+    at /home/user/Development/screeps-redux/integration/node_modules/q/q.js:570:49
+    at runSingle (/home/user/Development/screeps-redux/integration/node_modules/q/q.js:137:13)
+    at flush (/home/user/Development/screeps-redux/integration/node_modules/q/q.js:125:13)
+    at processTicksAndRejections (internal/process/task_queues.js:79:11)
+Got SIGTERM, disabling queue fetching
+Storage connection lost
+Loading mods from "/home/user/Development/screeps-redux/integration/server/db.json"
+Connecting to storage
+Error processing room W0N0: TypeError: Cannot read property 'terrain' of undefined
+    at /src/processor.js:35:13
+    at _fulfilled (/home/user/Development/screeps-redux/integration/node_modules/q/q.js:854:54)
+    at /home/user/Development/screeps-redux/integration/node_modules/q/q.js:883:30
+    at Promise.promise.promiseDispatch (/home/user/Development/screeps-redux/integration/node_modules/q/q.js:816:13)
+    at /home/user/Development/screeps-redux/integration/node_modules/q/q.js:570:49
+    at runSingle (/home/user/Development/screeps-redux/integration/node_modules/q/q.js:137:13)
+    at flush (/home/user/Development/screeps-redux/integration/node_modules/q/q.js:125:13)
+    at processTicksAndRejections (internal/process/task_queues.js:79:11)
+Got SIGTERM, disabling queue fetching
+Storage connection lost
+Loading mods from "/home/user/Development/screeps-redux/integration/server/db.json"
+Connecting to storage
+Error processing room W0N0: TypeError: Cannot read property 'terrain' of undefined
+    at /src/processor.js:35:13
+    at _fulfilled (/home/user/Development/screeps-redux/integration/node_modules/q/q.js:854:54)
+    at /home/user/Development/screeps-redux/integration/node_modules/q/q.js:883:30
+    at Promise.promise.promiseDispatch (/home/user/Development/screeps-redux/integration/node_modules/q/q.js:816:13)
+    at /home/user/Development/screeps-redux/integration/node_modules/q/q.js:570:49
+    at runSingle (/home/user/Development/screeps-redux/integration/node_modules/q/q.js:137:13)
+    at flush (/home/user/Development/screeps-redux/integration/node_modules/q/q.js:125:13)
+    at processTicksAndRejections (internal/process/task_queues.js:79:11)
+Loading mods from "/home/user/Development/screeps-redux/integration/server/db.json"
+Connecting to storage
+Error processing room W0N0: TypeError: Cannot read property 'terrain' of undefined
+    at /src/processor.js:35:13
+    at _fulfilled (/home/user/Development/screeps-redux/integration/node_modules/q/q.js:854:54)
+    at /home/user/Development/screeps-redux/integration/node_modules/q/q.js:883:30
+    at Promise.promise.promiseDispatch (/home/user/Development/screeps-redux/integration/node_modules/q/q.js:816:13)
+    at /home/user/Development/screeps-redux/integration/node_modules/q/q.js:570:49
+    at runSingle (/home/user/Development/screeps-redux/integration/node_modules/q/q.js:137:13)
+    at flush (/home/user/Development/screeps-redux/integration/node_modules/q/q.js:125:13)
+    at processTicksAndRejections (internal/process/task_queues.js:79:11)
+Got SIGTERM, disabling queue fetching
+Storage connection lost

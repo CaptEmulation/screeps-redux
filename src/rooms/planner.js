@@ -63,6 +63,8 @@ export function getBunkerLocation(room, visualize) {
     return totalDistance;
   };
   let bestAnchor = _.minBy(allowableLocations, pos => totalPathLength(pos));
+  console.log("Best anchor: " + coordName(bestAnchor));
+  console.log("Total path length: " + totalPathLength(bestAnchor));
   return bestAnchor;
 }
 

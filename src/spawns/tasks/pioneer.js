@@ -28,7 +28,7 @@ export default function* pioneer(spawn, {
     const allCreeps = Object.values(Game.creeps);
     const myPioneerCreeps = allCreeps.filter(hasTask('pioneer', t => !!t.room));
     if (myPioneerCreeps.length < (6 * context.targets.length)) {
-      yield priority();
+      yield priority(-10);
       let body = [MOVE, MOVE, MOVE, CARRY, WORK, WORK];
       const additionals = Math.floor(spawn.room.energyAvailable / calcCreepCost(body));
       for (let i = 0; i < additionals - 1; i++) {

@@ -3,6 +3,7 @@ import './Memory';
 import './rooms'
 import './creeps';
 import './spawns';
+import './game';
 import store from './store';
 
 import {

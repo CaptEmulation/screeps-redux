@@ -17,7 +17,6 @@ export default function* supplyUpgrade(creep, {
   let target;
 
   const containerId = _.get(creep, 'room.memory.bunker.upgradeContainer');
-  console.log('containerId', containerId)
   if (containerId) {
     const container = Game.getObjectById(containerId);
     if (!container) {
@@ -26,7 +25,6 @@ export default function* supplyUpgrade(creep, {
       target = container;
     }
   }
-  console.log('target', target)
   if (target) {
     const range = creep.pos.getRangeTo(target);
     if (range > 1) {

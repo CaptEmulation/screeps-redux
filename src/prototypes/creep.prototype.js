@@ -108,16 +108,20 @@ function circle(pos, color, opacity) {
 
 function positionAtDirection(origin, direction) {
   const offsetX = [0, 0, 1, 1, 1, 0, -1, -1, -1];
-  const offsetY = [0, -1, -1, 0, 1, 1, 1, 0, -1];
+  const offsetY = [0, -1, -1, 0, 1, 1, 1, 0, -1]; 
+  if (!Number.isFinite(direction) || !Number.isFinite(origin.x) || !Number.isFinite(origin.y)) {
+    console.log(`positionAtDirection: invalid parameters: ${origin}, ${direction}`, new Error().stack);
+    return;
+  }
   const x = origin.x + offsetX[direction];
   const y = origin.y + offsetY[direction];
-  if (!_.isNumber(x) || !_.isNumber(y) || x > 49 || x < 0 || y > 49 || y < 0) {
+  if (!Number.isFinite(x) || !Number.isFinite(y) || x > 49 || x < 0 || y > 49 || y < 0) {
     return;
   }
   try {
     return new RoomPosition(x, y, origin.roomName);
   } catch (e) {
-    console.log('Failed to set position', 'x =>', x, _.isNumber(x), 'y =>', y, 'origin.x =>', origin.x, 'origin.y =>', origin.y, 'direction =>', direction, 'origin =>', origin && origin.roomName, e);
+    console.log('Failed to set position', 'x =>', x, Number.isFinite(x), 'y =>', y, 'origin.x =>', origin.x, 'origin.y =>', origin.y, 'direction =>', direction, 'origin =>', origin && origin.roomName, e.stack);
   }
 }
 
